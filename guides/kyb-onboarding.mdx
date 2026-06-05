@@ -109,45 +109,32 @@ curl -X GET "https://api.teel.finance/api/kyb/onboarding/status" \
 ```json
 {
   "status": "approved",
-  "providers": [
-    { "provider": "provider_a", "status": "approved" },
-    { "provider": "provider_b", "status": "under_review" }
-  ],
   "updatedAt": "2026-03-11T14:00:00Z"
 }
 ```
 
 ### Status Values
 
-| Status         | Description                                              |
-|----------------|----------------------------------------------------------|
-| `pending`      | Submission received, verification has not started yet     |
-| `under_review` | Provider is actively reviewing your application           |
-| `approved`     | Verification passed -- you can begin transacting          |
-| `rejected`     | Verification failed -- check provider details for reason  |
+| Status         | What it means                                                                  |
+|----------------|--------------------------------------------------------------------------------|
+| `pending`      | Submission received, verification hasn't started yet                           |
+| `under_review` | Compliance review in progress                                                  |
+| `approved`     | You can transact in the currencies you requested in Step 1                     |
+| `rejected`     | Verification failed — check the response's `reason` field and contact support  |
 
 <Note>
-Each provider reviews independently. Your overall status is `approved` once at least one provider approves. You can begin transacting on approved providers while others are still under review.
+KYB is reviewed independently for each corridor you requested. `status` reports the overall verdict; some corridors may approve before others. Once `status` becomes `approved`, your account is fully provisioned — there is no further action required from you before you can start transacting.
 </Note>
 
-## Step 5: Create Provider Accounts
+## Step 5: Confirm what you can route
 
-Once approved, create your accounts with the verified providers. This provisions the infrastructure needed to send and receive payments.
+After approval, check `/config/coverage` to see the live matrix of currencies, rails, directions, and amount bounds available to your account. This is the authoritative view of what you can quote and execute.
 
 ```bash
-curl -X POST "https://api.teel.finance/api/kyb/onboarding/create-accounts" \
+curl -X GET "https://api.teel.finance/config/coverage" \
   -H "Authorization: Bearer YOUR_API_TOKEN"
 ```
 
-### Response
+See the [Coverage page](/coverage) for the full response schema.
 
-```json
-{
-  "accounts": [
-    { "provider": "provider_a", "status": "active" },
-    { "provider": "provider_b", "status": "pending_approval" }
-  ]
-}
-```
-
-After accounts are created, you can proceed to set up [payment methods](/guides/payment-methods) and [recipients](/guides/recipients).
+Once you've confirmed your corridors, move on to [payment methods](/guides/payment-methods) and [recipients](/guides/recipients) to start sending payouts.
