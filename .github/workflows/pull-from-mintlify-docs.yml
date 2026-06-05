@@ -1,0 +1,86 @@
+# Pull docs content from TeelOrg/mintlify-docs into this repo.
+#
+# Why this exists: Mintlify is wired to deploy from THIS repo
+# (TeelOrg/docs), but all docs content is authored in
+# TeelOrg/mintlify-docs. This workflow keeps the two in sync without
+# any secrets: it runs on a 10-minute cron (and on demand), clones
+# mintlify-docs over public HTTPS (no auth needed — public repo),
+# rsyncs the tree into this repo, and commits with the built-in
+# GITHUB_TOKEN (which has push access to this repo by default).
+#
+# This is a stop-gap until the Mintlify dashboard is repointed to
+# read directly from TeelOrg/mintlify-docs — delete this workflow
+# the day that lands.
+
+name: Pull from TeelOrg/mintlify-docs
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'  # every 10 minutes
+  workflow_dispatch: {}     # manual run for immediate sync
+
+# Serialize runs so an in-flight sync isn't fighting a new one.
+concurrency:
+  group: pull-from-mintlify-docs
+  cancel-in-progress: false
+
+permissions:
+  contents: write  # required for GITHUB_TOKEN to push back to this repo
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout this repo (TeelOrg/docs)
+        uses: actions/checkout@v4
+        with:
+          path: target
+          # token is the default GITHUB_TOKEN, which can push to its
+          # own repo when permissions.contents is write (above).
+
+      - name: Clone TeelOrg/mintlify-docs (public, no auth)
+        run: |
+          git clone --depth 1 https://github.com/TeelOrg/mintlify-docs.git source
+
+      - name: Capture source SHA
+        id: src
+        working-directory: source
+        run: echo "sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+      - name: Mirror tree
+        # --delete makes the mirror absolute — files removed from
+        # mintlify-docs are removed here.
+        # Excludes:
+        #   .git           — keep target's git history intact
+        #   .github        — don't overwrite this workflow with anything
+        #                    mintlify-docs might add under .github
+        #   node_modules   — local build artifacts
+        #   .DS_Store      — macOS junk
+        run: |
+          rsync -av --delete \
+            --exclude='.git' \
+            --exclude='.github' \
+            --exclude='node_modules' \
+            --exclude='.DS_Store' \
+            source/ target/
+
+      - name: Commit + push if changed
+        working-directory: target
+        env:
+          SRC_SHA: ${{ steps.src.outputs.sha }}
+        run: |
+          git config user.name "teel-docs-sync[bot]"
+          git config user.email "teel-docs-sync@users.noreply.github.com"
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "No changes to mirror — exiting clean."
+            exit 0
+          fi
+          git add -A
+          git commit -m "sync: mirror from mintlify-docs@${SRC_SHA:0:7}
+
+          Auto-mirrored by .github/workflows/pull-from-mintlify-docs.yml.
+          All docs content is authored in TeelOrg/mintlify-docs; edits
+          should target that repo and arrive here on the 10-minute cron.
+
+          Source commit: https://github.com/TeelOrg/mintlify-docs/commit/${SRC_SHA}"
+          git push
