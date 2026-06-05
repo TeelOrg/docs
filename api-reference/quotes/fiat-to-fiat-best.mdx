@@ -1,0 +1,70 @@
+---
+title: Get Best Fiat-to-Fiat Quote
+api: GET https://api.teel.finance/api/quotes/fiat-to-fiat/best
+description: Get the best exchange rate across all providers for a fiat-to-fiat transfer
+---
+
+Returns the single best quote (lowest effective rate) across all connected providers for converting one fiat currency to another.
+
+## Query Parameters
+
+<ParamField query="source_currency" type="string" required>
+  ISO 4217 currency code for the source currency (e.g. `USD`, `EUR`, `GBP`).
+</ParamField>
+
+<ParamField query="target_currency" type="string" required>
+  ISO 4217 currency code for the target currency (e.g. `MXN`, `NGN`, `BRL`).
+</ParamField>
+
+<ParamField query="amount" type="number" required>
+  The amount in the source currency to convert.
+</ParamField>
+
+## Response
+
+<ResponseField name="fromCcy" type="string">
+  Source currency code.
+</ResponseField>
+
+<ResponseField name="toCcy" type="string">
+  Target currency code.
+</ResponseField>
+
+<ResponseField name="fromAmount" type="number">
+  Amount in the source currency.
+</ResponseField>
+
+<ResponseField name="toAmount" type="number">
+  Amount the recipient will receive in the target currency.
+</ResponseField>
+
+<ResponseField name="exchangeRate" type="number">
+  The raw exchange rate before fees.
+</ResponseField>
+
+<ResponseField name="effRate" type="number">
+  The effective exchange rate after fees are applied.
+</ResponseField>
+
+<ResponseField name="provider" type="string">
+  The provider offering this quote.
+</ResponseField>
+
+<ResponseField name="fee" type="number">
+  Total fee charged for the conversion.
+</ResponseField>
+
+<ResponseExample>
+```json 200
+{
+  "fromCcy": "USD",
+  "toCcy": "MXN",
+  "fromAmount": 1000,
+  "toAmount": 17250.50,
+  "exchangeRate": 17.35,
+  "effRate": 17.25,
+  "provider": "conduit",
+  "fee": 5.00
+}
+```
+</ResponseExample>

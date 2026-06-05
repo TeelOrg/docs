@@ -1,0 +1,155 @@
+---
+title: Errors & retries
+description: HTTP status codes, error shape, idempotency, and retry guidance for the Teel API
+---
+
+Teel returns standard HTTP status codes. The body is JSON with a single `error` field carrying a human-readable message — short enough to log, descriptive enough for the cause to be obvious from the message alone.
+
+```json
+{
+  "error": "subscription limit reached (max 25 per account)"
+}
+```
+
+Some responses include additional context fields (`details`, `field`, `code`) — these are opt-in per endpoint; treat `error` as the only field guaranteed to exist.
+
+## Status codes
+
+| Code | When |
+| --- | --- |
+| `200 OK` | Successful read |
+| `201 Created` | Successful create |
+| `202 Accepted` | Asynchronous work enqueued (e.g. webhook delivery replay) |
+| `400 Bad Request` | Your request was malformed — bad JSON, missing required field, validation failure (invalid URL, unknown event type, etc.) |
+| `401 Unauthorized` | Auth missing or invalid — see [Authentication](/authentication) |
+| `403 Forbidden` | Authenticated but lacks the required scope, or trying to act on a resource you don't own |
+| `404 Not Found` | Resource doesn't exist, or exists but isn't yours |
+| `409 Conflict` | Request conflicts with current state — e.g. you've reached a per-account limit (25 subscriptions, etc.) |
+| `422 Unprocessable Entity` | Validation passed but business rule rejected — e.g. payout amount below the provider's minimum |
+| `429 Too Many Requests` | Rate limit hit — back off per `Retry-After` |
+| `5xx Server Error` | Our side. Safe to retry per the schedule below. |
+
+## What is and isn't retryable
+
+| Status | Retryable? | Why |
+| --- | --- | --- |
+| `4xx` (except `429`) | **No** | The request will fail the same way until you change it. Retrying wastes your rate budget. |
+| `429` | **Yes**, after `Retry-After` | The server told you when to come back. Respect it. |
+| `5xx` | **Yes**, with exponential backoff | Likely transient — our side. |
+| Network timeout / connection error | **Yes**, with exponential backoff + idempotency | The server may or may not have processed your request — see [Idempotency](#idempotency). |
+
+### Recommended retry schedule
+
+For `5xx` and network errors:
+
+```
+attempt 1 → wait 1s
+attempt 2 → wait 2s
+attempt 3 → wait 4s
+attempt 4 → wait 8s
+attempt 5 → wait 16s
+attempt 6 → give up, surface to the user
+```
+
+With ±20% jitter to spread retry storms across many clients. Total wait: ~31 seconds across 5 attempts.
+
+For `429` responses, ignore the schedule above and wait the number of seconds in the `Retry-After` header. A retry before that just adds load.
+
+```http
+HTTP/1.1 429 Too Many Requests
+Retry-After: 13
+
+{"error": "rate limit exceeded"}
+```
+
+## Idempotency
+
+`POST /payouts` and `POST /payouts/batch` accept an **`Idempotency-Key`** header. Include a UUID you generate; if the same key is sent within 24 hours, Teel returns the original response without creating a duplicate payout.
+
+```bash
+curl https://api.teel.finance/payouts \
+  -H "Authorization: Bearer sk_live_…" \
+  -H "Idempotency-Key: 7f3c2a91-4e5b-4d8c-9a1f-3e2b1c4d5e6f" \
+  -H "Content-Type: application/json" \
+  -d '{"recipientId": "rec_abc", "amount": 1000, "currency": "USD", ...}'
+```
+
+**Always set this on payout creation.** A network timeout on a POST without `Idempotency-Key` leaves you uncertain whether the payout was created — and retrying might double-charge your customer. With the header set, retry is safe.
+
+The header is **not** required on quotes (those are idempotent by request shape) or on reads. It's accepted but ignored on update / delete endpoints.
+
+## Rate limiting
+
+Per-key default: **60 requests per minute, burst 20**. Specific endpoint families have tighter limits:
+
+| Endpoint | Limit | Notes |
+| --- | --- | --- |
+| `GET /quotes/*` | 120/min, burst 40 | Quotes are cheap; higher limit reflects their typical poll-during-checkout pattern |
+| `POST /payouts` | 30/min, burst 10 | Creating money movements should be relatively rare |
+| `POST /webhooks/deliveries/:id/replay` | **5/min, burst 5** per account | Stricter — manual ops affordance, not a programmatic endpoint |
+
+Every response carries:
+
+```http
+X-RateLimit-Limit: 60
+X-RateLimit-Remaining: 47
+X-RateLimit-Reset: 1700001234
+```
+
+`X-RateLimit-Reset` is a Unix timestamp (seconds) when the bucket fully refills.
+
+If you find yourself consistently near the limit, batch where possible (`POST /payouts/batch` instead of N calls to `POST /payouts`) and cache quote results client-side for ~30s rather than re-quoting on every page render.
+
+## What we never do
+
+- **We do not return 4xx for transient issues.** If you got a `400` / `401` / `403` / `404` / `409`, the request is wrong; do not retry.
+- **We do not silently truncate fields.** If a field exceeds a limit, you get a `400` with the field name and the violated bound. Quietly truncating user-supplied amounts is a class of bug we deliberately avoid.
+- **We do not return generic 500s if we can avoid it.** Validation failures are `400` / `422`; permission failures are `403`; missing resources are `404`. A `500` from our side really means "something we didn't expect went wrong" — please report it via the GitHub issues link in [Support](/support) so we can fix it.
+
+## Examples
+
+### Idempotent payout with retries
+
+```javascript
+import { randomUUID } from "crypto";
+
+async function createPayoutWithRetries(payload) {
+  const idemKey = randomUUID();
+  let delay = 1000;
+  for (let attempt = 1; attempt <= 5; attempt++) {
+    const res = await fetch("https://api.teel.finance/payouts", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${process.env.TEEL_API_KEY}`,
+        "Idempotency-Key": idemKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    // 2xx — done.
+    if (res.ok) return res.json();
+
+    // 4xx (except 429) — bug in our request; do not retry.
+    if (res.status >= 400 && res.status < 500 && res.status !== 429) {
+      const err = await res.json();
+      throw new Error(`Teel ${res.status}: ${err.error}`);
+    }
+
+    // 429 — server-told wait.
+    if (res.status === 429) {
+      const retryAfter = Number(res.headers.get("Retry-After") ?? 1);
+      await new Promise((r) => setTimeout(r, retryAfter * 1000));
+      continue;
+    }
+
+    // 5xx or network error — exponential backoff with jitter.
+    const jitter = 0.8 + Math.random() * 0.4;
+    await new Promise((r) => setTimeout(r, delay * jitter));
+    delay *= 2;
+  }
+  throw new Error("Teel API: 5 retries exhausted");
+}
+```
+
+Same `Idempotency-Key` across all retries — Teel returns the originally-created payout on retry rather than creating duplicates.

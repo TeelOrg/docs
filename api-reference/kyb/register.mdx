@@ -1,0 +1,88 @@
+---
+title: Register Business (KYB)
+api: POST https://api.teel.finance/api/kyb/register
+description: Register a business with all providers at once via KYB submission
+---
+
+Submits KYB (Know Your Business) information to register a business with all connected providers simultaneously. Requires the `X-User-ID` header to associate the registration with a user.
+
+## Headers
+
+<ParamField header="X-User-ID" type="string" required>
+  The unique identifier of the user initiating the KYB registration.
+</ParamField>
+
+## Body Parameters
+
+<ParamField body="businessName" type="string" required>
+  Legal name of the business.
+</ParamField>
+
+<ParamField body="businessType" type="string" required>
+  Type of business entity (e.g. `llc`, `corporation`, `sole_proprietorship`).
+</ParamField>
+
+<ParamField body="registrationNumber" type="string" required>
+  Business registration or EIN number.
+</ParamField>
+
+<ParamField body="country" type="string" required>
+  ISO 3166-1 alpha-2 country code where the business is registered (e.g. `US`, `GB`).
+</ParamField>
+
+<ParamField body="address" type="object" required>
+  Registered business address.
+  <Expandable title="Address fields">
+    <ParamField body="street" type="string" required>
+      Street address.
+    </ParamField>
+    <ParamField body="city" type="string" required>
+      City name.
+    </ParamField>
+    <ParamField body="state" type="string">
+      State or province.
+    </ParamField>
+    <ParamField body="postalCode" type="string" required>
+      Postal or ZIP code.
+    </ParamField>
+    <ParamField body="country" type="string" required>
+      Country code.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="contactEmail" type="string" required>
+  Primary contact email for the business.
+</ParamField>
+
+<ParamField body="contactPhone" type="string">
+  Primary contact phone number.
+</ParamField>
+
+## Response
+
+<ResponseField name="registrationId" type="string">
+  Unique identifier for this KYB registration.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Overall registration status (e.g. `pending`, `approved`, `rejected`).
+</ResponseField>
+
+<ResponseField name="providers" type="object">
+  Map of provider names to their individual registration statuses.
+</ResponseField>
+
+<ResponseExample>
+```json 200
+{
+  "registrationId": "kyb_abc123def456",
+  "status": "pending",
+  "providers": {
+    "conduit": "pending",
+    "lemonado": "pending",
+    "circle": "pending"
+  }
+}
+```
+</ResponseExample>

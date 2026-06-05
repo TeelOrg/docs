@@ -1,0 +1,102 @@
+---
+title: Authentication
+description: How to authenticate with the Teel API
+---
+
+The Teel API uses a **secret API key** sent as a bearer token on every request. Same pattern as Stripe, OpenAI, Anthropic, Resend. Your server holds the key in env vars or a vault and presents it on every call.
+
+```bash
+curl https://api.teel.finance/users/me \
+  -H "Authorization: Bearer sk_live_a3f2x9k7m4q8…"
+```
+
+## Key format
+
+```
+sk_<env>_<43 url-safe base64 chars>
+```
+
+| Prefix     | Environment | Base URL                            |
+| ---------- | ----------- | ----------------------------------- |
+| `sk_live_` | Production  | `https://api.teel.finance`          |
+| `sk_test_` | Sandbox     | `https://api-sandbox.teel.finance`  |
+
+<Note>
+  `api-sandbox.teel.finance` is the canonical sandbox host. While DNS is propagating, `api-dev.teel.finance` is a transitional alias accepting the same `sk_test_…` keys — switch to `api-sandbox.teel.finance` once it resolves on your network. Sandbox provider APIs don't move real funds.
+</Note>
+
+The fixed `sk_` prefix is recognized by GitHub secret scanning, GitGuardian, and TruffleHog — if you accidentally commit a key, you'll get a leak notification. The visible `live` vs `test` distinction prevents the "prod creds in Slack" failure mode.
+
+<Warning>
+  Keys mismatched to the environment fail with `403 ENV_SCOPE_MISMATCH`. `sk_live_…` against `api-sandbox.teel.finance` is rejected, and `sk_test_…` against `api.teel.finance` is rejected.
+</Warning>
+
+## Issuing a key
+
+Today: from the **API Keys** page in `dashboard.teel.finance`. Click **Create API key**, pick the scopes, and copy the shown plaintext **immediately** — Teel stores only an argon2id hash + the first 12 characters for display. We cannot retrieve the plaintext later.
+
+Headless issuance (programmatic key creation) ships when partner-account self-service lands; track in [TEELS-170](https://teelapp.atlassian.net/browse/TEELS-170).
+
+## Scopes
+
+Each key carries a subset of scopes. Default for a newly-minted key is read-only:
+
+| Scope | What it allows |
+| --- | --- |
+| `quotes:read` | Fetch quotes (`/quotes/*`) |
+| `payouts:write` | Create payouts (`POST /payouts`) |
+| `payouts:read` | List / fetch your own payouts |
+| `recipients:write` | Create / update / delete recipients |
+| `recipients:read` | List / fetch recipients |
+
+Webhook subscription scopes (`webhooks:read` / `webhooks:write`) ship with [TEELS-178](https://teelapp.atlassian.net/browse/TEELS-178)'s partner-API enablement; today webhook subscriptions are managed only from the dashboard.
+
+## Rotation
+
+Use the **Roll key** action in the dashboard. The new key is shown once; the previous key continues working for **7 days** to give you time to redeploy. After the overlap window, the old key returns `401`.
+
+A rolled key is logged to the partner-visible audit feed under the same business.
+
+## Revocation
+
+The **Revoke key** action in the dashboard sets the key inactive immediately. In-memory caches expire within 30 seconds; after that, every request with the revoked key returns `401`. Use revocation if you suspect compromise — rotation has a 7-day overlap that you do not want during incident response.
+
+## What happens if a key is compromised
+
+1. **Blast radius is bounded by the key's scopes** — a key with `quotes:read` only cannot create payouts. Issue narrowly-scoped keys per use case so a leaked CI key can't act as a leaked production key.
+2. **Teel only custodies funds via escrow + smart wallets.** A captured key cannot drain a wallet — it can only place actions the holder of the key could place anyway, all of which are audited and rate-limited.
+3. **Revoke first, investigate second.** Rotation's 7-day overlap is wrong for an active compromise; revoke + mint a new key + redeploy.
+
+## Storage
+
+- **Server-side only.** Never embed a `sk_live_…` key in a mobile app, browser bundle, or any artifact a partner of yours can read. Use a backend you control.
+- **One secret per environment.** Mirror the key into your env-vars / vault under names like `TEEL_API_KEY`. Don't share a key across staging and production.
+- **CI secret scanning.** Configure your CI to fail on `sk_live_` / `sk_test_` substrings in commits. Most CI providers have built-in detectors for this prefix shape.
+
+## Error responses
+
+| Status | Meaning |
+| --- | --- |
+| `401 Unauthorized` | Missing / malformed `Authorization` header, key revoked, or wrong environment for the key prefix |
+| `403 Forbidden` | Key is valid but lacks the scope the endpoint requires (e.g. you called `POST /payouts` with a `quotes:read`-only key) |
+| `429 Too Many Requests` | Per-key rate limit exceeded — back off per the `Retry-After` header |
+
+## Rate limiting
+
+Per-key rate limits apply. Each response carries:
+
+```http
+X-RateLimit-Limit: 60
+X-RateLimit-Remaining: 47
+X-RateLimit-Reset: 1700001234
+```
+
+On a `429`, also: `Retry-After: <seconds>`. Wait at least that long before the next request.
+
+Specific limits per endpoint family + the per-key default are documented in the [Errors & retries](/errors) guide.
+
+## Dashboard (Auth0) authentication
+
+The dashboard at `dashboard.teel.finance` uses Auth0 JWT for the in-browser user session. **This is not the API path** — partner integrations should always use the `sk_` API key pattern above. Auth0 access tokens are not accepted on `api.teel.finance` / `api-dev.teel.finance`.
+
+If you build an internal tool that needs to act on behalf of multiple Teel accounts, use one `sk_` key per account rather than reusing your own dashboard JWT.

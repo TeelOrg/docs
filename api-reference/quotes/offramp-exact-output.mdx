@@ -1,0 +1,42 @@
+---
+title: Get Exact-Output Offramp Quote
+api: GET https://api.teel.finance/api/quotes/offramp/exact-output
+description: Quote the crypto input needed to deliver an exact fiat payout
+---
+
+Returns the single best offramp quote that delivers an **exact** fiat amount to the recipient. Teel solves for the required crypto input, adding the Teel fee on top of the input (fee-on-input) so the recipient receives exactly `target_amount`.
+
+## Query Parameters
+
+<ParamField query="payout_currency" type="string" required>
+  ISO 4217 currency code for the fiat payout currency (e.g. `USD`, `PHP`).
+</ParamField>
+
+<ParamField query="target_amount" type="number" required>
+  The exact fiat amount the recipient must receive.
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean" />
+
+<ResponseField name="data" type="object">
+  A single offramp quote. `toAmount` equals the requested `target_amount`; `fromAmount` is the crypto input required (including the Teel fee). The `protocol` field is an opaque route token (`rt_...`) — see [Route tokens](/api-reference/quotes/onramp-all#route-tokens).
+</ResponseField>
+
+<ResponseExample>
+```json 200
+{
+  "success": true,
+  "data": {
+    "protocol": "rt_9XbN2kQ",
+    "fromToken": "USDC",
+    "toCcy": "PHP",
+    "fromAmount": 176.43,
+    "toAmount": 10000.00,
+    "rate": 56.8,
+    "fee": 0.35
+  }
+}
+```
+</ResponseExample>

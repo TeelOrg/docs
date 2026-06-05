@@ -1,0 +1,35 @@
+---
+title: Airwallex Webhook
+api: POST /api/airwallex/webhook
+description: Receive transfer status events from Airwallex
+---
+
+Processes transfer status events (paid, failed, rejected, returned, cancelled) and updates offramp metadata.
+
+## Signature Verification
+
+HMAC-SHA256 using `x-signature` header, verified against `AIRWALLEX_WEBHOOK_SECRET`.
+
+<ParamField body="id" type="string" required>
+  Webhook event ID
+</ParamField>
+
+<ParamField body="name" type="string" required>
+  Event name (e.g., `transfer.paid`, `transfer.failed`, `transfer.rejected`, `transfer.returned`, `transfer.cancelled`)
+</ParamField>
+
+<ParamField body="account_id" type="string" required>
+  Airwallex account ID
+</ParamField>
+
+<ParamField body="data" type="object" required>
+  Event payload containing `object` with transfer details including `id`, `status`, `failure_reason`, and `failure_reason_message`
+</ParamField>
+
+<ResponseExample>
+```json
+{
+  "status": "ok"
+}
+```
+</ResponseExample>

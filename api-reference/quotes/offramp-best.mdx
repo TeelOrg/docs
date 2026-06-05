@@ -1,0 +1,61 @@
+---
+title: Get Best Offramp Quote
+api: GET https://api.teel.finance/api/quotes/offramp/best
+description: Get the best quote for offramping crypto to fiat currency
+---
+
+Returns the single best offramp quote across all providers for converting crypto tokens back into fiat currency.
+
+## Query Parameters
+
+<ParamField query="payout_currency" type="string" required>
+  ISO 4217 currency code for the desired fiat payout currency (e.g. `USD`, `EUR`).
+</ParamField>
+
+<ParamField query="amount" type="number" required>
+  The amount of crypto tokens to offramp.
+</ParamField>
+
+## Response
+
+<ResponseField name="protocol" type="string">
+  Opaque route token (`rt_...`) identifying the route. See [Route tokens](/api-reference/quotes/onramp-all#route-tokens).
+</ResponseField>
+
+<ResponseField name="fromToken" type="string">
+  The crypto token being sold.
+</ResponseField>
+
+<ResponseField name="toCcy" type="string">
+  Target fiat currency code.
+</ResponseField>
+
+<ResponseField name="fromAmount" type="number">
+  Amount of crypto tokens being sold.
+</ResponseField>
+
+<ResponseField name="toAmount" type="number">
+  Amount in fiat currency the user will receive.
+</ResponseField>
+
+<ResponseField name="rate" type="number">
+  The conversion rate applied.
+</ResponseField>
+
+<ResponseField name="fee" type="number">
+  Total fee charged for the offramp.
+</ResponseField>
+
+<ResponseExample>
+```json 200
+{
+  "protocol": "rt_9XbN2kQ7r3d",
+  "fromToken": "USDC",
+  "toCcy": "USD",
+  "fromAmount": 1000,
+  "toAmount": 997.50,
+  "rate": 1.0,
+  "fee": 2.50
+}
+```
+</ResponseExample>

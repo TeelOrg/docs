@@ -1,0 +1,30 @@
+---
+title: List Recipients
+api: GET /api/recipients
+description: List all recipients
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token from Auth0
+</ParamField>
+
+<ParamField header="X-User-ID" type="string" required>
+  Internal user ID
+</ParamField>
+
+<ResponseExample>
+```json
+[
+  {
+    "id": "rec_abc123",
+    "businessName": "Acme Malaysia",
+    "country": "MY",
+    "currency": "MYR",
+    "transferType": "fiat_to_fiat",
+    "bankName": "Maybank",
+    "bankAccount": "1234567890",
+    "status": "active"
+  }
+]
+```
+</ResponseExample>

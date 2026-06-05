@@ -1,0 +1,65 @@
+---
+title: Introduction
+description: Cross-border payment and stablecoin transfer platform
+---
+
+# Welcome to Teel API
+
+Teel is a cross-border payment platform that supports **fiat-to-fiat**, **fiat-to-stablecoin**, and **stablecoin-to-stablecoin** transfers. The API lets you programmatically manage payouts, recipients, quotes, and compliance workflows.
+
+## Key Capabilities
+
+<CardGroup cols={2}>
+  <Card title="Fiat-to-Fiat Payouts" icon="money-bill-transfer">
+    Send cross-border fiat payments (e.g., USD → MYR) routed through the best
+    available provider.
+  </Card>
+  <Card title="Fiat-to-Stablecoin" icon="coins">
+    Convert fiat currency into stablecoins like USDC or MYRC via onramp.
+  </Card>
+  <Card title="Stablecoin-to-Stablecoin" icon="right-left">
+    Transfer stablecoins across chains via DEX swaps and cross-chain bridges.
+  </Card>
+  <Card title="Multi-Provider Quoting" icon="scale-balanced">
+    Compare rates across multiple providers and automatically select the best
+    quote.
+  </Card>
+</CardGroup>
+
+## How It Works
+
+1. **Onboard** — Complete KYB (Know Your Business) verification with supported providers.
+2. **Add Recipients** — Create recipients with their bank accounts or wallet addresses.
+3. **Get Quotes** — Fetch real-time quotes for your desired currency pair and amount.
+4. **Execute Payouts** — Create and execute payouts using the best available route.
+
+## Base URLs
+
+Pick the host that matches your API key prefix:
+
+| Environment | Base URL | Use with |
+| --- | --- | --- |
+| Production | `https://api.teel.finance` | `sk_live_…` keys |
+| Sandbox | `https://api-sandbox.teel.finance` | `sk_test_…` keys |
+
+<Note>
+  If `api-sandbox.teel.finance` doesn't resolve yet on your network, `api-dev.teel.finance` is a transitional alias accepting the same `sk_test_…` keys while DNS propagates. Both hostnames route to the sandbox backend; switch to `api-sandbox.teel.finance` once it resolves.
+</Note>
+
+The OpenAPI 3.1 spec is served at [`/openapi.json`](https://api-sandbox.teel.finance/openapi.json) (or `/openapi.yaml`) on every host — import it into Postman, Insomnia, or `openapi-generator-cli` for typed clients.
+
+## Key Concepts
+
+| Term                   | Description                                                             |
+| ---------------------- | ----------------------------------------------------------------------- |
+| **Onramp**             | Converting fiat currency into USDC stablecoin                           |
+| **Offramp**            | Converting USDC stablecoin into fiat currency                           |
+| **Fiat-to-Fiat**       | Cross-border fiat payment routed through the best provider              |
+| **Fiat-to-Stablecoin** | Converting fiat into a specific stablecoin (e.g., USD → MYRC)           |
+| **S2S**                | Stablecoin-to-stablecoin transfer via DEX swap + bridge                 |
+| **Quote**              | A rate estimate from one or more providers before executing a transfer  |
+| **KYB**                | Know Your Business — compliance onboarding required before transacting  |
+| **Recipient**          | A counterparty (person or business) that receives payouts               |
+| **Payment Method**     | A bank account or wallet linked to the user for sending/receiving funds |
+| **Bridge**             | Cross-chain transfer of tokens (e.g., USDT on Arbitrum → USDC on Base)  |
+| **DEX Swap**           | On-chain token swap via decentralized exchange                          |

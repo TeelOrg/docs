@@ -1,0 +1,31 @@
+---
+title: Conduit Webhook
+api: POST /api/conduit/webhook
+description: Receive transaction, customer, and counterparty status updates from Conduit
+---
+
+Handles transaction, customer, and counterparty status updates from Conduit.
+
+## Signature Verification
+
+HMAC-SHA256 using `Conduit-Signature` and `Conduit-Signature-Timestamp` headers, verified against `CONDUIT_WEBHOOK_SECRET`.
+
+<ParamField body="event" type="string" required>
+  Event type (e.g., `transaction.completed`, `customer.active`, `counterparty.active`)
+</ParamField>
+
+<ParamField body="version" type="string" required>
+  Webhook version
+</ParamField>
+
+<ParamField body="data" type="object" required>
+  Event payload — structure varies by event type (transaction, customer, or counterparty)
+</ParamField>
+
+<ResponseExample>
+```json
+{
+  "status": "ok"
+}
+```
+</ResponseExample>

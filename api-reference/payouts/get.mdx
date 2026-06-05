@@ -1,0 +1,95 @@
+---
+title: Get Payout
+api: GET /api/payouts/{id}
+description: Get payout details by ID
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token from Auth0
+</ParamField>
+
+<ParamField path="id" type="string" required>
+  Payout ID
+</ParamField>
+
+<ResponseField name="id" type="string">
+  Payout ID
+</ResponseField>
+
+<ResponseField name="transaction_type" type="string">
+  `payout` or `swap`
+</ResponseField>
+
+<ResponseField name="payout_amount" type="number">
+  Amount in payout currency
+</ResponseField>
+
+<ResponseField name="source_amount" type="number">
+  Amount in source currency
+</ResponseField>
+
+<ResponseField name="source_currency" type="string">
+  Source currency code
+</ResponseField>
+
+<ResponseField name="payout_currency" type="string">
+  Payout currency code
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  `pending`, `processing`, `completed`, `failed`, or `cancelled`
+</ResponseField>
+
+<ResponseField name="recipient_id" type="string">
+  Recipient ID
+</ResponseField>
+
+<ResponseField name="bank_account" type="string">
+  Bank account number
+</ResponseField>
+
+<ResponseField name="wallet_address" type="string">
+  Wallet address (for crypto payouts)
+</ResponseField>
+
+<ResponseField name="payment_method" type="string">
+  Payment method used
+</ResponseField>
+
+<ResponseField name="payment_purpose" type="string">
+  Purpose of payment
+</ResponseField>
+
+<ResponseField name="reference" type="string">
+  Payment reference
+</ResponseField>
+
+<ResponseField name="provider_metadata" type="object">
+  Provider-specific metadata (onramp, offramp, swap, bridge details)
+</ResponseField>
+
+<ResponseExample>
+```json
+{
+  "id": "pay_abc123",
+  "transaction_type": "payout",
+  "payout_amount": 4425.00,
+  "source_amount": 1000.00,
+  "source_currency": "USD",
+  "payout_currency": "MYR",
+  "status": "completed",
+  "recipient_id": "rec_xyz",
+  "bank_name": "Maybank",
+  "bank_account": "1234567890",
+  "payment_method": "fiat_bank_transfer",
+  "payment_purpose": "trade_settlement",
+  "created_at": "2026-03-01T10:00:00Z",
+  "completed_at": "2026-03-01T10:05:00Z",
+  "provider_metadata": {
+    "version": 1,
+    "onramp": { "protocol": "airwallex", "status": "completed" },
+    "offramp": { "protocol": "airwallex", "amount": 4425, "currency": "MYR" }
+  }
+}
+```
+</ResponseExample>

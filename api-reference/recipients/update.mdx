@@ -1,0 +1,35 @@
+---
+title: Update Recipient
+api: PUT /api/recipients/{id}
+description: Update a recipient
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token from Auth0
+</ParamField>
+
+<ParamField path="id" type="string" required>
+  Recipient ID
+</ParamField>
+
+<ParamField body="businessName" type="string">
+  Recipient business name
+</ParamField>
+
+<ParamField body="country" type="string">
+  Country code
+</ParamField>
+
+<ParamField body="currency" type="string">
+  Currency code
+</ParamField>
+
+<ResponseExample>
+```json
+{
+  "id": "rec_abc123",
+  "businessName": "Acme Malaysia Updated",
+  "status": "active"
+}
+```
+</ResponseExample>

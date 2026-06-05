@@ -1,0 +1,83 @@
+---
+title: "Coverage"
+description: "Supported countries, currencies, and payment rails"
+---
+
+Teel aggregates multiple payment providers behind a single API, giving you broad coverage across currencies, countries, and payment rails. The specific corridors available to your business depend on your KYB onboarding status.
+
+## Payment Corridors
+
+Teel supports four types of payment flows:
+
+<CardGroup cols={2}>
+  <Card title="Fiat-to-Fiat">
+    Cross-border bank transfers from one fiat currency to another. Teel handles
+    the onramp and offramp legs automatically, selecting the best route.
+  </Card>
+  <Card title="Fiat-to-Stablecoin">
+    Onramp from fiat currency to stablecoins (USDC, USDT). Funds are deposited
+    to a blockchain wallet address.
+  </Card>
+  <Card title="Stablecoin-to-Fiat">
+    Offramp from stablecoins to fiat currency. Stablecoins are converted and
+    delivered to a bank account.
+  </Card>
+  <Card title="Stablecoin-to-Stablecoin">
+    Cross-chain stablecoin transfers via bridge. Move tokens between supported
+    blockchain networks.
+  </Card>
+</CardGroup>
+
+## Supported Currencies & Rails
+
+Coverage is driven entirely by live platform configuration, so the authoritative, always-current list is served by the API rather than duplicated here. Call the [coverage endpoint](/api-reference/config/coverage) to get every supported fiat currency, the payment rails available for each, whether it can be used for onramp and/or offramp, and the per-currency amount bounds:
+
+```bash
+curl https://api.teel.finance/api/config/coverage
+```
+
+```json
+{
+  "fiat": [
+    {
+      "code": "PHP",
+      "name": "Philippine Peso",
+      "decimals": 2,
+      "onramp": true,
+      "offramp": true,
+      "minAmount": 620,
+      "maxAmount": 500000,
+      "rails": [
+        { "code": "instapay", "label": "InstaPay" },
+        { "code": "pesonet", "label": "PESONet" }
+      ]
+    }
+  ],
+  "wallet": { "tokens": ["USDC", "USDT"], "chains": [{ "code": "polygon", "label": "Polygon" }] }
+}
+```
+
+Each fiat entry tells you exactly **how much you can onramp/offramp** (`minAmount`/`maxAmount`), in **which direction** (`onramp`/`offramp`), and over **which rails**. No authentication is required — this is the platform-wide matrix.
+
+## Blockchain Networks
+
+The `wallet` section of the [coverage endpoint](/api-reference/config/coverage) lists the supported stablecoin tokens and the chains they settle on. Today this covers:
+
+**Supported tokens:** USDC, USDT
+
+**Supported chains:** Ethereum, Arbitrum, Polygon, Base, Optimism, Celo, Solana, Tron
+
+**Cross-chain transfers:**
+
+- Native USDC transfers via CCTP (Circle)
+- Fast bridging across supported chains
+
+## Coverage vs. your onboarding status
+
+The coverage endpoint returns the **platform-wide** matrix. The corridors available to *your* business additionally depend on your KYB onboarding status. To see what you specifically can transact, complete onboarding and consult your capabilities (see [KYB Onboarding](/guides/kyb-onboarding)).
+
+<Note>
+  The platform coverage matrix is public and unauthenticated. Per-business
+  corridor availability still depends on your KYB status — complete onboarding
+  to unlock additional corridors.
+</Note>

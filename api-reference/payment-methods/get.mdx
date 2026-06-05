@@ -1,0 +1,25 @@
+---
+title: Get Payment Method
+api: GET /api/payment-methods/{id}
+description: Get a payment method by ID
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token from Auth0
+</ParamField>
+
+<ParamField path="id" type="string" required>
+  Payment method ID
+</ParamField>
+
+<ResponseExample>
+```json
+{
+  "id": "pm_abc123",
+  "type": "bank_transfer",
+  "bankName": "Chase",
+  "accountNumber": "****7890",
+  "currency": "USD"
+}
+```
+</ResponseExample>

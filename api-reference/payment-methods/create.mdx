@@ -1,0 +1,48 @@
+---
+title: Create Payment Method
+api: POST /api/payment-methods
+description: Create a new payment method
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token from Auth0
+</ParamField>
+
+<ParamField body="type" type="string" required>
+  Payment method type (`bank_transfer` or `wallet`)
+</ParamField>
+
+<ParamField body="bankName" type="string">
+  Bank name (for bank transfers)
+</ParamField>
+
+<ParamField body="accountNumber" type="string">
+  Bank account number
+</ParamField>
+
+<ParamField body="routingNumber" type="string">
+  Routing number
+</ParamField>
+
+<ParamField body="currency" type="string">
+  Currency code
+</ParamField>
+
+<ParamField body="walletAddress" type="string">
+  Wallet address (for wallet type)
+</ParamField>
+
+<ParamField body="chainId" type="integer">
+  Blockchain chain ID (for wallet type)
+</ParamField>
+
+<ResponseExample>
+```json
+{
+  "id": "pm_abc123",
+  "type": "bank_transfer",
+  "bankName": "Chase",
+  "status": "active"
+}
+```
+</ResponseExample>

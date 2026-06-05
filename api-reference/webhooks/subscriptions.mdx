@@ -1,0 +1,188 @@
+---
+title: Webhook subscriptions
+description: CRUD + secret rotation for outbound HTTP webhook subscriptions
+---
+
+Each subscription registers a URL that Teel POSTs signed events to. See the [Webhooks guide](/guides/webhooks) for the delivery format, retry behavior, and verifier samples.
+
+## Account limits
+
+| Limit | Value |
+| --- | --- |
+| Subscriptions per account | 25 |
+| Maximum payload size (JSON envelope) | 256 KB |
+| URL scheme | `https://` only |
+
+Loopback, RFC1918 private, link-local, and known cloud metadata host/IP ranges are rejected at create time and at delivery time (DNS is re-resolved before every POST).
+
+---
+
+## List subscriptions
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token from Auth0
+</ParamField>
+
+```http
+GET /api/webhooks/subscriptions
+```
+
+<ResponseExample>
+```json
+[
+  {
+    "id": "1c84203c-b4e3-40de-83a9-51bc0d9c991f",
+    "user_id": "4d9e5f15-33bd-4b52-970d-88ad31dfe3ce",
+    "url": "https://hooks.example.com/teel",
+    "events": ["payout.created", "payout.status.updated"],
+    "status": "active",
+    "secret_prefix": "whsec_Pdt_BP",
+    "label": "Production receiver",
+    "created_at": "2026-05-27T09:30:00Z",
+    "updated_at": "2026-05-27T09:30:00Z",
+    "last_success_at": "2026-05-27T09:31:02Z",
+    "last_failure_at": null
+  }
+]
+```
+</ResponseExample>
+
+---
+
+## Create subscription
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token from Auth0
+</ParamField>
+
+<ParamField body="url" type="string" required>
+  Endpoint URL. Must be `https://`. Rejected with `400` if it's a private IP, loopback, or metadata host.
+</ParamField>
+
+<ParamField body="events" type="string[]" required>
+  Non-empty list of event types. Allowed: `payout.created`, `payout.status.updated`.
+</ParamField>
+
+<ParamField body="label" type="string">
+  Optional human-readable label for the dashboard. Never sent to your endpoint.
+</ParamField>
+
+```http
+POST /api/webhooks/subscriptions
+```
+
+The response includes a one-shot `secret` field — your `whsec_…` signing secret. **Copy it immediately.** Subsequent reads of the subscription only return the `secret_prefix`; we cannot retrieve the plaintext later.
+
+<ResponseExample>
+```json
+{
+  "id": "1c84203c-b4e3-40de-83a9-51bc0d9c991f",
+  "user_id": "4d9e5f15-33bd-4b52-970d-88ad31dfe3ce",
+  "url": "https://hooks.example.com/teel",
+  "events": ["payout.created", "payout.status.updated"],
+  "status": "active",
+  "secret_prefix": "whsec_Pdt_BP",
+  "secret": "whsec_Pdt_BP3ft-nIDl86430kZrGEy8qd7zB4pCUmeU1GVB0",
+  "label": "Production receiver",
+  "created_at": "2026-05-27T09:30:00Z",
+  "updated_at": "2026-05-27T09:30:00Z",
+  "last_success_at": null,
+  "last_failure_at": null
+}
+```
+</ResponseExample>
+
+**Errors**
+
+| Status | Meaning |
+| --- | --- |
+| `400` | Invalid URL (not https, missing host, private IP, metadata host) or unknown event type |
+| `409` | You've reached the per-account limit (25). Delete or pause an existing one first. |
+
+---
+
+## Get subscription
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token from Auth0
+</ParamField>
+
+<ParamField path="id" type="string" required>
+  Subscription UUID
+</ParamField>
+
+```http
+GET /api/webhooks/subscriptions/{id}
+```
+
+Returns the same shape as List but for a single row. Returns `404` if the id isn't yours.
+
+---
+
+## Update subscription
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token from Auth0
+</ParamField>
+
+<ParamField path="id" type="string" required>
+  Subscription UUID
+</ParamField>
+
+<ParamField body="url" type="string">
+  New endpoint URL. Same validation rules as create.
+</ParamField>
+
+<ParamField body="events" type="string[]">
+  New event allow-list. Replaces existing.
+</ParamField>
+
+<ParamField body="status" type="string">
+  `active` or `paused`. `disabled` is reserved for ops-side use and not user-settable.
+</ParamField>
+
+<ParamField body="label" type="string">
+  New label.
+</ParamField>
+
+```http
+PATCH /api/webhooks/subscriptions/{id}
+```
+
+All fields are optional — any field you omit stays unchanged. Returns the updated subscription. Pausing a subscription stops new deliveries from being enqueued; in-flight retries continue.
+
+---
+
+## Delete subscription
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token from Auth0
+</ParamField>
+
+<ParamField path="id" type="string" required>
+  Subscription UUID
+</ParamField>
+
+```http
+DELETE /api/webhooks/subscriptions/{id}
+```
+
+Removes the subscription **and** all of its pending / historical deliveries (cascade). Returns `{"deleted": true}` on success.
+
+---
+
+## Rotate signing secret
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token from Auth0
+</ParamField>
+
+<ParamField path="id" type="string" required>
+  Subscription UUID
+</ParamField>
+
+```http
+POST /api/webhooks/subscriptions/{id}/rotate-secret
+```
+
+Mints a new `whsec_…` secret and returns it once (same envelope as Create). **The previous secret is invalidated immediately — there is no overlap window.** If you need overlap, pause the subscription first, rotate, deploy your verifier with the new secret, and unpause.

@@ -1,0 +1,188 @@
+---
+title: "Managing Recipients"
+description: "Create and manage payment recipients (counterparties)"
+---
+
+## Overview
+
+Recipients (also called counterparties) are the businesses or individuals you send payments to. When you create a recipient, Teel automatically provisions them with all of your active payment providers so you can pay them through any available rail.
+
+## Transfer Types
+
+The transfer type determines what payment method information is required for the recipient.
+
+| Transfer Type              | Description                              | Required Payment Method         |
+|----------------------------|------------------------------------------|---------------------------------|
+| `fiat_to_fiat`             | Send fiat currency to a bank account     | Bank details (account number, routing number, SWIFT/BIC, etc.) |
+| `fiat_to_stablecoin`       | Convert fiat to stablecoin on delivery   | Wallet address                  |
+| `stablecoin_to_stablecoin` | Send stablecoins across chains           | Wallet addresses per chain      |
+
+## Step 1: Get Counterparty Requirements
+
+Fetch the fields required to create a recipient based on your active providers and currencies.
+
+```bash
+curl -X GET "https://api.teel.finance/api/kyb/capabilities/counterparty" \
+  -H "Authorization: Bearer YOUR_API_TOKEN"
+```
+
+### Response
+
+```json
+{
+  "schema": {
+    "fields": [
+      { "name": "business_name", "type": "string", "required": true },
+      { "name": "email", "type": "string", "required": true },
+      { "name": "country", "type": "string", "required": true },
+      { "name": "transfer_type", "type": "enum", "required": true, "values": ["fiat_to_fiat", "fiat_to_stablecoin", "stablecoin_to_stablecoin"] }
+    ]
+  }
+}
+```
+
+## Step 2: Get Wallet Networks
+
+If your recipient will receive stablecoins, fetch the list of supported wallet networks.
+
+```bash
+curl -X GET "https://api.teel.finance/api/recipients/wallet-networks" \
+  -H "Authorization: Bearer YOUR_API_TOKEN"
+```
+
+### Response
+
+```json
+{
+  "networks": [
+    { "id": "ethereum", "name": "Ethereum", "tokens": ["USDC", "USDT"] },
+    { "id": "polygon", "name": "Polygon", "tokens": ["USDC", "USDT"] },
+    { "id": "arbitrum", "name": "Arbitrum", "tokens": ["USDC"] },
+    { "id": "base", "name": "Base", "tokens": ["USDC"] }
+  ]
+}
+```
+
+## Step 3: Create a Recipient
+
+Create the recipient with their business details and payment method information.
+
+### Fiat-to-Fiat Example
+
+```bash
+curl -X POST "https://api.teel.finance/api/recipients" \
+  -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "business_name": "Vendor Co",
+    "email": "payments@vendorco.com",
+    "country": "US",
+    "transfer_type": "fiat_to_fiat",
+    "payment_methods": [
+      {
+        "type": "bank",
+        "currency": "USD",
+        "account_number": "1234567890",
+        "routing_number": "021000021",
+        "account_type": "checking"
+      }
+    ]
+  }'
+```
+
+### Fiat-to-Stablecoin Example
+
+```bash
+curl -X POST "https://api.teel.finance/api/recipients" \
+  -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "business_name": "Crypto Vendor",
+    "email": "treasury@cryptovendor.com",
+    "country": "SG",
+    "transfer_type": "fiat_to_stablecoin",
+    "payment_methods": [
+      {
+        "type": "wallet",
+        "network": "polygon",
+        "token": "USDC",
+        "address": "0xRecipientWalletAddress"
+      }
+    ]
+  }'
+```
+
+### Stablecoin-to-Stablecoin Example
+
+```bash
+curl -X POST "https://api.teel.finance/api/recipients" \
+  -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "business_name": "DeFi Partner",
+    "email": "ops@defipartner.io",
+    "country": "DE",
+    "transfer_type": "stablecoin_to_stablecoin",
+    "payment_methods": [
+      {
+        "type": "wallet",
+        "network": "arbitrum",
+        "token": "USDC",
+        "address": "0xArbitrumAddress"
+      },
+      {
+        "type": "wallet",
+        "network": "polygon",
+        "token": "USDC",
+        "address": "0xPolygonAddress"
+      }
+    ]
+  }'
+```
+
+## Step 4: Auto-Provisioning
+
+When a recipient is created, Teel automatically provisions them with all of your active payment providers. This means the recipient is ready to receive payments through any rail your providers support -- no additional setup is needed.
+
+## Step 5: Retry Failed Provisioning
+
+If provisioning fails for any provider (e.g., due to a temporary network issue), you can retry.
+
+```bash
+curl -X POST "https://api.teel.finance/api/recipients/rec_abc123/retry" \
+  -H "Authorization: Bearer YOUR_API_TOKEN"
+```
+
+## Step 6: Get Recipient Details
+
+Retrieve a recipient along with their full counterparty data from all providers.
+
+```bash
+curl -X GET "https://api.teel.finance/api/recipients/rec_abc123/with-counterparty" \
+  -H "Authorization: Bearer YOUR_API_TOKEN"
+```
+
+### Response
+
+```json
+{
+  "id": "rec_abc123",
+  "business_name": "Vendor Co",
+  "email": "payments@vendorco.com",
+  "country": "US",
+  "transfer_type": "fiat_to_fiat",
+  "payment_methods": [
+    {
+      "type": "bank",
+      "currency": "USD",
+      "account_number": "****7890",
+      "routing_number": "021000021"
+    }
+  ],
+  "providers": [
+    { "provider": "provider_a", "status": "active", "counterparty_id": "cp_xyz" },
+    { "provider": "provider_b", "status": "active", "counterparty_id": "cp_abc" }
+  ],
+  "createdAt": "2026-03-10T10:00:00Z"
+}
+```

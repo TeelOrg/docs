@@ -1,0 +1,21 @@
+---
+title: Delete Payment Method
+api: DELETE /api/payment-methods/{id}
+description: Delete a payment method
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token from Auth0
+</ParamField>
+
+<ParamField path="id" type="string" required>
+  Payment method ID
+</ParamField>
+
+<ResponseExample>
+```json
+{
+  "success": true
+}
+```
+</ResponseExample>

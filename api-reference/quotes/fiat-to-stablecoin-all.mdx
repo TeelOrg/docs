@@ -1,0 +1,100 @@
+---
+title: Get All Fiat-to-Stablecoin Quotes
+api: GET https://api.teel.finance/api/quotes/fiat-to-stablecoin/all
+description: Get quotes from all available providers for converting fiat currency to a stablecoin
+---
+
+Returns an array of quotes from every connected provider for converting fiat currency into a stablecoin. Useful for comparing rates and swap paths across providers.
+
+## Query Parameters
+
+<ParamField query="source_currency" type="string" required>
+  ISO 4217 currency code for the source fiat currency (e.g. `USD`, `EUR`).
+</ParamField>
+
+<ParamField query="target_token" type="string" required>
+  The target stablecoin token symbol (e.g. `USDC`, `USDT`).
+</ParamField>
+
+<ParamField query="amount" type="number" required>
+  The amount in the source fiat currency to convert.
+</ParamField>
+
+## Response
+
+Returns an array of stablecoin quote objects.
+
+<ResponseField name="quotes" type="array">
+  <Expandable title="StablecoinQuote object">
+    <ResponseField name="protocol" type="string">
+      Opaque route token (`rt_...`) identifying the route. See [Route tokens](/api-reference/quotes/onramp-all#route-tokens).
+    </ResponseField>
+
+    <ResponseField name="fromCcy" type="string">
+      Source fiat currency code.
+    </ResponseField>
+
+    <ResponseField name="toCcy" type="string">
+      Target stablecoin token symbol.
+    </ResponseField>
+
+    <ResponseField name="fromAmount" type="number">
+      Amount in the source fiat currency.
+    </ResponseField>
+
+    <ResponseField name="toAmount" type="number">
+      Amount of stablecoin the user will receive.
+    </ResponseField>
+
+    <ResponseField name="exchangeRate" type="number">
+      The raw exchange rate before fees.
+    </ResponseField>
+
+    <ResponseField name="effRate" type="number">
+      The effective exchange rate after fees are applied.
+    </ResponseField>
+
+    <ResponseField name="fee" type="number">
+      Total fee charged for the conversion.
+    </ResponseField>
+
+    <ResponseField name="isCryptoQuote" type="boolean">
+      Whether this quote involves a crypto leg.
+    </ResponseField>
+
+    <ResponseField name="swapPath" type="string">
+      Description of the swap path used.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json 200
+[
+  {
+    "protocol": "rt_5Tn1bQp8w2k",
+    "fromCcy": "USD",
+    "toCcy": "USDC",
+    "fromAmount": 1000,
+    "toAmount": 998.50,
+    "exchangeRate": 1.0,
+    "effRate": 0.9985,
+    "fee": 1.50,
+    "isCryptoQuote": true,
+    "swapPath": "USD -> USDC"
+  },
+  {
+    "protocol": "rt_8QmVxT2pA9c",
+    "fromCcy": "USD",
+    "toCcy": "USDC",
+    "fromAmount": 1000,
+    "toAmount": 995.00,
+    "exchangeRate": 1.0,
+    "effRate": 0.995,
+    "fee": 5.00,
+    "isCryptoQuote": true,
+    "swapPath": "USD -> USDC"
+  }
+]
+```
+</ResponseExample>

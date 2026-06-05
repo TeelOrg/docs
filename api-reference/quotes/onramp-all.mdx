@@ -1,0 +1,56 @@
+---
+title: Get All Onramp Quotes
+api: GET https://api.teel.finance/api/quotes/onramp/all
+description: Get every available onramp quote across providers for fiat to crypto
+---
+
+Returns **all** available onramp quotes for converting fiat into crypto, one per route. Use this when you want to present the full set of options; use [Get Best Onramp Quote](/api-reference/quotes/onramp-best) for the single best route.
+
+## Query Parameters
+
+<ParamField query="source_currency" type="string" required>
+  ISO 4217 currency code for the source fiat currency (e.g. `USD`, `EUR`).
+</ParamField>
+
+<ParamField query="amount" type="number" required>
+  The amount in the source fiat currency to onramp.
+</ParamField>
+
+<ParamField query="payout_currency" type="string">
+  Optional. The desired payout token (e.g. `USDC`). If omitted, the provider default is used.
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean" />
+
+<ResponseField name="data" type="array">
+  Array of onramp quote objects, each with the same shape as [Get Best Onramp Quote](/api-reference/quotes/onramp-best).
+  <Expandable title="Quote object">
+    <ResponseField name="protocol" type="string">
+      Opaque route token (`rt_...`) identifying the route. See [Route tokens](#route-tokens).
+    </ResponseField>
+    <ResponseField name="fromCcy" type="string">Source fiat currency code.</ResponseField>
+    <ResponseField name="toToken" type="string">Crypto token purchased.</ResponseField>
+    <ResponseField name="fromAmount" type="number">Amount in source fiat.</ResponseField>
+    <ResponseField name="toAmount" type="number">Amount of crypto received.</ResponseField>
+    <ResponseField name="rate" type="number">Conversion rate applied.</ResponseField>
+    <ResponseField name="fee" type="number">Total fee charged.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json 200
+{
+  "success": true,
+  "data": [
+    { "protocol": "rt_8QmVxT2pA9c", "fromCcy": "USD", "toToken": "USDC", "fromAmount": 500, "toAmount": 493.75, "rate": 1.0, "fee": 6.25 },
+    { "protocol": "rt_K1d9LpZr4Hn", "fromCcy": "USD", "toToken": "USDC", "fromAmount": 500, "toAmount": 492.10, "rate": 1.0, "fee": 7.90 }
+  ]
+}
+```
+</ResponseExample>
+
+## Route tokens
+
+The `protocol` value is an **opaque route token** (`rt_...`) — Teel does not expose which underlying provider backs a route. To execute a specific route, pass the token back verbatim as `routeProtocol` on [`POST /rfq/execute`](/api-reference/payouts/create); Teel resolves it server-side. Treat it as an opaque string; do not parse or construct it.

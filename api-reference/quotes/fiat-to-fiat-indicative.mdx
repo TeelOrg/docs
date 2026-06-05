@@ -1,0 +1,55 @@
+---
+title: Get Indicative Fiat-to-Fiat Quote
+api: GET https://api.teel.finance/api/quotes/fiat-to-fiat/indicative
+description: A fast, indicative cross-border fiat-to-fiat rate (not lockable)
+---
+
+Returns a single **indicative** fiat-to-fiat route — a fast estimate suitable for display before a recipient or payment method is selected. Indicative quotes are **not firm**: they are not pinned to a payment-method context and should not be relied on for the exact settled amount. Use [Get Best Fiat-to-Fiat Quote](/api-reference/quotes/fiat-to-fiat-best) for a firm, executable quote.
+
+## Query Parameters
+
+<ParamField query="source_currency" type="string" required>
+  ISO 4217 code for the currency you are sending from (e.g. `USD`).
+</ParamField>
+
+<ParamField query="target_currency" type="string" required>
+  ISO 4217 code for the recipient's currency (e.g. `PHP`).
+</ParamField>
+
+<ParamField query="amount" type="number" required>
+  The amount in the source currency.
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean" />
+
+<ResponseField name="data" type="object">
+  The indicative route, or `null` when no route is available (a `message` field then explains why). The `protocol` field is an opaque route token (`rt_...`) — see [Route tokens](/api-reference/quotes/onramp-all#route-tokens).
+</ResponseField>
+
+<ResponseField name="message" type="string">
+  Present only when `data` is `null` (e.g. `"No route available"`).
+</ResponseField>
+
+<ResponseExample>
+```json 200
+{
+  "success": true,
+  "data": {
+    "protocol": "rt_2hVtQ7w",
+    "fromCcy": "USD",
+    "toCcy": "PHP",
+    "fromAmount": 1000,
+    "toAmount": 56700.00,
+    "rate": 56.7,
+    "fee": 5.0
+  }
+}
+```
+</ResponseExample>
+
+<Note>
+  Indicative quotes omit firm-quote resolution (payment-method-specific pricing,
+  provider fallbacks). The settled amount on a firm quote may differ.
+</Note>

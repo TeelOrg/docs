@@ -1,0 +1,35 @@
+---
+title: Borderless Webhook
+api: POST /api/borderless/webhook
+description: Receive transaction, identity compliance, and virtual account events from Borderless
+---
+
+Handles three event types: transaction updates, identity compliance checks, and virtual account creation.
+
+## Signature Verification
+
+None.
+
+<ParamField body="type" type="string" required>
+  Event type: `Transaction_Updated`, `IdentityComplianceCheck_Completed`, or `VirtualAccount_Created`
+</ParamField>
+
+<ParamField body="organizationId" type="string" required>
+  Organization identifier
+</ParamField>
+
+<ParamField body="timestamp" type="string" required>
+  Event timestamp
+</ParamField>
+
+<ParamField body="data" type="object" required>
+  Event payload — structure varies by event type
+</ParamField>
+
+<ResponseExample>
+```json
+{
+  "status": "ok"
+}
+```
+</ResponseExample>

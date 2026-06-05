@@ -1,0 +1,74 @@
+---
+title: Get Counterparty Requirements
+api: GET https://api.teel.finance/api/kyb/capabilities/counterparty
+description: Get the counterparty requirements schema for creating recipients across providers
+---
+
+Returns the schema of fields required to create counterparties (recipients) for each provider. Use this to build dynamic forms for collecting recipient information. No authentication is required for this endpoint.
+
+<Note>
+  This endpoint does not require authentication and can be called publicly.
+</Note>
+
+## Response
+
+<ResponseField name="providers" type="object">
+  Map of provider names to their counterparty requirements.
+  <Expandable title="Provider requirements">
+    <ResponseField name="fields" type="array">
+      Array of field requirement objects.
+      <Expandable title="Field object">
+        <ResponseField name="name" type="string">
+          Field identifier (e.g. `accountNumber`, `routingNumber`, `bankName`).
+        </ResponseField>
+
+        <ResponseField name="type" type="string">
+          Field data type (e.g. `string`, `number`, `enum`).
+        </ResponseField>
+
+        <ResponseField name="required" type="boolean">
+          Whether this field is required.
+        </ResponseField>
+
+        <ResponseField name="description" type="string">
+          Human-readable description of the field.
+        </ResponseField>
+
+        <ResponseField name="options" type="array">
+          Available options if the field type is `enum`.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json 200
+{
+  "providers": {
+    "conduit": {
+      "fields": [
+        {
+          "name": "accountNumber",
+          "type": "string",
+          "required": true,
+          "description": "Recipient bank account number"
+        },
+        {
+          "name": "routingNumber",
+          "type": "string",
+          "required": true,
+          "description": "Bank routing number"
+        },
+        {
+          "name": "bankName",
+          "type": "string",
+          "required": false,
+          "description": "Name of the recipient bank"
+        }
+      ]
+    }
+  }
+}
+```
+</ResponseExample>

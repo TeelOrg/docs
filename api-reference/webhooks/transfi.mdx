@@ -1,0 +1,39 @@
+---
+title: Transfi Webhook
+api: POST /api/transfi/webhook
+description: Receive order status and KYC updates from Transfi
+---
+
+Handles order status updates and KYC/user updates from Transfi.
+
+## Signature Verification
+
+HMAC-SHA256 using the `X-Transfi-Hmac-Hash` header, verified against `TRANSFI_WEBHOOK_KEY`.
+
+<ParamField body="entityType" type="string" required>
+  Entity type: `user` or `order`
+</ParamField>
+
+<ParamField body="entityId" type="string" required>
+  The entity identifier
+</ParamField>
+
+<ParamField body="status" type="string" required>
+  Transfi webhook status
+</ParamField>
+
+<ParamField body="user" type="object">
+  User details (when entityType is `user`)
+</ParamField>
+
+<ParamField body="order" type="object">
+  Order details including amounts, currency, and crypto info (when entityType is `order`)
+</ParamField>
+
+<ResponseExample>
+```json
+{
+  "status": "ok"
+}
+```
+</ResponseExample>

@@ -1,0 +1,65 @@
+---
+title: Get Best Onramp Quote
+api: GET https://api.teel.finance/api/quotes/onramp/best
+description: Get the best quote for onramping fiat currency to crypto
+---
+
+Returns the single best onramp quote across all providers for converting fiat currency into crypto tokens.
+
+## Query Parameters
+
+<ParamField query="source_currency" type="string" required>
+  ISO 4217 currency code for the source fiat currency (e.g. `USD`, `EUR`).
+</ParamField>
+
+<ParamField query="amount" type="number" required>
+  The amount in the source fiat currency to onramp.
+</ParamField>
+
+<ParamField query="payout_currency" type="string">
+  Optional. The desired payout token (e.g. `USDC`). If omitted, the provider default is used.
+</ParamField>
+
+## Response
+
+<ResponseField name="protocol" type="string">
+  Opaque route token (`rt_...`) identifying the route. See [Route tokens](/api-reference/quotes/onramp-all#route-tokens).
+</ResponseField>
+
+<ResponseField name="fromCcy" type="string">
+  Source fiat currency code.
+</ResponseField>
+
+<ResponseField name="toToken" type="string">
+  The crypto token being purchased.
+</ResponseField>
+
+<ResponseField name="fromAmount" type="number">
+  Amount in the source fiat currency.
+</ResponseField>
+
+<ResponseField name="toAmount" type="number">
+  Amount of crypto tokens the user will receive.
+</ResponseField>
+
+<ResponseField name="rate" type="number">
+  The conversion rate applied.
+</ResponseField>
+
+<ResponseField name="fee" type="number">
+  Total fee charged for the onramp.
+</ResponseField>
+
+<ResponseExample>
+```json 200
+{
+  "protocol": "rt_8QmVxT2pA9c",
+  "fromCcy": "USD",
+  "toToken": "USDC",
+  "fromAmount": 500,
+  "toAmount": 493.75,
+  "rate": 1.0,
+  "fee": 6.25
+}
+```
+</ResponseExample>

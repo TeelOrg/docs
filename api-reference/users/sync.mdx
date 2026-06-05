@@ -1,0 +1,45 @@
+---
+title: Sync User
+api: POST https://api.teel.finance/api/users/sync
+description: Create or update a user from Auth0
+---
+
+Creates a new user record or updates an existing one based on the Auth0 identity. This endpoint is typically called after a user authenticates via Auth0 to ensure the local user record is in sync.
+
+## Authentication
+
+This endpoint requires a valid JWT bearer token in the `Authorization` header.
+
+## Response
+
+<ResponseField name="id" type="string">
+  Unique user identifier.
+</ResponseField>
+
+<ResponseField name="email" type="string">
+  User's email address.
+</ResponseField>
+
+<ResponseField name="name" type="string">
+  User's display name.
+</ResponseField>
+
+<ResponseField name="auth0Id" type="string">
+  The user's Auth0 identifier.
+</ResponseField>
+
+<ResponseField name="created" type="boolean">
+  Whether a new user record was created (`true`) or an existing one was updated (`false`).
+</ResponseField>
+
+<ResponseExample>
+```json 200
+{
+  "id": "usr_abc123",
+  "email": "user@example.com",
+  "name": "Jane Smith",
+  "auth0Id": "auth0|abc123def456",
+  "created": true
+}
+```
+</ResponseExample>

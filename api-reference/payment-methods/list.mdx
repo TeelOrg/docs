@@ -1,0 +1,23 @@
+---
+title: List Payment Methods
+api: GET /api/payment-methods
+description: List user's payment methods
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token from Auth0
+</ParamField>
+
+<ResponseExample>
+```json
+[
+  {
+    "id": "pm_abc123",
+    "type": "bank_transfer",
+    "bankName": "Chase",
+    "accountNumber": "****7890",
+    "currency": "USD"
+  }
+]
+```
+</ResponseExample>

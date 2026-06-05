@@ -1,0 +1,11 @@
+{
+  "name": "teel-docs",
+  "private": true,
+  "scripts": {
+    "dev": "npx mintlify dev",
+    "build": "npx mintlify build"
+  },
+  "devDependencies": {
+    "mintlify": "^4.0.0"
+  }
+}

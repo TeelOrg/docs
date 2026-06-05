@@ -1,0 +1,38 @@
+---
+title: Webhooks Overview
+description: Receive real-time updates for transaction and account status changes
+---
+
+Teel sends real-time updates whenever events occur on your account (payout created, status changed, etc.). There are two delivery modes — pick whichever fits your stack:
+
+- **HTTP webhooks** — Teel POSTs HMAC-signed events to a URL you register. See [Subscriptions](/api-reference/webhooks/subscriptions) and [Deliveries](/api-reference/webhooks/deliveries) for the management endpoints, and the [Webhooks guide](/guides/webhooks) for the verifier samples + retry rules.
+- **WebSocket** — Connect to `wss://api.teel.finance/ws`, authenticate in-band with your Auth0 access token, and receive the same events on an open socket. See the [Webhooks guide](/guides/webhooks#websocket-connection) for the client snippet.
+
+Both deliver the same events with the same payload shape.
+
+## Provider webhooks (architecture — internal)
+
+The section below describes how Teel handles **inbound** webhooks from payment providers (Borderless, Conduit, TransFi, etc.) — this is internal architecture, not something you configure. If you're integrating as a partner, you only care about the outbound modes above.
+
+### How It Works
+
+Teel manages webhook integrations with all underlying providers on your behalf. When a provider sends a status update, Teel processes it and forwards the relevant event to your application via WebSocket and any registered HTTP webhook subscriptions.
+
+## Common Behavior
+
+All webhook handlers follow the same pattern:
+
+1. Verify signature (where applicable)
+2. Parse the JSON request body
+3. Look up the transaction in the database
+4. Update transaction status
+5. Broadcast status update via WebSocket
+6. Auto-trigger offramp when onramp completes (where applicable)
+
+## Listening for Events
+
+Rather than configuring individual provider webhooks, connect to the Teel WebSocket to receive all status updates in a unified format. See the [Webhooks & Real-Time Updates](/guides/webhooks) guide for details.
+
+## Responding to Webhooks
+
+Return a `200 OK` response to acknowledge receipt. If a non-2xx response is returned, the provider may retry the webhook.

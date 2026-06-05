@@ -1,0 +1,63 @@
+---
+title: Create Payout
+api: POST /api/payouts
+description: Create a new payout
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token from Auth0
+</ParamField>
+
+<ParamField body="transaction_type" type="string" required>
+  `payout` or `swap`
+</ParamField>
+
+<ParamField body="payout_amount" type="number" required>
+  Amount in payout currency
+</ParamField>
+
+<ParamField body="source_amount" type="number">
+  Amount in source currency
+</ParamField>
+
+<ParamField body="source_currency" type="string" required>
+  Source currency code (e.g., "USD")
+</ParamField>
+
+<ParamField body="payout_currency" type="string" required>
+  Payout currency code (e.g., "MYR")
+</ParamField>
+
+<ParamField body="recipient_id" type="string" required>
+  Recipient ID
+</ParamField>
+
+<ParamField body="bank_account" type="string">
+  Bank account number
+</ParamField>
+
+<ParamField body="wallet_address" type="string">
+  Wallet address (for crypto payouts)
+</ParamField>
+
+<ParamField body="payment_method" type="string" required>
+  Payment method (e.g., "fiat_bank_transfer")
+</ParamField>
+
+<ParamField body="payment_purpose" type="string">
+  Purpose of payment
+</ParamField>
+
+<ParamField body="reference" type="string">
+  Payment reference
+</ParamField>
+
+<ResponseExample>
+```json
+{
+  "id": "pay_abc123",
+  "status": "pending",
+  "created_at": "2026-03-01T10:00:00Z"
+}
+```
+</ResponseExample>

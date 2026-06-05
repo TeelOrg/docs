@@ -1,47 +1,164 @@
 ---
 title: "Quickstart"
-description: "Begin with a guide on the fastest path to a successful outcome"
+description: "Make your first cross-border payout against the Teel sandbox in 5 minutes"
 ---
 
-Describe how someone begins using your product. What is the first thing they need to do? Are there any prerequisites?
-
-A quickstart should take someone from zero to using your product. They'll get a quick win and a sense of what they can accomplish.
-
-## Prerequisites
-
-Before you begin, you must have:
-
-- Requirement one (for example, Node.js 18+, a free account, an API key)
-- Requirement two (for example, a compatible device, a compatible browser, a compatible operating system)
-
-## Get started
+This guide walks you through making your first payout against the Teel **sandbox** environment. Sandbox provider APIs don't move real funds — perfect for end-to-end integration testing before you switch to production credentials.
 
 <Steps>
-  <Step title="Install">
-    Describe how to install your product or sign up.
+  <Step title="Set your API key">
+    Teel uses long-lived secret API keys (`sk_live_…` for production, `sk_test_…` for sandbox) presented as a bearer token. Same pattern as Stripe, OpenAI, Resend.
+
+    Your operator at Teel issues your key via the admin flow described in the [sandbox onboarding runbook](https://github.com/TeelOrg/teel-backend/blob/main/docs/superpowers/runbooks/sandbox-partner-onboarding.md) and shares it via 1Password / encrypted channel. The plaintext is shown **exactly once** at creation; afterwards only the first 12 characters are retrievable.
 
     ```bash
-    npm install your-package
+    export TEEL_API_KEY="sk_test_<43 url-safe base64 chars>"
     ```
-  </Step>
-  <Step title="Configure">
-    Describe any setup or configuration needed before first use.
+
+    Confirm the key works against the unauthenticated health endpoint and then against an authenticated read:
 
     ```bash
-    your-cli init
+    # 1. Health (no auth) — sanity check the host is reachable
+    curl https://api-sandbox.teel.finance/health
+    # → {"env":"development","status":"ok"}
+
+    # 2. Auth'd read — list your existing recipients
+    curl https://api-sandbox.teel.finance/recipients \
+      -H "Authorization: Bearer $TEEL_API_KEY"
     ```
+
+    See the [Authentication page](/authentication) for key format, scopes, rotation, and revocation.
+
+    <Note>
+      If `api-sandbox.teel.finance` doesn't resolve yet on your network, `api-dev.teel.finance` is a transitional alias accepting the same `sk_test_…` keys while DNS propagates.
+    </Note>
   </Step>
-  <Step title="Run it">
-    Show the first thing a user does to see it working.
+
+  <Step title="Check coverage">
+    The public `/config/coverage` endpoint returns the matrix of currencies, rails, directions, and amount bounds Teel can route. No auth required — partners can hit it from their integration server's pre-flight checks before quoting.
 
     ```bash
-    your-cli start
+    curl https://api-sandbox.teel.finance/config/coverage
+    ```
+
+    Confirm your corridor (e.g. USD → PHP) is in the response before proceeding. See the [Coverage page](/coverage) for the full schema.
+  </Step>
+
+  <Step title="Create a recipient">
+    Register the counterparty who will receive the payout. Recipients carry one or more payment methods — bank accounts or wallet addresses — that resolve currency-by-currency to the right provider at execution time.
+
+    ```bash
+    curl -X POST https://api-sandbox.teel.finance/recipients \
+      -H "Authorization: Bearer $TEEL_API_KEY" \
+      -H "Content-Type: application/json" \
+      -H "Idempotency-Key: $(uuidgen)" \
+      -d '{
+        "email": "payments@acme-ph.com",
+        "is_business": true,
+        "business_name": "Acme Corp Philippines",
+        "country": "PH",
+        "currency": "PHP",
+        "transfer_type": "fiat",
+        "payment_methods": [
+          {
+            "currency": "PHP",
+            "type": "bank_account",
+            "rail": "bank_transfer",
+            "bank_name": "BDO",
+            "account_number": "1234567890"
+          }
+        ]
+      }'
+    ```
+
+    Save the `id` from the response — that's your `recipient_id`.
+
+    The `Idempotency-Key` header is optional but recommended: a timeout-retry with the same key replays the cached response (24h window) instead of creating a duplicate recipient. See [`POST /recipients`](/api-reference/recipients/create) for every field.
+  </Step>
+
+  <Step title="Get a quote">
+    Fetch the best rate across all providers for your corridor. Quotes are short-lived (~minutes) and carry an opaque `protocol` token you'll pass back at execution time to pin the route.
+
+    ```bash
+    curl "https://api-sandbox.teel.finance/quotes/fiat-to-fiat/best?from_currency=USD&to_currency=PHP&amount=1000&recipient_id=$RECIPIENT_ID" \
+      -H "Authorization: Bearer $TEEL_API_KEY"
+    ```
+
+    The response includes the exchange rate, fees, estimated delivery amount, the `quoteId` you'll execute against, the `protocol` route token, and the `expiresAt` timestamp. Use the quote before it expires.
+
+    See the [Quotes pages](/api-reference/quotes/fiat-to-fiat-best) for the full quote families (onramp / offramp / fiat-to-fiat / fiat-to-stablecoin).
+  </Step>
+
+  <Step title="Execute the payout">
+    Partners execute payouts through the RFQ (request-for-quote) endpoint, using the `quoteId` from the previous step. Like recipient creation, this is `Idempotency-Key`-safe — Teel deduplicates retry attempts in a 24h window so a network timeout doesn't double-spend.
+
+    ```bash
+    curl -X POST https://api-sandbox.teel.finance/rfq/execute \
+      -H "Authorization: Bearer $TEEL_API_KEY" \
+      -H "Content-Type: application/json" \
+      -H "Idempotency-Key: $(uuidgen)" \
+      -d '{
+        "quoteId": "<quoteId from step 4>",
+        "recipientId": "<recipient_id from step 3>",
+        "routeProtocol": "<protocol token from step 4>"
+      }'
+    ```
+
+    The response includes the `transactionId` and initial status. The payout begins processing immediately.
+  </Step>
+
+  <Step title="Track status">
+    Two options: poll the status endpoint, or subscribe a webhook URL.
+
+    **Poll:**
+
+    ```bash
+    curl https://api-sandbox.teel.finance/rfq/status/<quoteId> \
+      -H "Authorization: Bearer $TEEL_API_KEY"
+    ```
+
+    Status moves through `initiated → compliance_cleared → instructions_sent → collected → converting → settling → delivered` (terminal: `delivered` or `failed`).
+
+    **Subscribe a webhook** for production payout monitoring instead of polling. Teel POSTs every status change to your URL with an HMAC-SHA256 signature header you verify with the secret returned at subscription creation:
+
+    ```bash
+    curl -X POST https://api-sandbox.teel.finance/webhooks/subscriptions \
+      -H "Authorization: Bearer $TEEL_API_KEY" \
+      -H "Content-Type: application/json" \
+      -d '{
+        "url": "https://your.app/teel-webhooks",
+        "events": ["payout.status.updated", "payout.delivered", "payout.failed"]
+      }'
+    ```
+
+    The response includes the signing `secret` returned **exactly once**. Store it server-side. See the [Webhooks guide](/guides/webhooks) for signature verification + retry semantics.
+
+    For real-time updates without a public URL, a WebSocket endpoint is also available. Auth is in-band — connect, then send `{"type":"auth","apiKey":"sk_test_..."}` as the first frame:
+
+    ```bash
+    wscat -c "wss://api-sandbox.teel.finance/ws"
+    > {"type":"auth","apiKey":"sk_test_..."}
     ```
   </Step>
 </Steps>
 
-<Tip>
-  Give people a way to get help. This could be a link to a support page, a chat with a customer support agent, or a forum for your product.
+## Next Steps
 
-  Example: Need help? Reach out to us at [support@yourcompany.com](mailto:support@yourcompany.com).
-</Tip>
+<CardGroup cols={2}>
+  <Card title="Authentication" href="/authentication">
+    Key format, scopes, rotation (7-day overlap), revocation, error responses.
+  </Card>
+  <Card title="Core Concepts" href="/concepts">
+    Multi-provider architecture, quote engine, transaction lifecycle.
+  </Card>
+  <Card title="Coverage" href="/coverage">
+    Supported countries, currencies, rails, and amount bounds via `/config/coverage`.
+  </Card>
+  <Card title="Webhooks" href="/guides/webhooks">
+    Subscribe a URL, verify HMAC signatures, replay deliveries.
+  </Card>
+</CardGroup>
+
+## OpenAPI spec
+
+Every endpoint above is documented in the machine-readable spec at [`/openapi.json`](https://api-sandbox.teel.finance/openapi.json) (or `/openapi.yaml`). Import it into Postman, Insomnia, or run `openapi-generator-cli` for a typed client in any language.

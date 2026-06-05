@@ -1,0 +1,54 @@
+---
+title: Get Bridge Quote
+api: GET https://api.teel.finance/api/bridge/quote
+description: Get a quote for bridging tokens between chains
+---
+
+Returns a quote for bridging tokens from one blockchain to another, including estimated fees and transfer time.
+
+## Query Parameters
+
+<ParamField query="sourceChain" type="string" required>
+  The source blockchain (e.g. `ethereum`, `polygon`, `arbitrum`, `solana`).
+</ParamField>
+
+<ParamField query="destinationChain" type="string" required>
+  The destination blockchain (e.g. `ethereum`, `polygon`, `arbitrum`, `solana`).
+</ParamField>
+
+<ParamField query="amount" type="number" required>
+  The amount of tokens to bridge.
+</ParamField>
+
+<ParamField query="protocol" type="string">
+  The bridging protocol to use. Defaults to `cctp`.
+</ParamField>
+
+## Response
+
+<ResponseField name="sendAmount" type="number">
+  The amount of tokens to send from the source chain.
+</ResponseField>
+
+<ResponseField name="maxFee" type="number">
+  The maximum fee that may be charged for the bridge transfer.
+</ResponseField>
+
+<ResponseField name="minAmountReceived" type="number">
+  The minimum amount guaranteed to be received on the destination chain.
+</ResponseField>
+
+<ResponseField name="estimatedTimeSec" type="number">
+  Estimated time in seconds for the bridge transfer to complete.
+</ResponseField>
+
+<ResponseExample>
+```json 200
+{
+  "sendAmount": 1000,
+  "maxFee": 2.50,
+  "minAmountReceived": 997.50,
+  "estimatedTimeSec": 900
+}
+```
+</ResponseExample>

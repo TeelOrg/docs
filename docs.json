@@ -1,64 +1,159 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "mint",
-  "name": "Mintlify Starter Kit",
+  "theme": "maple",
+  "name": "Teel API",
+  "description": "Cross-border payment and stablecoin transfer platform API documentation",
   "colors": {
-    "primary": "#16A34A",
-    "light": "#07C983",
-    "dark": "#15803D"
+    "primary": "#6366F1",
+    "light": "#818CF8",
+    "dark": "#4F46E5"
   },
-  "favicon": "/favicon.svg",
-  "navigation": {
-    "pages": ["index", "quickstart"],
-    "global": {
-      "anchors": [
-        {
-          "anchor": "Documentation",
-          "href": "https://mintlify.com/docs",
-          "icon": "book-open-cover"
-        },
-        {
-          "anchor": "Blog",
-          "href": "https://mintlify.com/blog",
-          "icon": "newspaper"
-        }
-      ]
-    }
-  },
-  "logo": {
-    "light": "/logo/light.svg",
-    "dark": "/logo/dark.svg"
-  },
+  "favicon": "/favicon.png",
   "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:hi@mintlify.com"
-      }
-    ],
     "primary": {
       "type": "button",
-      "label": "Dashboard",
-      "href": "https://dashboard.mintlify.com"
+      "label": "Home Page",
+      "href": "https://teel.finance"
     }
   },
-  "contextual": {
-    "options": [
-     "copy",
-     "view",
-     "chatgpt",
-     "claude",
-     "perplexity",
-     "mcp",
-     "cursor",
-     "vscode"
-   ]
-  },
-  "footer": {
-    "socials": {
-      "x": "https://x.com/mintlify",
-      "github": "https://github.com/mintlify",
-      "linkedin": "https://linkedin.com/company/mintlify"
-    }
+  "navigation": {
+    "global": {
+      "tabs": [
+        {
+          "tab": "Documentation",
+          "href": "/",
+          "icon": "book"
+        },
+        {
+          "tab": "API Reference",
+          "href": "/api-reference",
+          "icon": "code"
+        }
+      ]
+    },
+    "dropdowns": [
+      {
+        "dropdown": "Documentation",
+        "icon": "book",
+        "groups": [
+          {
+            "group": "Getting Started",
+            "pages": [
+              "introduction",
+              "quickstart",
+              "authentication",
+              "errors",
+              "concepts",
+              "coverage"
+            ]
+          },
+          {
+            "group": "Guides",
+            "pages": [
+              "guides/kyb-onboarding",
+              "guides/recipients",
+              "guides/payment-methods",
+              "guides/fiat-to-fiat-payout",
+              "guides/stablecoin-transfer",
+              "guides/crypto-payout",
+              "guides/webhooks"
+            ]
+          }
+        ]
+      },
+      {
+        "dropdown": "API Reference",
+        "icon": "code",
+        "groups": [
+          {
+            "group": "Users",
+            "pages": ["api-reference/users/me", "api-reference/users/sync"]
+          },
+          {
+            "group": "Businesses",
+            "pages": [
+              "api-reference/businesses/create",
+              "api-reference/businesses/get"
+            ]
+          },
+          {
+            "group": "Configuration",
+            "pages": ["api-reference/config/coverage"]
+          },
+          {
+            "group": "KYB",
+            "pages": [
+              "api-reference/kyb/capabilities-currencies",
+              "api-reference/kyb/capabilities-counterparty",
+              "api-reference/kyb/register",
+              "api-reference/kyb/onboarding-status"
+            ]
+          },
+          {
+            "group": "Recipients",
+            "pages": [
+              "api-reference/recipients/list",
+              "api-reference/recipients/get",
+              "api-reference/recipients/create",
+              "api-reference/recipients/update",
+              "api-reference/recipients/delete"
+            ]
+          },
+          {
+            "group": "Payment Methods",
+            "pages": [
+              "api-reference/payment-methods/requirements",
+              "api-reference/payment-methods/list",
+              "api-reference/payment-methods/get",
+              "api-reference/payment-methods/create",
+              "api-reference/payment-methods/delete"
+            ]
+          },
+          {
+            "group": "Quotes",
+            "pages": [
+              "api-reference/quotes/fiat-to-fiat-best",
+              "api-reference/quotes/fiat-to-fiat-all",
+              "api-reference/quotes/fiat-to-fiat-indicative",
+              "api-reference/quotes/fiat-to-stablecoin-best",
+              "api-reference/quotes/fiat-to-stablecoin-all",
+              "api-reference/quotes/fiat-to-stablecoin-exact-output",
+              "api-reference/quotes/onramp-best",
+              "api-reference/quotes/onramp-all",
+              "api-reference/quotes/offramp-best",
+              "api-reference/quotes/offramp-all",
+              "api-reference/quotes/offramp-exact-output",
+              "api-reference/quotes/preflight"
+            ]
+          },
+          {
+            "group": "Payouts",
+            "pages": [
+              "api-reference/payouts/list",
+              "api-reference/payouts/get",
+              "api-reference/payouts/create",
+              "api-reference/payouts/update",
+              "api-reference/payouts/delete"
+            ]
+          },
+          {
+            "group": "Bridge",
+            "pages": [
+              "api-reference/bridge/quote",
+              "api-reference/bridge/execute",
+              "api-reference/bridge/status"
+            ]
+          },
+          {
+            "group": "Webhooks",
+            "pages": [
+              "api-reference/webhooks/overview",
+              "api-reference/webhooks/subscriptions",
+              "api-reference/webhooks/deliveries"
+            ]
+          }
+        ]
+      }
+    ]
   }
 }

@@ -1,0 +1,31 @@
+---
+title: OnrampMoney Webhook
+api: POST /api/onrampmoney/webhook
+description: Receive onramp, offramp, KYC, and fiat account events from OnrampMoney
+---
+
+Handles onramp, offramp, KYC, and fiat account events with status mapping.
+
+## Signature Verification
+
+Custom signature using `X-ONRAMP-SIGNATURE` and `X-ONRAMP-PAYLOAD` headers, verified against `ONRAMP_MONEY_API_SECRET`.
+
+<ParamField body="eventType" type="string" required>
+  Event type: `onramp`, `offramp`, `kyc`, or `fiat_account`
+</ParamField>
+
+<ParamField body="status" type="string" required>
+  Event-specific status
+</ParamField>
+
+<ParamField body="metadata" type="object" required>
+  Event metadata containing customer ID, failure reasons, and other event-specific data
+</ParamField>
+
+<ResponseExample>
+```json
+{
+  "status": "ok"
+}
+```
+</ResponseExample>

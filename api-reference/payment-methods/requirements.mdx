@@ -1,0 +1,24 @@
+---
+title: Payment Method Requirements
+api: GET /api/payment-methods/requirements
+description: Get payment method capability requirements
+---
+
+Returns the fields required to create a payment method based on provider capabilities.
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token from Auth0
+</ParamField>
+
+<ResponseExample>
+```json
+{
+  "bank_transfer": {
+    "fields": ["bankName", "accountNumber", "routingNumber", "currency"]
+  },
+  "wallet": {
+    "fields": ["walletAddress", "chainId"]
+  }
+}
+```
+</ResponseExample>

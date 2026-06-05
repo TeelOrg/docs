@@ -1,0 +1,92 @@
+---
+title: Get Coverage Matrix
+api: GET https://api.teel.finance/api/config/coverage
+description: Currencies, rails, directions, and amount bounds the platform can onramp/offramp
+---
+
+Returns the full currency & rails coverage matrix for the platform: which fiat currencies are supported, the payment rails available for each, whether each can be used for onramp (pay-in) and/or offramp (pay-out), and the per-currency amount bounds. It also lists the supported stablecoin tokens and the chains they settle on.
+
+This endpoint is derived entirely from live platform configuration — as corridors, currencies, rails, or providers change, the response updates automatically. Provider identities are never exposed.
+
+<Note>
+  This endpoint requires no authentication and can be called publicly. Coverage
+  here is the **platform-wide** matrix; the corridors available to a specific
+  business still depend on its KYB onboarding status.
+</Note>
+
+## Response
+
+<ResponseField name="fiat" type="array">
+  Supported fiat currencies.
+  <Expandable title="Currency coverage object">
+    <ResponseField name="code" type="string">ISO 4217 currency code (e.g. `PHP`, `USD`).</ResponseField>
+    <ResponseField name="name" type="string">Human-readable currency name, when configured.</ResponseField>
+    <ResponseField name="decimals" type="integer">Decimal precision for amounts in this currency (e.g. `2`, or `0` for IDR/VND).</ResponseField>
+    <ResponseField name="onramp" type="boolean">Whether the currency can be used as a pay-in (onramp) source.</ResponseField>
+    <ResponseField name="offramp" type="boolean">Whether the currency can be paid out (offramp) to a recipient.</ResponseField>
+    <ResponseField name="minAmount" type="number">Smallest supported amount across providers, when known. Omitted if unbounded.</ResponseField>
+    <ResponseField name="maxAmount" type="number">Largest supported amount across providers, when known. Omitted if unbounded.</ResponseField>
+    <ResponseField name="rails" type="array">
+      Payment rails available for this currency.
+      <Expandable title="Rail object">
+        <ResponseField name="code" type="string">Rail code (e.g. `ach`, `wire`, `sepa`, `instapay`, `bank_transfer`).</ResponseField>
+        <ResponseField name="label" type="string">Display label for the rail.</ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="wallet" type="object">
+  Stablecoin (wallet) coverage.
+  <Expandable title="Wallet coverage object">
+    <ResponseField name="tokens" type="array">Supported stablecoin token symbols (e.g. `USDC`, `USDT`).</ResponseField>
+    <ResponseField name="chains" type="array">
+      Chains the tokens settle on.
+      <Expandable title="Chain object">
+        <ResponseField name="code" type="string">Chain code (e.g. `polygon`, `base`, `arbitrum`).</ResponseField>
+        <ResponseField name="label" type="string">Display label for the chain.</ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json 200
+{
+  "fiat": [
+    {
+      "code": "PHP",
+      "name": "Philippine Peso",
+      "decimals": 2,
+      "onramp": true,
+      "offramp": true,
+      "minAmount": 620,
+      "maxAmount": 500000,
+      "rails": [
+        { "code": "instapay", "label": "InstaPay" },
+        { "code": "pesonet", "label": "PESONet" }
+      ]
+    },
+    {
+      "code": "USD",
+      "name": "US Dollar",
+      "decimals": 2,
+      "onramp": true,
+      "offramp": true,
+      "rails": [
+        { "code": "ach", "label": "ACH" },
+        { "code": "wire", "label": "Wire" }
+      ]
+    }
+  ],
+  "wallet": {
+    "tokens": ["USDC", "USDT"],
+    "chains": [
+      { "code": "arbitrum", "label": "Arbitrum" },
+      { "code": "base", "label": "Base" },
+      { "code": "polygon", "label": "Polygon" }
+    ]
+  }
+}
+```
+</ResponseExample>

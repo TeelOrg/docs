@@ -1,0 +1,36 @@
+---
+title: List Payouts
+api: GET /api/payouts
+description: List all payouts with pagination
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token from Auth0
+</ParamField>
+
+<ParamField query="limit" type="integer">
+  Maximum number of results (default: 1000)
+</ParamField>
+
+<ParamField query="offset" type="integer">
+  Number of results to skip (default: 0)
+</ParamField>
+
+<ResponseExample>
+```json
+[
+  {
+    "id": "pay_abc123",
+    "transaction_type": "payout",
+    "payout_amount": 4425.00,
+    "source_currency": "USD",
+    "payout_currency": "MYR",
+    "status": "completed",
+    "recipient_id": "rec_xyz",
+    "payment_method": "fiat_bank_transfer",
+    "created_at": "2026-03-01T10:00:00Z",
+    "completed_at": "2026-03-01T10:05:00Z"
+  }
+]
+```
+</ResponseExample>

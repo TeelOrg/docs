@@ -1,0 +1,28 @@
+---
+title: Get Recipient
+api: GET /api/recipients/{id}
+description: Get a recipient by ID
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token from Auth0
+</ParamField>
+
+<ParamField path="id" type="string" required>
+  Recipient ID
+</ParamField>
+
+<ResponseExample>
+```json
+{
+  "id": "rec_abc123",
+  "businessName": "Acme Malaysia",
+  "country": "MY",
+  "currency": "MYR",
+  "transferType": "fiat_to_fiat",
+  "bankName": "Maybank",
+  "bankAccount": "1234567890",
+  "status": "active"
+}
+```
+</ResponseExample>

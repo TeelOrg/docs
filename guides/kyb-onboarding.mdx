@@ -1,0 +1,153 @@
+---
+title: "KYB Onboarding"
+description: "Complete Know Your Business verification to start transacting"
+---
+
+## Overview
+
+Before you can send or receive payments through Teel, your business must complete Know Your Business (KYB) verification. Teel submits your KYB application to all relevant payment providers simultaneously, so you only need to fill out one form.
+
+## How It Works
+
+- KYB is submitted to **all relevant providers at once** based on the currencies and rails you need.
+- Different providers may require different fields. The capabilities endpoint returns a **merged schema** from all providers, so a single form submission satisfies all of them.
+- Some providers may require **additional documents** after initial submission (e.g., proof of address, articles of incorporation).
+
+## Step 1: Check Requirements
+
+Determine which fields are required for KYB based on the currencies you plan to transact in.
+
+```bash
+curl -X POST "https://api.teel.finance/api/kyb/capabilities/requirements" \
+  -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "currencies": ["USD", "EUR", "MXN"]
+  }'
+```
+
+### Response
+
+The response contains a dynamic form schema with all fields required across providers for your selected currencies.
+
+```json
+{
+  "schema": {
+    "fields": [
+      {
+        "name": "business_name",
+        "type": "string",
+        "required": true,
+        "label": "Legal Business Name"
+      },
+      {
+        "name": "registration_number",
+        "type": "string",
+        "required": true,
+        "label": "Business Registration Number"
+      },
+      {
+        "name": "country",
+        "type": "string",
+        "required": true,
+        "label": "Country of Incorporation"
+      },
+      {
+        "name": "documents",
+        "type": "file_array",
+        "required": false,
+        "label": "Supporting Documents"
+      }
+    ]
+  }
+}
+```
+
+## Step 2: Build Your Form
+
+Use the dynamic schema from Step 1 to render a form in your application. Each field includes its type, label, and whether it is required. The schema adapts based on the currencies you selected -- if you add or remove currencies, re-fetch the requirements to get an updated schema.
+
+## Step 3: Submit KYB
+
+Submit the completed form data. Teel routes the submission to all providers that match your currency needs.
+
+```bash
+curl -X POST "https://api.teel.finance/api/kyb/register" \
+  -H "Authorization: Bearer YOUR_API_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "business_name": "Acme Corp",
+    "registration_number": "12345678",
+    "country": "US",
+    "address": {
+      "street": "123 Main St",
+      "city": "San Francisco",
+      "state": "CA",
+      "postal_code": "94105",
+      "country": "US"
+    },
+    "representative": {
+      "first_name": "Jane",
+      "last_name": "Doe",
+      "email": "jane@acmecorp.com",
+      "date_of_birth": "1990-01-15"
+    }
+  }'
+```
+
+## Step 4: Check Status
+
+Poll the onboarding status endpoint to track your verification progress.
+
+```bash
+curl -X GET "https://api.teel.finance/api/kyb/onboarding/status" \
+  -H "Authorization: Bearer YOUR_API_TOKEN"
+```
+
+### Response
+
+```json
+{
+  "status": "approved",
+  "providers": [
+    { "provider": "provider_a", "status": "approved" },
+    { "provider": "provider_b", "status": "under_review" }
+  ],
+  "updatedAt": "2026-03-11T14:00:00Z"
+}
+```
+
+### Status Values
+
+| Status         | Description                                              |
+|----------------|----------------------------------------------------------|
+| `pending`      | Submission received, verification has not started yet     |
+| `under_review` | Provider is actively reviewing your application           |
+| `approved`     | Verification passed -- you can begin transacting          |
+| `rejected`     | Verification failed -- check provider details for reason  |
+
+<Note>
+Each provider reviews independently. Your overall status is `approved` once at least one provider approves. You can begin transacting on approved providers while others are still under review.
+</Note>
+
+## Step 5: Create Provider Accounts
+
+Once approved, create your accounts with the verified providers. This provisions the infrastructure needed to send and receive payments.
+
+```bash
+curl -X POST "https://api.teel.finance/api/kyb/onboarding/create-accounts" \
+  -H "Authorization: Bearer YOUR_API_TOKEN"
+```
+
+### Response
+
+```json
+{
+  "accounts": [
+    { "provider": "provider_a", "status": "active" },
+    { "provider": "provider_b", "status": "pending_approval" }
+  ]
+}
+```
+
+After accounts are created, you can proceed to set up [payment methods](/guides/payment-methods) and [recipients](/guides/recipients).

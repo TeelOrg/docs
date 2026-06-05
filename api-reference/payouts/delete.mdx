@@ -1,0 +1,21 @@
+---
+title: Delete Payout
+api: DELETE /api/payouts/{id}
+description: Delete a payout
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token from Auth0
+</ParamField>
+
+<ParamField path="id" type="string" required>
+  Payout ID
+</ParamField>
+
+<ResponseExample>
+```json
+{
+  "success": true
+}
+```
+</ResponseExample>

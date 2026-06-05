@@ -1,0 +1,21 @@
+---
+title: Delete Recipient
+api: DELETE /api/recipients/{id}
+description: Delete a recipient
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token from Auth0
+</ParamField>
+
+<ParamField path="id" type="string" required>
+  Recipient ID
+</ParamField>
+
+<ResponseExample>
+```json
+{
+  "success": true
+}
+```
+</ResponseExample>

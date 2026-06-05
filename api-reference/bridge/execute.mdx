@@ -1,0 +1,57 @@
+---
+title: Execute Bridge Transfer
+api: POST https://api.teel.finance/api/bridge/execute
+description: Execute a cross-chain bridge transfer
+---
+
+Initiates a cross-chain bridge transfer to move tokens from one blockchain to another.
+
+## Body Parameters
+
+<ParamField body="sourceChain" type="string" required>
+  The source blockchain (e.g. `ethereum`, `polygon`, `arbitrum`, `solana`).
+</ParamField>
+
+<ParamField body="destinationChain" type="string" required>
+  The destination blockchain (e.g. `ethereum`, `polygon`, `arbitrum`, `solana`).
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  The amount of tokens to bridge.
+</ParamField>
+
+<ParamField body="recipientAddress" type="string" required>
+  The wallet address on the destination chain to receive the tokens.
+</ParamField>
+
+<ParamField body="useFastTransfer" type="boolean">
+  Whether to use fast transfer mode for quicker settlement. May incur higher fees.
+</ParamField>
+
+<ParamField body="protocol" type="string">
+  The bridging protocol to use (e.g. `cctp`, `wormhole`). Defaults to `cctp`.
+</ParamField>
+
+## Response
+
+<ResponseField name="bridgeId" type="string">
+  Unique identifier for tracking this bridge transfer.
+</ResponseField>
+
+<ResponseField name="sourceTxHash" type="string">
+  Transaction hash on the source chain.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Current status of the bridge transfer (e.g. `pending`, `in_progress`, `completed`).
+</ResponseField>
+
+<ResponseExample>
+```json 200
+{
+  "bridgeId": "bridge_abc123def456",
+  "sourceTxHash": "0x1234567890abcdef1234567890abcdef1234567890abcdef1234567890abcdef",
+  "status": "pending"
+}
+```
+</ResponseExample>

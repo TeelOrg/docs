@@ -1,0 +1,47 @@
+---
+title: Create Recipient
+api: POST /api/recipients
+description: Create a new recipient
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token from Auth0
+</ParamField>
+
+<ParamField body="businessName" type="string" required>
+  Recipient business name
+</ParamField>
+
+<ParamField body="country" type="string" required>
+  Country code (ISO 3166-1 alpha-2)
+</ParamField>
+
+<ParamField body="currency" type="string">
+  Currency code for fiat recipients
+</ParamField>
+
+<ParamField body="transferType" type="string" required>
+  `fiat_to_fiat`, `fiat_to_stablecoin`, or `stablecoin_to_stablecoin`
+</ParamField>
+
+<ParamField body="bankName" type="string">
+  Bank name (for fiat recipients)
+</ParamField>
+
+<ParamField body="bankAccount" type="string">
+  Bank account number (for fiat recipients)
+</ParamField>
+
+<ParamField body="walletAddresses" type="object">
+  Wallet addresses by chain ID (for stablecoin recipients). Example: `{"42161": "0x..."}`
+</ParamField>
+
+<ResponseExample>
+```json
+{
+  "id": "rec_abc123",
+  "businessName": "Acme Malaysia",
+  "status": "provisioning"
+}
+```
+</ResponseExample>

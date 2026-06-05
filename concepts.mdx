@@ -1,0 +1,67 @@
+---
+title: "Core Concepts"
+description: "Key concepts and architecture of the Teel platform"
+---
+
+## Multi-Provider Architecture
+
+Teel aggregates multiple payment providers behind a single API. Rather than integrating with each provider individually, you integrate once with Teel. When you request a quote, Teel queries all available providers concurrently and returns the best rate.
+
+This architecture means:
+
+- **No vendor lock-in** -- your transactions route through whichever provider offers the best terms.
+- **Broader coverage** -- each provider covers different corridors, and Teel combines them all.
+- **Automatic failover** -- if one provider is unavailable, Teel falls back to alternatives.
+
+## Provider-Agnostic Flow
+
+```
+Your App  -->  Teel API  -->  [ Provider 1 ]  -->  Destination
+                          -->  [ Provider 2 ]
+                          -->  [ Provider 3 ]
+                          -->  [ ...         ]
+```
+
+The flow works as follows:
+
+1. **KYB onboards you with all providers at once.** Submit your business verification through Teel, and it is forwarded to each provider.
+2. **Recipients are provisioned across providers automatically.** When you create a recipient in Teel, the recipient is registered with the relevant providers behind the scenes.
+3. **Quotes are fetched from all providers concurrently.** A single quote request fans out to every provider that supports the corridor.
+4. **The best route is selected at execution time.** When you create a payout, Teel picks the provider with the best rate from the quote.
+
+## Transaction Lifecycle
+
+Every transaction follows a standard status flow:
+
+```
+pending  -->  processing  -->  completed
+                           -->  failed
+                           -->  cancelled
+```
+
+| Status | Description |
+|--------|-------------|
+| `pending` | The transaction has been created and is awaiting processing. Funds have not yet been submitted to a provider. |
+| `processing` | The transaction has been submitted to a provider and is in progress. For fiat-to-fiat, this may involve both an onramp and offramp leg. |
+| `completed` | The transaction has settled successfully. The recipient has received the funds. |
+| `failed` | The transaction could not be completed. This may be due to compliance checks, insufficient funds, or a provider error. Review the error details for specifics. |
+| `cancelled` | The transaction was cancelled before completion, either by you or by the system (e.g., an expired quote). |
+
+## Onramp / Offramp
+
+Teel supports three models for moving money:
+
+**Onramp** -- A provider converts fiat currency into stablecoins. For example, a user sends USD and receives USDC in their wallet. This is used when the destination is a blockchain address.
+
+**Offramp** -- A provider converts stablecoins into fiat currency. For example, USDC is sent to the provider and MYR is deposited into a bank account. This is used when the source is on-chain and the destination is a bank account.
+
+**Fiat-to-Fiat** -- This combines both legs. The source fiat is onramped to stablecoins, then offramped to the destination fiat. Different providers can handle each leg independently. Teel orchestrates the full flow, selecting the best provider for each leg.
+
+## Webhooks and Real-Time Updates
+
+Teel provides two mechanisms for tracking transaction state:
+
+- **WebSocket** -- Connect to the WebSocket endpoint for real-time payout status updates. Your application receives push notifications as transactions move through the lifecycle.
+- **Provider webhooks** -- Each provider sends webhook callbacks to Teel as transaction states change. Teel processes these and updates the transaction record automatically, which in turn triggers WebSocket notifications to your application.
+
+This means you do not need to poll for status. Connect via WebSocket and react to events as they arrive.

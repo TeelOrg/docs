@@ -1,0 +1,30 @@
+---
+title: Update Payout
+api: PUT /api/payouts/{id}
+description: Update a payout's status or metadata
+---
+
+<ParamField header="Authorization" type="string" required>
+  Bearer token from Auth0
+</ParamField>
+
+<ParamField path="id" type="string" required>
+  Payout ID
+</ParamField>
+
+<ParamField body="status" type="string">
+  New status (`processing`, `completed`, `failed`, `cancelled`)
+</ParamField>
+
+<ParamField body="provider_metadata" type="object">
+  Provider-specific metadata to update
+</ParamField>
+
+<ResponseExample>
+```json
+{
+  "id": "pay_abc123",
+  "status": "processing"
+}
+```
+</ResponseExample>

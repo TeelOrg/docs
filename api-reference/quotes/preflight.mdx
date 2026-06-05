@@ -1,0 +1,57 @@
+---
+title: Quote Preflight (Balance Check)
+api: GET https://api.teel.finance/api/quotes/preflight
+description: Check whether a wallet holds enough stablecoin before executing
+---
+
+A read-only check for payouts that start from stablecoin (stablecoin-to-fiat, stablecoin-to-stablecoin). Call it **before** executing to confirm the source wallet holds enough of the token on the right chain, so an insufficient balance surfaces up front instead of as a stranded payout. No state is changed.
+
+## Query Parameters
+
+<ParamField query="crypto_ticker" type="string" required>
+  Platform crypto ticker including chain suffix, e.g. `USDCPOLYGON`, `USDCBASE`. Determines the chain the balance is read on.
+</ParamField>
+
+<ParamField query="required" type="number" required>
+  The amount needed, in display units (e.g. `1500.123456`).
+</ParamField>
+
+<ParamField query="wallet" type="string" required>
+  EVM wallet address (hex) to check the balance of.
+</ParamField>
+
+## Response
+
+<ResponseField name="ok" type="boolean">
+  `true` when the wallet holds at least `required`. `false` is **not an error** — it means the wallet is short; use `required` vs `available` to render the gap.
+</ResponseField>
+<ResponseField name="required" type="string">Required amount, display units.</ResponseField>
+<ResponseField name="requiredUnits" type="string">Required amount, raw token units (string-encoded big integer).</ResponseField>
+<ResponseField name="available" type="string">Wallet balance, display units.</ResponseField>
+<ResponseField name="availableUnits" type="string">Wallet balance, raw token units.</ResponseField>
+<ResponseField name="eoa" type="string">The wallet address checked (echoed back).</ResponseField>
+<ResponseField name="chainId" type="integer">Chain the balance was read on.</ResponseField>
+<ResponseField name="token" type="string">Token symbol (e.g. `USDC`).</ResponseField>
+<ResponseField name="decimals" type="integer">Token decimals.</ResponseField>
+
+<ResponseExample>
+```json 200
+{
+  "ok": false,
+  "required": "1500.000000",
+  "requiredUnits": "1500000000",
+  "available": "1200.500000",
+  "availableUnits": "1200500000",
+  "eoa": "0x1234abcd5678ef901234abcd5678ef901234abcd",
+  "chainId": 137,
+  "token": "USDC",
+  "decimals": 6
+}
+```
+</ResponseExample>
+
+<Note>
+  Returns `503` with `{ "error": { "code": "preflight_unsupported" } }` when the
+  chain implied by `crypto_ticker` has no escrow client registered, and `400`
+  (`invalid_request` / `corridor_unsupported`) for bad input.
+</Note>

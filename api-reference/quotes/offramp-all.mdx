@@ -1,0 +1,41 @@
+---
+title: Get All Offramp Quotes
+api: GET https://api.teel.finance/api/quotes/offramp/all
+description: Get every available offramp quote across providers for crypto to fiat
+---
+
+Returns **all** available offramp quotes for converting crypto into fiat, one per route. Supports both forward mode (you specify the crypto input) and exact-output mode (you specify the fiat the recipient must receive).
+
+## Query Parameters
+
+<ParamField query="payout_currency" type="string" required>
+  ISO 4217 currency code for the desired fiat payout currency (e.g. `USD`, `PHP`).
+</ParamField>
+
+<ParamField query="usdc_amount" type="number">
+  Forward mode: the amount of crypto (USDC) to offramp. Provide either this or `target_amount`.
+</ParamField>
+
+<ParamField query="target_amount" type="number">
+  Exact-output mode: the exact fiat amount the recipient must receive. Teel computes the crypto input (fee-on-input). Provide either this or `usdc_amount`.
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean" />
+
+<ResponseField name="data" type="array">
+  Array of offramp quote objects, each with the same shape as [Get Best Offramp Quote](/api-reference/quotes/offramp-best). The `protocol` field is an opaque route token (`rt_...`) — see [Route tokens](/api-reference/quotes/onramp-all#route-tokens).
+</ResponseField>
+
+<ResponseExample>
+```json 200
+{
+  "success": true,
+  "data": [
+    { "protocol": "rt_9XbN2kQ", "fromToken": "USDC", "toCcy": "PHP", "fromAmount": 1000, "toAmount": 56800.00, "rate": 56.8, "fee": 2.5 },
+    { "protocol": "rt_3FpL7dM", "fromToken": "USDC", "toCcy": "PHP", "fromAmount": 1000, "toAmount": 56750.00, "rate": 56.75, "fee": 3.0 }
+  ]
+}
+```
+</ResponseExample>

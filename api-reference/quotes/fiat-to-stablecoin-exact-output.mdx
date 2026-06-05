@@ -1,0 +1,42 @@
+---
+title: Get Exact-Output Fiat-to-Stablecoin Quote
+api: GET https://api.teel.finance/api/quotes/fiat-to-stablecoin/exact-output
+description: Quote the fiat input needed to deliver an exact stablecoin amount
+---
+
+Returns the best fiat-to-stablecoin quote that delivers an **exact** stablecoin amount. Teel solves for the required fiat input so the destination wallet receives exactly `target_amount` of the stablecoin.
+
+## Query Parameters
+
+<ParamField query="source_currency" type="string" required>
+  ISO 4217 code for the source fiat currency (e.g. `USD`, `EUR`).
+</ParamField>
+
+<ParamField query="target_amount" type="number" required>
+  The exact stablecoin amount to deliver (e.g. `1000` USDC).
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean" />
+
+<ResponseField name="data" type="object">
+  A single quote. `toAmount` equals the requested stablecoin `target_amount`; `fromAmount` is the fiat input required. The `protocol` field is an opaque route token (`rt_...`) — see [Route tokens](/api-reference/quotes/onramp-all#route-tokens).
+</ResponseField>
+
+<ResponseExample>
+```json 200
+{
+  "success": true,
+  "data": {
+    "protocol": "rt_5Tn1bQp",
+    "fromCcy": "USD",
+    "toToken": "USDC",
+    "fromAmount": 1012.66,
+    "toAmount": 1000.00,
+    "rate": 1.0,
+    "fee": 12.66
+  }
+}
+```
+</ResponseExample>
