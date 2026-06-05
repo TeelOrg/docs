@@ -22,7 +22,7 @@ sk_<env>_<43 url-safe base64 chars>
 | `sk_test_` | Sandbox     | `https://api-sandbox.teel.finance`  |
 
 <Note>
-  `api-sandbox.teel.finance` is the canonical sandbox host. While DNS is propagating, `api-dev.teel.finance` is a transitional alias accepting the same `sk_test_…` keys — switch to `api-sandbox.teel.finance` once it resolves on your network. Sandbox provider APIs don't move real funds.
+  Sandbox provider APIs don't move real funds — use `sk_test_…` keys against `api-sandbox.teel.finance` for end-to-end integration testing before switching to production credentials.
 </Note>
 
 The fixed `sk_` prefix is recognized by GitHub secret scanning, GitGuardian, and TruffleHog — if you accidentally commit a key, you'll get a leak notification. The visible `live` vs `test` distinction prevents the "prod creds in Slack" failure mode.
@@ -33,9 +33,16 @@ The fixed `sk_` prefix is recognized by GitHub secret scanning, GitGuardian, and
 
 ## Issuing a key
 
-Today: from the **API Keys** page in `dashboard.teel.finance`. Click **Create API key**, pick the scopes, and copy the shown plaintext **immediately** — Teel stores only an argon2id hash + the first 12 characters for display. We cannot retrieve the plaintext later.
+API keys are issued by the Teel onboarding team. Email **support@teel.finance** (or your dedicated onboarding contact) to request:
 
-Headless issuance (programmatic key creation) ships when partner-account self-service lands; track in [TEELS-170](https://teelapp.atlassian.net/browse/TEELS-170).
+- A new `sk_test_…` sandbox key
+- A new `sk_live_…` production key (after KYB approval)
+- Additional keys for separate use cases (e.g. one per service)
+- A scope change on an existing key
+
+The plaintext key is delivered through an encrypted channel and shown **exactly once** — Teel stores only an argon2id hash plus the first 12 characters for identification. We cannot retrieve the plaintext later, so save it to your secret manager immediately.
+
+Self-service key creation from the dashboard is on the roadmap.
 
 ## Scopes
 
@@ -49,17 +56,17 @@ Each key carries a subset of scopes. Default for a newly-minted key is read-only
 | `recipients:write` | Create / update / delete recipients |
 | `recipients:read` | List / fetch recipients |
 
-Webhook subscription scopes (`webhooks:read` / `webhooks:write`) ship with [TEELS-178](https://teelapp.atlassian.net/browse/TEELS-178)'s partner-API enablement; today webhook subscriptions are managed only from the dashboard.
+Webhook subscription scopes (`webhooks:read` / `webhooks:write`) are on the roadmap. Today, webhook subscriptions are managed from the dashboard or by contacting support — see the [Webhooks guide](/guides/webhooks).
 
 ## Rotation
 
-Use the **Roll key** action in the dashboard. The new key is shown once; the previous key continues working for **7 days** to give you time to redeploy. After the overlap window, the old key returns `401`.
+To roll a key, contact **support@teel.finance**. We issue a new key alongside the existing one and keep the previous key working for **7 days** to give you time to redeploy. After the overlap window, the old key returns `401`.
 
-A rolled key is logged to the partner-visible audit feed under the same business.
+Rotations are logged to the partner-visible audit feed under the same business.
 
 ## Revocation
 
-The **Revoke key** action in the dashboard sets the key inactive immediately. In-memory caches expire within 30 seconds; after that, every request with the revoked key returns `401`. Use revocation if you suspect compromise — rotation has a 7-day overlap that you do not want during incident response.
+If you suspect compromise, contact **support@teel.finance** to revoke the key immediately. Active in-memory caches drain within 30 seconds; after that, every request with the revoked key returns `401`. Use revocation rather than rotation during incident response — rotation has a 7-day overlap window you don't want when responding to a leak.
 
 ## What happens if a key is compromised
 
@@ -95,8 +102,8 @@ On a `429`, also: `Retry-After: <seconds>`. Wait at least that long before the n
 
 Specific limits per endpoint family + the per-key default are documented in the [Errors & retries](/errors) guide.
 
-## Dashboard (Auth0) authentication
+## Dashboard authentication
 
-The dashboard at `dashboard.teel.finance` uses Auth0 JWT for the in-browser user session. **This is not the API path** — partner integrations should always use the `sk_` API key pattern above. Auth0 access tokens are not accepted on `api.teel.finance` / `api-dev.teel.finance`.
+The Teel dashboard is a separate, browser-only session and is **not** the API authentication path. Partner integrations should always use the `sk_` API key pattern above — dashboard sessions are not accepted on `api.teel.finance` or `api-sandbox.teel.finance`.
 
-If you build an internal tool that needs to act on behalf of multiple Teel accounts, use one `sk_` key per account rather than reusing your own dashboard JWT.
+If you build an internal tool that needs to act on behalf of multiple Teel accounts, request one `sk_` key per account rather than reusing your own dashboard session.

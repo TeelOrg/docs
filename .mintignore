@@ -5,3 +5,7 @@
 # Draft content
 drafts/
 *.draft.mdx
+
+# Internal docs not intended for partner publication
+_skill.md
+AGENTS.md

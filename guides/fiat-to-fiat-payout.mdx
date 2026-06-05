@@ -32,7 +32,7 @@ sequenceDiagram
 Fetch the best available rate for your currency pair:
 
 ```bash
-curl -X GET "https://dev.teelapp.io/api/quotes/fiat-to-fiat/best?source_currency=USD&target_currency=MYR&amount=1000" \
+curl -X GET "https://api.teel.finance/quotes/fiat-to-fiat/best?source_currency=USD&target_currency=MYR&amount=1000" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
@@ -42,7 +42,7 @@ curl -X GET "https://dev.teelapp.io/api/quotes/fiat-to-fiat/best?source_currency
   "toCcy": "MYR",
   "amount": "1000",
   "exchangeRate": "4.4250",
-  "provider": "airwallex",
+  "provider": "provider_a",
   "payoutAmount": "4425.00"
 }
 ```
@@ -52,7 +52,7 @@ curl -X GET "https://dev.teelapp.io/api/quotes/fiat-to-fiat/best?source_currency
 Create the payout record with recipient and amount details:
 
 ```bash
-curl -X POST "https://dev.teelapp.io/api/payouts" \
+curl -X POST "https://api.teel.finance/payouts" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -72,7 +72,7 @@ curl -X POST "https://dev.teelapp.io/api/payouts" \
 Some corridors require supporting documentation:
 
 ```bash
-curl -X POST "https://dev.teelapp.io/api/payouts/pay_xyz/document" \
+curl -X POST "https://api.teel.finance/payouts/pay_xyz/document" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -F "document=@invoice.pdf"
 ```
@@ -82,7 +82,7 @@ curl -X POST "https://dev.teelapp.io/api/payouts/pay_xyz/document" \
 Update the payout status to trigger execution:
 
 ```bash
-curl -X PUT "https://dev.teelapp.io/api/payouts/pay_xyz" \
+curl -X PUT "https://api.teel.finance/payouts/pay_xyz" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{"status": "processing"}'
@@ -93,7 +93,7 @@ curl -X PUT "https://dev.teelapp.io/api/payouts/pay_xyz" \
 Poll the payout to check completion:
 
 ```bash
-curl -X GET "https://dev.teelapp.io/api/payouts/pay_xyz" \
+curl -X GET "https://api.teel.finance/payouts/pay_xyz" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 

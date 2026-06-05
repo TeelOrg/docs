@@ -42,11 +42,7 @@ Pick the host that matches your API key prefix:
 | Production | `https://api.teel.finance` | `sk_live_…` keys |
 | Sandbox | `https://api-sandbox.teel.finance` | `sk_test_…` keys |
 
-<Note>
-  If `api-sandbox.teel.finance` doesn't resolve yet on your network, `api-dev.teel.finance` is a transitional alias accepting the same `sk_test_…` keys while DNS propagates. Both hostnames route to the sandbox backend; switch to `api-sandbox.teel.finance` once it resolves.
-</Note>
-
-The OpenAPI 3.1 spec is served at [`/openapi.json`](https://api-sandbox.teel.finance/openapi.json) (or `/openapi.yaml`) on every host — import it into Postman, Insomnia, or `openapi-generator-cli` for typed clients.
+The OpenAPI 3.1 spec is served at [`/openapi.json`](https://api.teel.finance/openapi.json) (or `/openapi.yaml`) on every host — import it into Postman, Insomnia, or `openapi-generator-cli` for typed clients.
 
 ## Key Concepts
 

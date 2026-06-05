@@ -9,7 +9,7 @@ This guide walks you through making your first payout against the Teel **sandbox
   <Step title="Set your API key">
     Teel uses long-lived secret API keys (`sk_live_…` for production, `sk_test_…` for sandbox) presented as a bearer token. Same pattern as Stripe, OpenAI, Resend.
 
-    Your operator at Teel issues your key via the admin flow described in the [sandbox onboarding runbook](https://github.com/TeelOrg/teel-backend/blob/main/docs/superpowers/runbooks/sandbox-partner-onboarding.md) and shares it via 1Password / encrypted channel. The plaintext is shown **exactly once** at creation; afterwards only the first 12 characters are retrievable.
+    Sandbox API keys are issued by the Teel onboarding team. Email **support@teel.finance** (or reach out to your dedicated onboarding contact) and we'll send your `sk_test_…` key through an encrypted channel. The plaintext is shown **exactly once** at creation; afterwards only the first 12 characters are retrievable for identification.
 
     ```bash
     export TEEL_API_KEY="sk_test_<43 url-safe base64 chars>"
@@ -20,7 +20,7 @@ This guide walks you through making your first payout against the Teel **sandbox
     ```bash
     # 1. Health (no auth) — sanity check the host is reachable
     curl https://api-sandbox.teel.finance/health
-    # → {"env":"development","status":"ok"}
+    # → {"env":"sandbox","status":"ok"}
 
     # 2. Auth'd read — list your existing recipients
     curl https://api-sandbox.teel.finance/recipients \
@@ -28,10 +28,6 @@ This guide walks you through making your first payout against the Teel **sandbox
     ```
 
     See the [Authentication page](/authentication) for key format, scopes, rotation, and revocation.
-
-    <Note>
-      If `api-sandbox.teel.finance` doesn't resolve yet on your network, `api-dev.teel.finance` is a transitional alias accepting the same `sk_test_…` keys while DNS propagates.
-    </Note>
   </Step>
 
   <Step title="Check coverage">

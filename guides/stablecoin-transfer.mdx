@@ -28,14 +28,14 @@ sequenceDiagram
 ## Step 1: Get a Quote
 
 ```bash
-curl -X GET "https://dev.teelapp.io/api/quotes/fiat-to-stablecoin/best?source_currency=USD&amount=1000&crypto_ticker=USDC" \
+curl -X GET "https://api.teel.finance/quotes/fiat-to-stablecoin/best?source_currency=USD&amount=1000&crypto_ticker=USDC" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
 
 ## Step 2: Initiate Transfer
 
 ```bash
-curl -X POST "https://dev.teelapp.io/api/stablecoin-transfer/initiate" \
+curl -X POST "https://api.teel.finance/stablecoin-transfer/initiate" \
   -H "Authorization: Bearer YOUR_TOKEN" \
   -H "Content-Type: application/json" \
   -d '{
@@ -49,6 +49,6 @@ curl -X POST "https://dev.teelapp.io/api/stablecoin-transfer/initiate" \
 ## Step 3: Poll Transfer Status
 
 ```bash
-curl -X GET "https://dev.teelapp.io/api/stablecoin-transfer/status/txn_abc123" \
+curl -X GET "https://api.teel.finance/stablecoin-transfer/status/txn_abc123" \
   -H "Authorization: Bearer YOUR_TOKEN"
 ```
