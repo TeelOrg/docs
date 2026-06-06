@@ -16,7 +16,16 @@ name: Pull from TeelOrg/mintlify-docs
 
 on:
   schedule:
-    - cron: '*/10 * * * *'  # every 10 minutes
+    # Every 2 days at 12:00 UTC. Docs change rarely enough that the
+    # original 10-minute polling burned hundreds of Actions minutes/month
+    # for nothing. When you merge a docs PR and want it live now, hit
+    # "Run workflow" — that path is unchanged.
+    #
+    # Cron quirk: `*/2` on the day-of-month field divides the calendar
+    # month (1, 3, 5, …, 29, 31, 1, 3 …), so months with 31 days run
+    # two days in a row at the rollover. Still well within "rare" and
+    # not worth working around.
+    - cron: '0 12 */2 * *'
   workflow_dispatch: {}     # manual run for immediate sync
 
 # Serialize runs so an in-flight sync isn't fighting a new one.
