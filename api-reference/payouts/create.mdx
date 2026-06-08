@@ -4,8 +4,12 @@ api: POST /api/payouts
 description: Create a new payout
 ---
 
+<Note>
+  Used by the Teel dashboard — not part of the partner API surface. Partners using `sk_` keys cannot call this endpoint.
+</Note>
+
 <ParamField header="Authorization" type="string" required>
-  Bearer token from Auth0
+  Dashboard session token (JWT).
 </ParamField>
 
 <ParamField body="transaction_type" type="string" required>

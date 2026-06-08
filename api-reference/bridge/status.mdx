@@ -6,6 +6,10 @@ description: Get the current status of a bridge transfer
 
 Returns the current status of a previously initiated bridge transfer. When the transfer is completed, the destination transaction hash will be included.
 
+<Note>
+  Used by the Teel dashboard — not part of the partner API surface. Partners using `sk_` keys cannot call this endpoint.
+</Note>
+
 ## Path Parameters
 
 <ParamField path="id" type="string" required>

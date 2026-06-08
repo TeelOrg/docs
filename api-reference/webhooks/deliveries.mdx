@@ -8,7 +8,7 @@ Every event Teel POSTs to your subscriptions creates a `webhook_deliveries` row 
 ## List deliveries
 
 <ParamField header="Authorization" type="string" required>
-  Bearer token from Auth0
+  `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
 </ParamField>
 
 <ParamField query="subscription_id" type="string">
@@ -85,7 +85,7 @@ Rows older than 30 days are eligible for automatic pruning (terminal statuses on
 ## Get delivery
 
 <ParamField header="Authorization" type="string" required>
-  Bearer token from Auth0
+  `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
 </ParamField>
 
 <ParamField path="id" type="string" required>
@@ -103,7 +103,7 @@ Returns the same shape as List for a single row. Useful as a follow-up after Rep
 ## Replay delivery
 
 <ParamField header="Authorization" type="string" required>
-  Bearer token from Auth0
+  `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
 </ParamField>
 
 <ParamField path="id" type="string" required>

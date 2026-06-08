@@ -1,95 +1,111 @@
 ---
 title: Get Payout
 api: GET /api/payouts/{id}
-description: Get payout details by ID
+description: Get a payout by ID
 ---
 
+## Headers
+
 <ParamField header="Authorization" type="string" required>
-  Bearer token from Auth0
+  `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
 </ParamField>
+
+## Path parameters
 
 <ParamField path="id" type="string" required>
-  Payout ID
+  The payout ID returned from [`POST /payouts`](/api-reference/payouts/create).
 </ParamField>
 
+## Response
+
 <ResponseField name="id" type="string">
-  Payout ID
+  Payout ID.
 </ResponseField>
 
 <ResponseField name="transaction_type" type="string">
-  `payout` or `swap`
-</ResponseField>
-
-<ResponseField name="payout_amount" type="number">
-  Amount in payout currency
-</ResponseField>
-
-<ResponseField name="source_amount" type="number">
-  Amount in source currency
-</ResponseField>
-
-<ResponseField name="source_currency" type="string">
-  Source currency code
-</ResponseField>
-
-<ResponseField name="payout_currency" type="string">
-  Payout currency code
+  `payout` or `swap`.
 </ResponseField>
 
 <ResponseField name="status" type="string">
-  `pending`, `processing`, `completed`, `failed`, or `cancelled`
+  `pending`, `processing`, `completed`, `failed`, or `cancelled`. See [Core Concepts](/concepts#transaction-status) for the lifecycle.
+</ResponseField>
+
+<ResponseField name="source_amount" type="number">
+  Amount debited.
+</ResponseField>
+
+<ResponseField name="source_currency" type="string">
+  ISO 4217 code.
+</ResponseField>
+
+<ResponseField name="payout_amount" type="number">
+  Amount credited to the recipient.
+</ResponseField>
+
+<ResponseField name="payout_currency" type="string">
+  ISO 4217 code.
 </ResponseField>
 
 <ResponseField name="recipient_id" type="string">
-  Recipient ID
-</ResponseField>
-
-<ResponseField name="bank_account" type="string">
-  Bank account number
-</ResponseField>
-
-<ResponseField name="wallet_address" type="string">
-  Wallet address (for crypto payouts)
+  Recipient ID.
 </ResponseField>
 
 <ResponseField name="payment_method" type="string">
-  Payment method used
+  Funding method.
 </ResponseField>
 
 <ResponseField name="payment_purpose" type="string">
-  Purpose of payment
+  Stated purpose.
 </ResponseField>
 
 <ResponseField name="reference" type="string">
-  Payment reference
+  Free-text reference you set at execution time.
 </ResponseField>
 
 <ResponseField name="provider_metadata" type="object">
-  Provider-specific metadata (onramp, offramp, swap, bridge details)
+  Routing detail for the executed payout.
+
+  <Expandable title="provider_metadata">
+    <ResponseField name="version" type="integer">
+      Schema version.
+    </ResponseField>
+    <ResponseField name="onramp" type="object">
+      Onramp leg detail. Present on fiat-to-stablecoin and fiat-to-fiat payouts.
+    </ResponseField>
+    <ResponseField name="offramp" type="object">
+      Offramp leg detail. Present on stablecoin-to-fiat and fiat-to-fiat payouts.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  ISO 8601 timestamp.
+</ResponseField>
+
+<ResponseField name="completed_at" type="string">
+  ISO 8601 timestamp. Present when `status` is `completed`.
 </ResponseField>
 
 <ResponseExample>
-```json
+```json 200
 {
   "id": "pay_abc123",
   "transaction_type": "payout",
-  "payout_amount": 4425.00,
+  "status": "completed",
   "source_amount": 1000.00,
   "source_currency": "USD",
+  "payout_amount": 4425.00,
   "payout_currency": "MYR",
-  "status": "completed",
   "recipient_id": "rec_xyz",
-  "bank_name": "Maybank",
-  "bank_account": "1234567890",
   "payment_method": "fiat_bank_transfer",
   "payment_purpose": "trade_settlement",
-  "created_at": "2026-03-01T10:00:00Z",
-  "completed_at": "2026-03-01T10:05:00Z",
   "provider_metadata": {
     "version": 1,
     "onramp": { "protocol": "provider_a", "status": "completed" },
     "offramp": { "protocol": "provider_a", "amount": 4425, "currency": "MYR" }
-  }
+  },
+  "created_at": "2026-03-01T10:00:00Z",
+  "completed_at": "2026-03-01T10:05:00Z"
 }
 ```
 </ResponseExample>

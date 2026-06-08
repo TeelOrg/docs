@@ -20,7 +20,7 @@ Loopback, RFC1918 private, link-local, and known cloud metadata host/IP ranges a
 ## List subscriptions
 
 <ParamField header="Authorization" type="string" required>
-  Bearer token from Auth0
+  `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
 </ParamField>
 
 ```http
@@ -52,7 +52,7 @@ GET /api/webhooks/subscriptions
 ## Create subscription
 
 <ParamField header="Authorization" type="string" required>
-  Bearer token from Auth0
+  `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
 </ParamField>
 
 <ParamField body="url" type="string" required>
@@ -104,7 +104,7 @@ The response includes a one-shot `secret` field — your `whsec_…` signing sec
 ## Get subscription
 
 <ParamField header="Authorization" type="string" required>
-  Bearer token from Auth0
+  `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
 </ParamField>
 
 <ParamField path="id" type="string" required>
@@ -122,7 +122,7 @@ Returns the same shape as List but for a single row. Returns `404` if the id isn
 ## Update subscription
 
 <ParamField header="Authorization" type="string" required>
-  Bearer token from Auth0
+  `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
 </ParamField>
 
 <ParamField path="id" type="string" required>
@@ -156,7 +156,7 @@ All fields are optional — any field you omit stays unchanged. Returns the upda
 ## Delete subscription
 
 <ParamField header="Authorization" type="string" required>
-  Bearer token from Auth0
+  `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
 </ParamField>
 
 <ParamField path="id" type="string" required>
@@ -174,7 +174,7 @@ Removes the subscription **and** all of its pending / historical deliveries (cas
 ## Rotate signing secret
 
 <ParamField header="Authorization" type="string" required>
-  Bearer token from Auth0
+  `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
 </ParamField>
 
 <ParamField path="id" type="string" required>

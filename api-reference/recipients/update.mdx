@@ -5,13 +5,15 @@ description: Update a recipient
 ---
 
 <ParamField header="Authorization" type="string" required>
-  Bearer token from Auth0
+  `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
 </ParamField>
+
+
+## Path parameters
 
 <ParamField path="id" type="string" required>
-  Recipient ID
+  Recipient ID.
 </ParamField>
-
 <ParamField body="businessName" type="string">
   Recipient business name
 </ParamField>

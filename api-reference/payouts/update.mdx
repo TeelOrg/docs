@@ -4,14 +4,20 @@ api: PUT /api/payouts/{id}
 description: Update a payout's status or metadata
 ---
 
+<Note>
+  Used by the Teel dashboard — not part of the partner API surface. Partners using `sk_` keys cannot call this endpoint.
+</Note>
+
 <ParamField header="Authorization" type="string" required>
-  Bearer token from Auth0
+  Dashboard session token (JWT).
 </ParamField>
+
+
+## Path parameters
 
 <ParamField path="id" type="string" required>
-  Payout ID
+  Payout ID.
 </ParamField>
-
 <ParamField body="status" type="string">
   New status (`processing`, `completed`, `failed`, `cancelled`)
 </ParamField>
