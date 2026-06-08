@@ -6,8 +6,7 @@ description: Get exchange rate quotes from all available providers for a fiat-to
 
 Returns an array of quotes from every connected provider for converting one fiat currency to another. Useful for comparing rates across providers.
 
-## Query Parameters
-
+## Query parameters
 <ParamField query="source_currency" type="string" required>
   ISO 4217 currency code for the source currency (e.g. `USD`, `EUR`, `GBP`).
 </ParamField>
@@ -21,7 +20,6 @@ Returns an array of quotes from every connected provider for converting one fiat
 </ParamField>
 
 ## Response
-
 Returns an array of quote objects.
 
 <ResponseField name="quotes" type="array">

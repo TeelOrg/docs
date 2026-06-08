@@ -7,12 +7,13 @@ description: Register a business with all providers at once via KYB submission
 Submits KYB (Know Your Business) information to register a business with all connected providers simultaneously. Requires the `X-User-ID` header to associate the registration with a user.
 
 ## Headers
-
 <ParamField header="X-User-ID" type="string" required>
   The unique identifier of the user initiating the KYB registration.
 </ParamField>
 
 ## Body Parameters
+
+## Request body
 
 <ParamField body="businessName" type="string" required>
   Legal name of the business.
@@ -60,7 +61,6 @@ Submits KYB (Know Your Business) information to register a business with all con
 </ParamField>
 
 ## Response
-
 <ResponseField name="registrationId" type="string">
   Unique identifier for this KYB registration.
 </ResponseField>

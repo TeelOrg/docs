@@ -8,16 +8,19 @@ description: Update a payout's status or metadata
   Used by the Teel dashboard — not part of the partner API surface. Partners using `sk_` keys cannot call this endpoint.
 </Note>
 
+## Headers
+
 <ParamField header="Authorization" type="string" required>
   Dashboard session token (JWT).
 </ParamField>
-
 
 ## Path parameters
 
 <ParamField path="id" type="string" required>
   Payout ID.
 </ParamField>
+## Request body
+
 <ParamField body="status" type="string">
   New status (`processing`, `completed`, `failed`, `cancelled`)
 </ParamField>
@@ -25,6 +28,8 @@ description: Update a payout's status or metadata
 <ParamField body="provider_metadata" type="object">
   Provider-specific metadata to update
 </ParamField>
+
+## Response
 
 <ResponseExample>
 ```json

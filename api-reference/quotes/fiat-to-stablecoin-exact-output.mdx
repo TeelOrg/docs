@@ -6,8 +6,7 @@ description: Quote the fiat input needed to deliver an exact stablecoin amount
 
 Returns the best fiat-to-stablecoin quote that delivers an **exact** stablecoin amount. Teel solves for the required fiat input so the destination wallet receives exactly `target_amount` of the stablecoin.
 
-## Query Parameters
-
+## Query parameters
 <ParamField query="source_currency" type="string" required>
   ISO 4217 code for the source fiat currency (e.g. `USD`, `EUR`).
 </ParamField>
@@ -17,7 +16,6 @@ Returns the best fiat-to-stablecoin quote that delivers an **exact** stablecoin 
 </ParamField>
 
 ## Response
-
 <ResponseField name="success" type="boolean" />
 
 <ResponseField name="data" type="object">

@@ -4,6 +4,8 @@ api: GET /api/recipients
 description: List all recipients
 ---
 
+## Headers
+
 <ParamField header="Authorization" type="string" required>
   `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
 </ParamField>
@@ -11,6 +13,8 @@ description: List all recipients
 <ParamField header="X-User-ID" type="string" required>
   Internal user ID
 </ParamField>
+
+## Response
 
 <ResponseExample>
 ```json

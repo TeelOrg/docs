@@ -8,6 +8,8 @@ Initiates a cross-chain bridge transfer to move tokens from one blockchain to an
 
 ## Body Parameters
 
+## Request body
+
 <ParamField body="sourceChain" type="string" required>
   The source blockchain (e.g. `ethereum`, `polygon`, `arbitrum`, `solana`).
 </ParamField>
@@ -33,7 +35,6 @@ Initiates a cross-chain bridge transfer to move tokens from one blockchain to an
 </ParamField>
 
 ## Response
-
 <ResponseField name="bridgeId" type="string">
   Unique identifier for tracking this bridge transfer.
 </ResponseField>

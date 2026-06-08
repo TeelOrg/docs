@@ -6,8 +6,7 @@ description: Get the best quote across all providers for converting fiat currenc
 
 Returns the single best quote for converting fiat currency into a stablecoin such as USDC or USDT.
 
-## Query Parameters
-
+## Query parameters
 <ParamField query="source_currency" type="string" required>
   ISO 4217 currency code for the source fiat currency (e.g. `USD`, `EUR`).
 </ParamField>
@@ -21,7 +20,6 @@ Returns the single best quote for converting fiat currency into a stablecoin suc
 </ParamField>
 
 ## Response
-
 <ResponseField name="protocol" type="string">
   Opaque route token (`rt_...`) identifying the route. See [Route tokens](/api-reference/quotes/onramp-all#route-tokens).
 </ResponseField>

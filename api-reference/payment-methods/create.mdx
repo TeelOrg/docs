@@ -8,9 +8,13 @@ description: Create a new payment method
   Used by the Teel dashboard — not part of the partner API surface. Partners using `sk_` keys cannot call this endpoint.
 </Note>
 
+## Headers
+
 <ParamField header="Authorization" type="string" required>
   Dashboard session token (JWT).
 </ParamField>
+
+## Request body
 
 <ParamField body="type" type="string" required>
   Payment method type (`bank_transfer` or `wallet`)
@@ -39,6 +43,8 @@ description: Create a new payment method
 <ParamField body="chainId" type="integer">
   Blockchain chain ID (for wallet type)
 </ParamField>
+
+## Response
 
 <ResponseExample>
 ```json

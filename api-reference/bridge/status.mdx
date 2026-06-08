@@ -10,14 +10,12 @@ Returns the current status of a previously initiated bridge transfer. When the t
   Used by the Teel dashboard — not part of the partner API surface. Partners using `sk_` keys cannot call this endpoint.
 </Note>
 
-## Path Parameters
-
+## Path parameters
 <ParamField path="id" type="string" required>
   The unique bridge transfer identifier returned from the execute endpoint.
 </ParamField>
 
 ## Response
-
 <ResponseField name="bridgeId" type="string">
   Unique identifier for this bridge transfer.
 </ResponseField>

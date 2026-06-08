@@ -4,9 +4,13 @@ api: GET /api/payouts
 description: List all payouts with pagination
 ---
 
+## Headers
+
 <ParamField header="Authorization" type="string" required>
   `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
 </ParamField>
+
+## Query parameters
 
 <ParamField query="limit" type="integer">
   Maximum number of results (default: 1000)
@@ -15,6 +19,8 @@ description: List all payouts with pagination
 <ParamField query="offset" type="integer">
   Number of results to skip (default: 0)
 </ParamField>
+
+## Response
 
 <ResponseExample>
 ```json

@@ -4,16 +4,19 @@ api: PUT /api/recipients/{id}
 description: Update a recipient
 ---
 
+## Headers
+
 <ParamField header="Authorization" type="string" required>
   `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
 </ParamField>
-
 
 ## Path parameters
 
 <ParamField path="id" type="string" required>
   Recipient ID.
 </ParamField>
+## Request body
+
 <ParamField body="businessName" type="string">
   Recipient business name
 </ParamField>
@@ -25,6 +28,8 @@ description: Update a recipient
 <ParamField body="currency" type="string">
   Currency code
 </ParamField>
+
+## Response
 
 <ResponseExample>
 ```json

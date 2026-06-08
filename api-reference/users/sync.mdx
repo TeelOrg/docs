@@ -4,14 +4,19 @@ api: POST https://api.teel.finance/api/users/sync
 description: Create or update a user from Auth0
 ---
 
-Creates a new user record or updates an existing one based on the Auth0 identity. This endpoint is typically called after a user authenticates via Auth0 to ensure the local user record is in sync.
+Creates a new user record or updates an existing one based on the dashboard identity. Called after a user authenticates so the local user record is in sync.
 
-## Authentication
+<Note>
+  Used by the Teel dashboard — not part of the partner API surface. Partners using `sk_` keys cannot call this endpoint.
+</Note>
 
-This endpoint requires a valid JWT bearer token in the `Authorization` header.
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  Dashboard session token (JWT).
+</ParamField>
 
 ## Response
-
 <ResponseField name="id" type="string">
   Unique user identifier.
 </ResponseField>

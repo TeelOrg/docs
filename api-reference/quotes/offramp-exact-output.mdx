@@ -6,8 +6,7 @@ description: Quote the crypto input needed to deliver an exact fiat payout
 
 Returns the single best offramp quote that delivers an **exact** fiat amount to the recipient. Teel solves for the required crypto input, adding the Teel fee on top of the input (fee-on-input) so the recipient receives exactly `target_amount`.
 
-## Query Parameters
-
+## Query parameters
 <ParamField query="payout_currency" type="string" required>
   ISO 4217 currency code for the fiat payout currency (e.g. `USD`, `PHP`).
 </ParamField>
@@ -17,7 +16,6 @@ Returns the single best offramp quote that delivers an **exact** fiat amount to 
 </ParamField>
 
 ## Response
-
 <ResponseField name="success" type="boolean" />
 
 <ResponseField name="data" type="object">

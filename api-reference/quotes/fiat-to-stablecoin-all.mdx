@@ -6,8 +6,7 @@ description: Get quotes from all available providers for converting fiat currenc
 
 Returns an array of quotes from every connected provider for converting fiat currency into a stablecoin. Useful for comparing rates and swap paths across providers.
 
-## Query Parameters
-
+## Query parameters
 <ParamField query="source_currency" type="string" required>
   ISO 4217 currency code for the source fiat currency (e.g. `USD`, `EUR`).
 </ParamField>
@@ -21,7 +20,6 @@ Returns an array of quotes from every connected provider for converting fiat cur
 </ParamField>
 
 ## Response
-
 Returns an array of stablecoin quote objects.
 
 <ResponseField name="quotes" type="array">

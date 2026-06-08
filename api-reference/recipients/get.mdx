@@ -4,16 +4,19 @@ api: GET /api/recipients/{id}
 description: Get a recipient by ID
 ---
 
+## Headers
+
 <ParamField header="Authorization" type="string" required>
   `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
 </ParamField>
-
 
 ## Path parameters
 
 <ParamField path="id" type="string" required>
   Recipient ID.
 </ParamField>
+## Response
+
 <ResponseExample>
 ```json
 {

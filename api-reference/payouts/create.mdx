@@ -8,9 +8,13 @@ description: Create a new payout
   Used by the Teel dashboard — not part of the partner API surface. Partners using `sk_` keys cannot call this endpoint.
 </Note>
 
+## Headers
+
 <ParamField header="Authorization" type="string" required>
   Dashboard session token (JWT).
 </ParamField>
+
+## Request body
 
 <ParamField body="transaction_type" type="string" required>
   `payout` or `swap`
@@ -55,6 +59,8 @@ description: Create a new payout
 <ParamField body="reference" type="string">
   Payment reference
 </ParamField>
+
+## Response
 
 <ResponseExample>
 ```json

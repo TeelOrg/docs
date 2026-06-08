@@ -4,14 +4,19 @@ api: GET https://api.teel.finance/api/users/me
 description: Get the currently authenticated user's profile
 ---
 
-Returns the profile of the currently authenticated user based on their JWT token.
+Returns the profile of the currently authenticated user.
 
-## Authentication
+<Note>
+  Used by the Teel dashboard — not part of the partner API surface. Partners using `sk_` keys cannot call this endpoint.
+</Note>
 
-This endpoint requires a valid JWT bearer token in the `Authorization` header.
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  Dashboard session token (JWT).
+</ParamField>
 
 ## Response
-
 <ResponseField name="id" type="string">
   Unique user identifier.
 </ResponseField>

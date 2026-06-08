@@ -6,8 +6,7 @@ description: Get the best quote for offramping crypto to fiat currency
 
 Returns the single best offramp quote across all providers for converting crypto tokens back into fiat currency.
 
-## Query Parameters
-
+## Query parameters
 <ParamField query="payout_currency" type="string" required>
   ISO 4217 currency code for the desired fiat payout currency (e.g. `USD`, `EUR`).
 </ParamField>
@@ -17,7 +16,6 @@ Returns the single best offramp quote across all providers for converting crypto
 </ParamField>
 
 ## Response
-
 <ResponseField name="protocol" type="string">
   Opaque route token (`rt_...`) identifying the route. See [Route tokens](/api-reference/quotes/onramp-all#route-tokens).
 </ResponseField>

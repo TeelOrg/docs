@@ -6,8 +6,7 @@ description: Get the best quote for onramping fiat currency to crypto
 
 Returns the single best onramp quote across all providers for converting fiat currency into crypto tokens.
 
-## Query Parameters
-
+## Query parameters
 <ParamField query="source_currency" type="string" required>
   ISO 4217 currency code for the source fiat currency (e.g. `USD`, `EUR`).
 </ParamField>
@@ -21,7 +20,6 @@ Returns the single best onramp quote across all providers for converting fiat cu
 </ParamField>
 
 ## Response
-
 <ResponseField name="protocol" type="string">
   Opaque route token (`rt_...`) identifying the route. See [Route tokens](/api-reference/quotes/onramp-all#route-tokens).
 </ResponseField>

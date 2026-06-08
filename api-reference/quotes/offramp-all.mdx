@@ -6,8 +6,7 @@ description: Get every available offramp quote across providers for crypto to fi
 
 Returns **all** available offramp quotes for converting crypto into fiat, one per route. Supports both forward mode (you specify the crypto input) and exact-output mode (you specify the fiat the recipient must receive).
 
-## Query Parameters
-
+## Query parameters
 <ParamField query="payout_currency" type="string" required>
   ISO 4217 currency code for the desired fiat payout currency (e.g. `USD`, `PHP`).
 </ParamField>
@@ -21,7 +20,6 @@ Returns **all** available offramp quotes for converting crypto into fiat, one pe
 </ParamField>
 
 ## Response
-
 <ResponseField name="success" type="boolean" />
 
 <ResponseField name="data" type="array">

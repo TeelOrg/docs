@@ -4,9 +4,13 @@ api: POST /api/recipients
 description: Create a new recipient
 ---
 
+## Headers
+
 <ParamField header="Authorization" type="string" required>
   `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
 </ParamField>
+
+## Request body
 
 <ParamField body="businessName" type="string" required>
   Recipient business name
@@ -35,6 +39,8 @@ description: Create a new recipient
 <ParamField body="walletAddresses" type="object">
   Wallet addresses by chain ID (for stablecoin recipients). Example: `{"42161": "0x..."}`
 </ParamField>
+
+## Response
 
 <ResponseExample>
 ```json
