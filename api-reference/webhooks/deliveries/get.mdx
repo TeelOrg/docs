@@ -1,0 +1,50 @@
+---
+title: Get delivery
+api: GET /api/webhooks/deliveries/{id}
+description: Fetch one webhook delivery by ID
+---
+
+Returns a single delivery row. Useful as a follow-up after [Replay](/api-reference/webhooks/deliveries/replay) to poll for the new delivery's outcome.
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
+</ParamField>
+
+## Path parameters
+
+<ParamField path="id" type="string" required>
+  Delivery UUID.
+</ParamField>
+
+## Response
+
+Same shape as one row on [List deliveries](/api-reference/webhooks/deliveries/list).
+
+<ResponseExample>
+```json 200
+{
+  "id": "54697e99-c2f5-4630-9f88-c1a3b1428d65",
+  "subscription_id": "1c84203c-b4e3-40de-83a9-51bc0d9c991f",
+  "event_type": "payout.status.updated",
+  "payload": {
+    "type": "payout.status.updated",
+    "created_at": "2026-05-27T09:30:46Z",
+    "data": {
+      "payout_id": "txn_abc",
+      "status": "processing",
+      "step": "settling"
+    }
+  },
+  "status": "succeeded",
+  "attempt_count": 1,
+  "next_attempt_at": "2026-05-27T09:30:46Z",
+  "last_response_code": 200,
+  "last_response_body": null,
+  "last_error": null,
+  "created_at": "2026-05-27T09:30:46Z",
+  "delivered_at": "2026-05-27T09:30:48Z"
+}
+```
+</ResponseExample>

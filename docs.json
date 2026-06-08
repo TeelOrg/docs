@@ -149,8 +149,25 @@
             "group": "Webhooks",
             "pages": [
               "api-reference/webhooks/overview",
-              "api-reference/webhooks/subscriptions",
-              "api-reference/webhooks/deliveries"
+              {
+                "group": "Subscriptions",
+                "pages": [
+                  "api-reference/webhooks/subscriptions/list",
+                  "api-reference/webhooks/subscriptions/create",
+                  "api-reference/webhooks/subscriptions/get",
+                  "api-reference/webhooks/subscriptions/update",
+                  "api-reference/webhooks/subscriptions/delete",
+                  "api-reference/webhooks/subscriptions/rotate-secret"
+                ]
+              },
+              {
+                "group": "Deliveries",
+                "pages": [
+                  "api-reference/webhooks/deliveries/list",
+                  "api-reference/webhooks/deliveries/get",
+                  "api-reference/webhooks/deliveries/replay"
+                ]
+              }
             ]
           }
         ]

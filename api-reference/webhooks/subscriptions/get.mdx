@@ -1,0 +1,40 @@
+---
+title: Get subscription
+api: GET /api/webhooks/subscriptions/{id}
+description: Fetch one webhook subscription by ID
+---
+
+Returns a single subscription. Returns `404` if the id isn't yours.
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
+</ParamField>
+
+## Path parameters
+
+<ParamField path="id" type="string" required>
+  Subscription UUID.
+</ParamField>
+
+## Response
+
+Same shape as one row on [List subscriptions](/api-reference/webhooks/subscriptions/list).
+
+<ResponseExample>
+```json 200
+{
+  "id": "1c84203c-b4e3-40de-83a9-51bc0d9c991f",
+  "url": "https://hooks.example.com/teel",
+  "events": ["payout.created", "payout.status.updated"],
+  "status": "active",
+  "secret_prefix": "whsec_Pdt_BP",
+  "label": "Production receiver",
+  "last_success_at": "2026-05-27T09:31:02Z",
+  "last_failure_at": null,
+  "created_at": "2026-05-27T09:30:00Z",
+  "updated_at": "2026-05-27T09:30:00Z"
+}
+```
+</ResponseExample>

@@ -1,0 +1,84 @@
+---
+title: List subscriptions
+api: GET /api/webhooks/subscriptions
+description: List every webhook subscription on your account
+---
+
+Returns every subscription on your account. Each row carries its delivery URL, the events it listens for, its current status, and timestamps for the last successful and failed deliveries.
+
+## Account limits
+
+| Limit | Value |
+| --- | --- |
+| Subscriptions per account | 25 |
+| Maximum payload size (JSON envelope) | 256 KB |
+| URL scheme | `https://` only |
+
+Loopback, RFC1918 private, link-local, and known cloud metadata host/IP ranges are rejected at create time and at delivery time (DNS is re-resolved before every POST).
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="string">
+  Subscription UUID.
+</ResponseField>
+
+<ResponseField name="url" type="string">
+  The delivery URL.
+</ResponseField>
+
+<ResponseField name="events" type="string[]">
+  Event types the subscription listens for (e.g. `payout.created`, `payout.status.updated`).
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  `active` or `paused`.
+</ResponseField>
+
+<ResponseField name="secret_prefix" type="string">
+  First few characters of the signing secret, for partner-side identification. The plaintext is only ever returned by [Create](/api-reference/webhooks/subscriptions/create) and [Rotate](/api-reference/webhooks/subscriptions/rotate-secret).
+</ResponseField>
+
+<ResponseField name="label" type="string">
+  Human-readable label shown in the dashboard. Never sent to your endpoint.
+</ResponseField>
+
+<ResponseField name="last_success_at" type="string">
+  ISO 8601 timestamp of the most recent 2xx delivery. `null` if none yet.
+</ResponseField>
+
+<ResponseField name="last_failure_at" type="string">
+  ISO 8601 timestamp of the most recent failed delivery. `null` if none yet.
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  ISO 8601 timestamp.
+</ResponseField>
+
+<ResponseField name="updated_at" type="string">
+  ISO 8601 timestamp.
+</ResponseField>
+
+<ResponseExample>
+```json 200
+[
+  {
+    "id": "1c84203c-b4e3-40de-83a9-51bc0d9c991f",
+    "url": "https://hooks.example.com/teel",
+    "events": ["payout.created", "payout.status.updated"],
+    "status": "active",
+    "secret_prefix": "whsec_Pdt_BP",
+    "label": "Production receiver",
+    "last_success_at": "2026-05-27T09:31:02Z",
+    "last_failure_at": null,
+    "created_at": "2026-05-27T09:30:00Z",
+    "updated_at": "2026-05-27T09:30:00Z"
+  }
+]
+```
+</ResponseExample>

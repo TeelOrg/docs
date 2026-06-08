@@ -1,0 +1,72 @@
+---
+title: Create subscription
+api: POST /api/webhooks/subscriptions
+description: Register a new webhook subscription
+---
+
+Registers a new URL to receive signed event POSTs. The response includes a one-shot `secret` field — your `whsec_…` signing secret. **Copy it immediately.** Subsequent reads of the subscription only return the `secret_prefix`; we cannot retrieve the plaintext later.
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
+</ParamField>
+
+## Request body
+
+<ParamField body="url" type="string" required>
+  Endpoint URL. Must be `https://`. Rejected with `400` if it's a private IP, loopback, or metadata host.
+</ParamField>
+
+<ParamField body="events" type="string[]" required>
+  Non-empty list of event types. Allowed: `payout.created`, `payout.status.updated`.
+</ParamField>
+
+<ParamField body="label" type="string">
+  Optional human-readable label for the dashboard. Never sent to your endpoint.
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="string">
+  Subscription UUID.
+</ResponseField>
+
+<ResponseField name="secret" type="string">
+  The signing secret in plaintext. Returned only on create — store it immediately.
+</ResponseField>
+
+<ResponseField name="secret_prefix" type="string">
+  First few characters of the secret for partner-side identification on subsequent reads.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Always `active` on a new subscription.
+</ResponseField>
+
+The other fields (`url`, `events`, `label`, `last_success_at`, `last_failure_at`, `created_at`, `updated_at`) match the shape on [List subscriptions](/api-reference/webhooks/subscriptions/list).
+
+<ResponseExample>
+```json 201
+{
+  "id": "1c84203c-b4e3-40de-83a9-51bc0d9c991f",
+  "url": "https://hooks.example.com/teel",
+  "events": ["payout.created", "payout.status.updated"],
+  "status": "active",
+  "secret_prefix": "whsec_Pdt_BP",
+  "secret": "whsec_Pdt_BP3ft-nIDl86430kZrGEy8qd7zB4pCUmeU1GVB0",
+  "label": "Production receiver",
+  "last_success_at": null,
+  "last_failure_at": null,
+  "created_at": "2026-05-27T09:30:00Z",
+  "updated_at": "2026-05-27T09:30:00Z"
+}
+```
+</ResponseExample>
+
+## Errors
+
+| Status | Meaning |
+| --- | --- |
+| `400` | Invalid URL (not https, missing host, private IP, metadata host) or unknown event type. |
+| `409` | You've reached the per-account limit (25). Delete or pause an existing one first. |
