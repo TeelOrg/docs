@@ -42,7 +42,16 @@ Pick the host that matches your API key prefix:
 | Production | `https://api.teel.finance` | `sk_live_…` keys |
 | Sandbox | `https://api-sandbox.teel.finance` | `sk_test_…` keys |
 
-The OpenAPI 3.1 spec is served at [`/openapi.json`](https://api-sandbox.teel.finance/openapi.json) (or `/openapi.yaml`) — import it into Postman, Insomnia, or `openapi-generator-cli` for typed clients. The same spec describes both the sandbox and production hosts; pick the `servers[]` entry that matches your key prefix when you import.
+## Tooling
+
+<CardGroup cols={2}>
+  <Card title="OpenAPI 3.1 spec" icon="file-code" href="https://api-sandbox.teel.finance/openapi.json">
+    Served at `/openapi.json` (or `/openapi.yaml`) on every host. The same spec describes both sandbox and production — pick the `servers[]` entry that matches your key prefix on import. Use it with `openapi-generator-cli` for typed clients in any language.
+  </Card>
+  <Card title="Postman collection" icon="download" href="/teel-postman-collection.json">
+    Pre-built Postman v2.1 collection auto-generated from the OpenAPI spec. Import via Postman → File → Import → Link, paste the URL of this download. Set `baseUrl` and `bearerAuth` collection variables to your sandbox or production credentials and you're ready to call every endpoint.
+  </Card>
+</CardGroup>
 
 ## Key Concepts
 
