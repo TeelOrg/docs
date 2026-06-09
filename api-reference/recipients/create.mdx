@@ -6,7 +6,12 @@ description: Register a recipient. Required fields vary by country, currency, an
 
 A recipient is the counterparty who will receive funds when you execute a payout. Required fields vary by country, currency, and whether you're paying to a bank account or to an on-chain wallet — so the body has a small common section plus a type-specific section selected by `transferType`.
 
-Use [`GET /config/coverage`](/api-reference/config/coverage) to find out which corridors and rails are supported on your account before constructing the body. For the exact per-rail field list (which routing identifier each rail wants), your onboarding contact will share the per-corridor schema during integration.
+Partners typically follow a two-step pattern:
+
+1. Call [`GET /recipients/requirements`](/api-reference/recipients/requirements) to discover the live field schema for your account.
+2. POST the populated fields here.
+
+The requirements endpoint returns a merged shape with `bank` and `wallet` sub-sections so a single response covers both recipient types — your form picks the relevant section after the user has chosen Fiat vs Stablecoin.
 
 ## Headers
 
@@ -71,7 +76,7 @@ The body has two parts: a small set of fields common to every recipient, and a t
     </ParamField>
 
     <ParamField body="paymentMethods" type="object[]" required>
-      One entry per (currency, rail) the recipient can receive on. Common rail-specific fields include `accountNumber`, `bankName`, `routingNumber`, `swiftCode`, `iban`, `bsb`, `ifsc`, `nuban`, `pixKey`, `mobileMoneyPhone` — send only what the chosen rail requires. Your onboarding contact provides the per-corridor field list.
+      One entry per (currency, rail) the recipient can receive on. Common rail-specific fields include `accountNumber`, `bankName`, `routingNumber`, `swiftCode`, `iban`, `bsb`, `ifsc`, `nuban`, `pixKey`, `mobileMoneyPhone` — send only what the chosen rail requires. [`GET /recipients/requirements`](/api-reference/recipients/requirements) lists the active set per rail for your account.
       <Expandable title="paymentMethods[]">
         <ParamField body="type" type="string" required>Always `"bank"` for fiat recipients.</ParamField>
         <ParamField body="rail" type="string" required>Rail identifier (e.g. `ach`, `sepa`, `pix`, `mobile_money`).</ParamField>
@@ -99,7 +104,7 @@ The body has two parts: a small set of fields common to every recipient, and a t
     </ParamField>
 
     <ParamField body="walletAddresses" type="object" required>
-      Map of chain ID (as a string) to wallet address. Supported chain IDs depend on which providers are active on your account — see the public [coverage endpoint](/api-reference/config/coverage) or your onboarding contact.
+      Map of chain ID (as a string) to wallet address. Supported chains are listed under `wallet.rails` on [`GET /recipients/requirements`](/api-reference/recipients/requirements).
 
       ```json
       {

@@ -93,6 +93,7 @@
           {
             "group": "Recipients",
             "pages": [
+              "api-reference/recipients/requirements",
               "api-reference/recipients/list",
               "api-reference/recipients/get",
               "api-reference/recipients/create",
