@@ -1,8 +1,10 @@
 ---
-title: Delete Recipient
+title: Delete recipient
 api: DELETE /api/recipients/{id}
 description: Delete a recipient
 ---
+
+Removes the recipient and its counterparty rows across providers. Past payouts that reference the recipient are unaffected.
 
 ## Headers
 
@@ -13,14 +15,17 @@ description: Delete a recipient
 ## Path parameters
 
 <ParamField path="id" type="string" required>
-  Recipient ID.
+  Recipient UUID.
 </ParamField>
+
 ## Response
 
+<ResponseField name="message" type="string">
+  Confirmation string. Always `"Recipient deleted successfully"` on success.
+</ResponseField>
+
 <ResponseExample>
-```json
-{
-  "success": true
-}
+```json 200
+{ "message": "Recipient deleted successfully" }
 ```
 </ResponseExample>

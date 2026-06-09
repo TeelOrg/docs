@@ -1,8 +1,10 @@
 ---
-title: Update Recipient
+title: Update recipient
 api: PUT /api/recipients/{id}
-description: Update a recipient
+description: Update a recipient. Any field you omit stays unchanged.
 ---
+
+All fields are optional — only the fields you include are written. To change recipient type (fiat ↔ stablecoin), submit the relevant `transferType` plus the corresponding `paymentMethods` (fiat) or `walletAddresses` (stablecoin).
 
 ## Headers
 
@@ -13,30 +15,76 @@ description: Update a recipient
 ## Path parameters
 
 <ParamField path="id" type="string" required>
-  Recipient ID.
+  Recipient UUID.
 </ParamField>
+
 ## Request body
 
+<ParamField body="email" type="string">
+  New email.
+</ParamField>
+
 <ParamField body="businessName" type="string">
-  Recipient business name
+  New legal business name.
+</ParamField>
+
+<ParamField body="firstName" type="string">
+  New individual first name.
+</ParamField>
+
+<ParamField body="lastName" type="string">
+  New individual last name.
 </ParamField>
 
 <ParamField body="country" type="string">
-  Country code
+  New ISO 3166-1 alpha-2 country code. Changing this can change which provider services the recipient.
 </ParamField>
 
-<ParamField body="currency" type="string">
-  Currency code
+<ParamField body="phone" type="string">
+  E.164 phone number.
 </ParamField>
+
+<ParamField body="address" type="object">
+  New postal address.
+</ParamField>
+
+<ParamField body="externalReference" type="object">
+  Replaces the stored object. Send `{}` to clear.
+</ParamField>
+
+<Tabs>
+  <Tab title="Fiat (bank)">
+    <ParamField body="transferType" type="string">Set to `"fiat"`.</ParamField>
+    <ParamField body="paymentMethods" type="object[]">
+      Full replacement of the recipient's payment methods. See [Create recipient](/api-reference/recipients/create) for the per-rail fields.
+    </ParamField>
+  </Tab>
+  <Tab title="Stablecoin (wallet)">
+    <ParamField body="transferType" type="string">Set to `"stablecoin"`.</ParamField>
+    <ParamField body="walletAddresses" type="object">
+      Full replacement of the chain → address map.
+    </ParamField>
+  </Tab>
+</Tabs>
 
 ## Response
 
+Returns the updated recipient with the same shape as [Get recipient](/api-reference/recipients/get).
+
 <ResponseExample>
-```json
+```json 200
 {
-  "id": "rec_abc123",
-  "businessName": "Acme Malaysia Updated",
-  "status": "active"
+  "id": "8b1a4c1d-7a3c-4a08-94ad-9f1ef1e0c3a2",
+  "email": "payments-new@acme-ph.com",
+  "is_business": true,
+  "business_name": "Acme Corp Philippines",
+  "country": "PH",
+  "currency": "PHP",
+  "transfer_type": "fiat",
+  "external_reference": { "vendor_id": "ACME-001" },
+  "status": "accepted",
+  "created_at": "2026-06-09T10:00:00Z",
+  "updated_at": "2026-06-09T11:30:00Z"
 }
 ```
 </ResponseExample>

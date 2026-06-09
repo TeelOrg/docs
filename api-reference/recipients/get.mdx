@@ -1,8 +1,10 @@
 ---
-title: Get Recipient
+title: Get recipient
 api: GET /api/recipients/{id}
-description: Get a recipient by ID
+description: Fetch a single recipient by ID
 ---
+
+Returns the full recipient record. Returns `404` if the ID isn't yours.
 
 ## Headers
 
@@ -13,21 +15,97 @@ description: Get a recipient by ID
 ## Path parameters
 
 <ParamField path="id" type="string" required>
-  Recipient ID.
+  Recipient UUID.
 </ParamField>
+
 ## Response
 
+<ResponseField name="id" type="string">
+  Recipient UUID.
+</ResponseField>
+
+<ResponseField name="email" type="string">
+  Recipient email.
+</ResponseField>
+
+<ResponseField name="is_business" type="boolean">
+  `true` for business, `false` for individual.
+</ResponseField>
+
+<ResponseField name="business_name" type="string">
+  Legal business name, when `is_business` is `true`.
+</ResponseField>
+
+<ResponseField name="first_name" type="string">
+  Individual first name, when `is_business` is `false`.
+</ResponseField>
+
+<ResponseField name="last_name" type="string">
+  Individual last name, when `is_business` is `false`.
+</ResponseField>
+
+<ResponseField name="country" type="string">
+  ISO 3166-1 alpha-2 country code.
+</ResponseField>
+
+<ResponseField name="currency" type="string">
+  Default currency for the recipient.
+</ResponseField>
+
+<ResponseField name="phone" type="string">
+  E.164 phone number.
+</ResponseField>
+
+<ResponseField name="address" type="object">
+  Postal address. Fields: `streetLine1`, `streetLine2`, `city`, `state`, `postalCode`, `country` — all camelCase, even on this otherwise-snake_case response.
+</ResponseField>
+
+<ResponseField name="transfer_type" type="string">
+  `"fiat"` or `"stablecoin"`.
+</ResponseField>
+
+<ResponseField name="wallet_addresses" type="object">
+  Map of chain ID to wallet address, when `transfer_type` is `"stablecoin"`.
+</ResponseField>
+
+<ResponseField name="external_reference" type="object">
+  Map of `string` → `string`, echoed from create.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Aggregated provider review status — `"pending"`, `"accepted"`, or `"rejected"`.
+</ResponseField>
+
+<ResponseField name="created_at" type="string">
+  ISO 8601 timestamp.
+</ResponseField>
+
+<ResponseField name="updated_at" type="string">
+  ISO 8601 timestamp.
+</ResponseField>
+
 <ResponseExample>
-```json
+```json 200
 {
-  "id": "rec_abc123",
-  "businessName": "Acme Malaysia",
-  "country": "MY",
-  "currency": "MYR",
-  "transferType": "fiat_to_fiat",
-  "bankName": "Maybank",
-  "bankAccount": "1234567890",
-  "status": "active"
+  "id": "8b1a4c1d-7a3c-4a08-94ad-9f1ef1e0c3a2",
+  "email": "payments@acme-ph.com",
+  "is_business": true,
+  "business_name": "Acme Corp Philippines",
+  "country": "PH",
+  "currency": "PHP",
+  "phone": "+639170000000",
+  "address": {
+    "streetLine1": "100 Acme Ave",
+    "city": "Makati",
+    "state": "Metro Manila",
+    "postalCode": "1226",
+    "country": "PH"
+  },
+  "transfer_type": "fiat",
+  "external_reference": { "vendor_id": "ACME-001" },
+  "status": "accepted",
+  "created_at": "2026-06-09T10:00:00Z",
+  "updated_at": "2026-06-09T10:00:00Z"
 }
 ```
 </ResponseExample>
