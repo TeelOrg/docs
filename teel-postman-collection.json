@@ -672,7 +672,7 @@
           "item": [
             {
               "event": [],
-              "name": "Execute a previously-returned quote",
+              "name": "Lock a quote and execute a payout",
               "protocolProfileBehavior": {
                 "disableBodyPruning": true
               },
@@ -686,10 +686,10 @@
                       "language": "json"
                     }
                   },
-                  "raw": "{\n  \"quoteId\": \"<uuid>\",\n  \"userPaymentMethodId\": \"<uuid>\",\n  \"recipientId\": \"<uuid>\",\n  \"recipientPaymentMethodId\": \"<uuid>\",\n  \"metadata\": {}\n}"
+                  "raw": "{\n  \"fromCurrency\": \"<string>\",\n  \"toCurrency\": \"<string>\",\n  \"amount\": \"<number>\",\n  \"recipientId\": \"<uuid>\",\n  \"targetAmount\": \"<number>\",\n  \"recipientPaymentMethodId\": \"<uuid>\",\n  \"userPaymentMethodId\": \"<uuid>\",\n  \"walletAddress\": \"<string>\",\n  \"paymentPurpose\": \"<string>\",\n  \"reference\": \"<string>\",\n  \"routeProtocol\": \"<string>\",\n  \"supportingDocumentKey\": \"<string>\",\n  \"flowType\": \"<string>\"\n}"
                 },
                 "description": {
-                  "content": "Single-payout execution against a locked `quoteId` from any of the\n`/quotes/*` endpoints. Scope: `payouts:write`. Idempotent via\n`Idempotency-Key`.\n",
+                  "content": "Lock-and-execute: this single call generates a quote from\n`(fromCurrency, toCurrency, amount, recipientId)`, locks it, and\nstarts the payout. There is no separate `/quotes/*` \u2192 `/rfq/execute`\ntwo-step. Pass `routeProtocol` from a `/quotes/*` response if you\nwant to pin a specific route token; otherwise the engine selects\nthe best route at lock time.\n\nScope: `payouts:write`. Idempotent via `Idempotency-Key`. The\nresponse is wrapped in `{success, data}` \u2014 the partner-visible\npayload sits on `data`.\n",
                   "type": "text/plain"
                 },
                 "header": [
@@ -712,7 +712,7 @@
                   }
                 ],
                 "method": "POST",
-                "name": "Execute a previously-returned quote",
+                "name": "Lock a quote and execute a payout",
                 "url": {
                   "host": [
                     "{{baseUrl}}"
@@ -734,7 +734,7 @@
           "item": [
             {
               "event": [],
-              "name": "Execute a batch of locked quotes",
+              "name": "Lock and execute a batch of payouts",
               "protocolProfileBehavior": {
                 "disableBodyPruning": true
               },
@@ -748,10 +748,10 @@
                       "language": "json"
                     }
                   },
-                  "raw": "{\n  \"items\": [\n    {\n      \"quoteId\": \"<uuid>\",\n      \"recipientId\": \"<uuid>\",\n      \"idempotency_key\": \"<string>\"\n    }\n  ]\n}"
+                  "raw": "{\n  \"fromCurrency\": \"<string>\",\n  \"items\": [\n    {\n      \"toCurrency\": \"<string>\",\n      \"amount\": \"<number>\",\n      \"recipientId\": \"<uuid>\",\n      \"targetAmount\": \"<number>\",\n      \"recipientPaymentMethodId\": \"<uuid>\",\n      \"offrampProvider\": \"<string>\",\n      \"paymentPurpose\": \"<string>\",\n      \"reference\": \"<string>\",\n      \"routeProtocol\": \"<string>\",\n      \"idempotency_key\": \"<string>\"\n    }\n  ],\n  \"onrampProtocol\": \"<string>\",\n  \"userPaymentMethodId\": \"<uuid>\",\n  \"walletAddresses\": {}\n}"
                 },
                 "description": {
-                  "content": "Per-row envelope: `data.rows[]` carries `{idx, status, transactionId?,\nquoteId?, errorCode?, retryable?}` for every input regardless of\npartial-failure mix. Scope: `payouts:write`. Idempotent via\n`Idempotency-Key`.\n",
+                  "content": "Same lock-and-execute model as `POST /rfq/execute`, but for N\npayouts that share a source `fromCurrency` and (optionally) a\nsingle funding `userPaymentMethodId`. The per-row envelope is\nkeyed by `idx` so partial failure is graceful \u2014 walk\n`data.rows[]`, retry the `retryable:true` failures with the\nsame row-level `idempotency_key`.\n\nScope: `payouts:write`. Idempotent via `Idempotency-Key` for the\nenvelope; per-row dedup uses `items[].idempotency_key`.\n",
                   "type": "text/plain"
                 },
                 "header": [
@@ -774,7 +774,7 @@
                   }
                 ],
                 "method": "POST",
-                "name": "Execute a batch of locked quotes",
+                "name": "Lock and execute a batch of payouts",
                 "url": {
                   "host": [
                     "{{baseUrl}}"
@@ -813,7 +813,7 @@
                   "raw": "{\n  \"quoteId\": \"<uuid>\",\n  \"txHash\": \"<string>\"\n}"
                 },
                 "description": {
-                  "content": "Stablecoin-to-fiat payouts auto-detect deposits to the escrow address\nvia on-chain log polling for ~5 minutes. After that the partner can\nsubmit the tx hash explicitly. Scope: `payouts:write`. Idempotent via\n`Idempotency-Key`.\n",
+                  "content": "For stablecoin-to-fiat payouts, your wallet sends the source\nstablecoin to the `escrowAddress` returned by `/rfq/execute`.\nThe engine auto-detects the deposit via on-chain log polling.\nIf detection misses your transfer \u2014 slow chain, late tx, dropped\nlog \u2014 call this endpoint with the tx hash to register the\ndeposit manually. The offramp leg proceeds as soon as the on-chain\namount and destination are verified.\n\nScope: `payouts:write`. Idempotent: re-submitting the same\n`quoteId` + `txHash` after the deposit is already confirmed\nreturns `{success: true}` again.\n",
                   "type": "text/plain"
                 },
                 "header": [
@@ -861,14 +861,17 @@
               "item": [
                 {
                   "event": [],
-                  "name": "Get status of a locked quote / transaction",
+                  "name": "Get the current status of a payout / locked quote",
                   "protocolProfileBehavior": {
                     "disableBodyPruning": true
                   },
                   "request": {
                     "auth": null,
                     "body": {},
-                    "description": {},
+                    "description": {
+                      "content": "Lookup by the `quoteId` returned from `/rfq/execute` (or any\nsuccessful row of `/rfq/execute-batch`). Response is wrapped in\n`{success, data}`.\n\nScope: `payouts:read`. For push-based updates use the webhook\nevents `payout.status.updated` / `payout.delivered` instead of\npolling.\n",
+                      "type": "text/plain"
+                    },
                     "header": [
                       {
                         "key": "Accept",
@@ -876,7 +879,7 @@
                       }
                     ],
                     "method": "GET",
-                    "name": "Get status of a locked quote / transaction",
+                    "name": "Get the current status of a payout / locked quote",
                     "url": {
                       "host": [
                         "{{baseUrl}}"
