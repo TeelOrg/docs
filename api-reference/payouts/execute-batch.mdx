@@ -1,10 +1,12 @@
 ---
 title: Execute a batch of payouts
 api: POST /api/rfq/execute-batch
-description: Lock in multiple quotes in one call. Each row succeeds or fails independently.
+description: Lock and execute N payouts that share a source currency, in one call. Per-row envelope so partial failure is graceful.
 ---
 
-Useful for fan-out scenarios (payroll, marketplace settlements) where you want to send N payouts at once without N round-trips. Each input row is validated and dispatched independently — a partial-failure result is normal and the response carries a per-row envelope so you know which rows landed and which need a retry.
+Same lock-and-execute model as [`POST /rfq/execute`](/api-reference/payouts/execute), but for many payouts at once. All rows must share one `fromCurrency` and (optionally) one funding `userPaymentMethodId`; each row picks its own destination and recipient.
+
+The response carries a per-row envelope keyed by `idx` — walk it, retry the `retryable: true` failures with the same row-level `idempotency_key`, accept the rest.
 
 Scope: `payouts:write`. Rate-limited.
 
@@ -15,59 +17,67 @@ Scope: `payouts:write`. Rate-limited.
 </ParamField>
 
 <ParamField header="Idempotency-Key" type="string">
-  Optional but **strongly recommended**. The batch envelope is deduplicated against this key for 24 hours. Per-row `idempotency_key` is independent and dedupes the underlying RFQ execution.
+  Optional but **strongly recommended**. Envelope-level dedup for the batch call. Independent of `items[].idempotency_key` which dedups individual rows.
 </ParamField>
 
 ## Request body
 
+<ParamField body="fromCurrency" type="string" required>
+  ISO 4217 source currency shared by every row in `items`.
+</ParamField>
+
+<ParamField body="userPaymentMethodId" type="string">
+  Shared source of funds. Used by fiat-to-fiat and onramp flows. Omit for stablecoin-to-fiat.
+</ParamField>
+
+<ParamField body="walletAddresses" type="object">
+  For stablecoin-to-fiat: map of chain name → source wallet address (e.g. `{"polygon": "0xAbc…", "arbitrum": "0xAbc…"}`).
+</ParamField>
+
+<ParamField body="onrampProtocol" type="string">
+  Optional opaque onramp route token to pin **every** row to the same onramp provider.
+</ParamField>
+
 <ParamField body="items" type="object[]" required>
-  Non-empty array of payouts to execute. Each entry mirrors the [single-execute](/api-reference/payouts/execute) request body.
+  Non-empty array of payouts to execute. Each row is independent.
   <Expandable title="items[]">
-    <ParamField body="quoteId" type="string" required>
-      UUID of the quote to execute.
-    </ParamField>
-    <ParamField body="recipientId" type="string">
-      UUID of the recipient. Required when the route pays out to a counterparty.
-    </ParamField>
-    <ParamField body="idempotency_key" type="string">
-      Per-row idempotency. Independent of the envelope-level `Idempotency-Key`. Recommended so a partial-failure retry can re-fire just the failed rows.
-    </ParamField>
+    <ParamField body="toCurrency" type="string" required>ISO 4217 destination currency.</ParamField>
+    <ParamField body="amount" type="number" required>Source amount for this row.</ParamField>
+    <ParamField body="recipientId" type="string" required>UUID of the recipient.</ParamField>
+    <ParamField body="targetAmount" type="number">Optional exact-output target.</ParamField>
+    <ParamField body="recipientPaymentMethodId" type="string">UUID of the recipient PM, when the recipient has more than one.</ParamField>
+    <ParamField body="offrampProvider" type="string">Optional offramp routing hint.</ParamField>
+    <ParamField body="routeProtocol" type="string">Per-row opaque route token.</ParamField>
+    <ParamField body="paymentPurpose" type="string">Per-row classification.</ParamField>
+    <ParamField body="reference" type="string">Per-row free-text reference.</ParamField>
+    <ParamField body="idempotency_key" type="string">Per-row idempotency. Recommended — when a row fails, you can retry just that row with the same key without re-running the whole batch.</ParamField>
   </Expandable>
 </ParamField>
 
 ## Response
 
-<ResponseField name="data" type="object">
-  <Expandable title="data">
-    <ResponseField name="rows" type="object[]">
-      One entry per input row, **in the same order as `items`**. Each row tells you whether that specific payout was accepted or failed.
-      <Expandable title="rows[]">
-        <ResponseField name="idx" type="integer">
-          Zero-based index back into the input `items` array.
-        </ResponseField>
-        <ResponseField name="status" type="string">
-          `accepted` or `failed`.
-        </ResponseField>
-        <ResponseField name="transactionId" type="string">
-          UUID of the new payout. Present when `status` is `accepted`.
-        </ResponseField>
-        <ResponseField name="quoteId" type="string">
-          Echoed back so you can correlate without looking at `idx`.
-        </ResponseField>
-        <ResponseField name="errorCode" type="string">
-          Stable error code. Present when `status` is `failed`.
-        </ResponseField>
-        <ResponseField name="retryable" type="boolean">
-          Whether the failure is transient. If `true`, re-fire just this row with the same `idempotency_key`.
-        </ResponseField>
-      </Expandable>
-    </ResponseField>
+`{ "success": true, "data": { "rows": [...], "items": [...] } }`. Always use `rows[]` — `items[]` is a deprecation alias.
+
+<ResponseField name="rows" type="object[]">
+  One entry per input row, **in the same order as the request `items`**. Each row carries the outcome for that specific payout.
+  <Expandable title="rows[]">
+    <ResponseField name="idx" type="integer">Zero-based index into the input `items` array.</ResponseField>
+    <ResponseField name="status" type="string">`accepted` or `failed`.</ResponseField>
+    <ResponseField name="transactionId" type="string">UUID of the new payout. Present when `status` is `accepted`.</ResponseField>
+    <ResponseField name="quoteId" type="string">Echoed back so you can correlate without scanning by `idx`.</ResponseField>
+    <ResponseField name="errorCode" type="string">Stable error code (e.g. `INVALID_PARAMETER`, `RECIPIENT_NOT_FOUND`). Present when `status` is `failed`.</ResponseField>
+    <ResponseField name="retryable" type="boolean">When `true`, the failure is transient — re-fire just this row with the same `idempotency_key` and it'll likely succeed. When `false`, fix the input before retrying.</ResponseField>
   </Expandable>
+</ResponseField>
+
+<ResponseField name="items" type="object[]">
+  Same content as `rows`, kept for one major-version of backward compatibility. New code should ignore `items` and read `rows`.
 </ResponseField>
 
 <ResponseExample>
 ```json 200
 {
+  "success": true,
   "data": {
     "rows": [
       {
@@ -79,8 +89,7 @@ Scope: `payouts:write`. Rate-limited.
       {
         "idx": 1,
         "status": "failed",
-        "quoteId": "9f1ef1e0-c3a2-4a08-94ad-8b1a4c1d7a3c",
-        "errorCode": "QUOTE_NOT_FOUND",
+        "errorCode": "RECIPIENT_NOT_FOUND",
         "retryable": false
       },
       {
@@ -95,4 +104,4 @@ Scope: `payouts:write`. Rate-limited.
 ```
 </ResponseExample>
 
-The HTTP status is `200` even when some rows fail — `data.rows[].status` is the source of truth per row. Treat the response like a checklist: walk `rows`, retry the `retryable: true` failures with the same per-row `idempotency_key`, and proceed for the `accepted` ones.
+The HTTP status is `200` even when some rows fail — `data.rows[].status` is the source of truth. Treat the response like a checklist: walk `rows`, retry the `retryable: true` failures with their per-row `idempotency_key`, and proceed for the `accepted` ones.

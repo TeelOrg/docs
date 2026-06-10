@@ -1,12 +1,12 @@
 ---
 title: Execute a payout
 api: POST /api/rfq/execute
-description: Execute a previously-returned quote to create and settle a payout.
+description: Lock a quote and start the payout in one call.
 ---
 
-Locks in the quote returned from any `/quotes/*` endpoint and starts the payout. The `quoteId` is opaque — Teel resolves the underlying provider and route server-side. Returns the new transaction's id and (for stablecoin-to-fiat flows) the escrow deposit instructions your wallet needs to fund.
+This single call generates a quote from your inputs (`fromCurrency`, `toCurrency`, `amount`, `recipientId`), locks it, and starts the payout. There's no separate "get a quote → execute it" two-step. If you want to pin a specific route token you saw from a `/quotes/*` call, pass it as `routeProtocol`; otherwise the engine selects the best route at lock time.
 
-Quotes are short-lived. Execute before the quote's `expiresAt`; otherwise the call fails with `400` and you'll need a fresh quote.
+The response is wrapped: `{ "success": true, "data": { … } }`. The payout payload sits on `data`.
 
 Scope: `payouts:write`. Rate-limited.
 
@@ -22,62 +22,154 @@ Scope: `payouts:write`. Rate-limited.
 
 ## Request body
 
-<ParamField body="quoteId" type="string" required>
-  UUID of the quote returned from `/quotes/fiat-to-fiat/best`, `/quotes/onramp/best`, `/quotes/offramp/best`, `/quotes/fiat-to-stablecoin/best`, or any of their `/all` variants.
+<ParamField body="fromCurrency" type="string" required>
+  ISO 4217 source currency (e.g. `USD`). For stablecoin-to-fiat, the source stablecoin ticker (e.g. `USDC`).
 </ParamField>
 
-<ParamField body="recipientId" type="string">
-  UUID of the recipient. Required for routes that pay out to a counterparty (fiat-to-fiat, offramp). Omit for self-onramp.
+<ParamField body="toCurrency" type="string" required>
+  ISO 4217 destination currency (e.g. `PHP`).
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  Source amount. Must be `> 0`. Truncated to currency precision; never rounded.
+</ParamField>
+
+<ParamField body="recipientId" type="string" required>
+  UUID of the recipient. Created via [`POST /recipients`](/api-reference/recipients/create).
+</ParamField>
+
+<ParamField body="targetAmount" type="number">
+  Optional **exact-output** target. When set, the engine sizes `amount` upstream so the recipient receives exactly this much in `toCurrency`. Use it for "send them exactly 1,000 PHP" UX.
 </ParamField>
 
 <ParamField body="recipientPaymentMethodId" type="string">
-  UUID of the specific recipient payment method to use, when the recipient has more than one. Defaults to the only / best match for the corridor.
+  UUID of the specific recipient payment method to use, when the recipient has more than one. Defaults to the corridor's best match.
 </ParamField>
 
 <ParamField body="userPaymentMethodId" type="string">
-  UUID of your funding method (source of funds). Used by onramp + fiat-to-fiat flows. For stablecoin-to-fiat the source is your wallet — no `userPaymentMethodId` is needed.
+  UUID of your funding source. Used by fiat-to-fiat and onramp flows. **Not used for stablecoin-to-fiat** — the source is your wallet, not a stored payment method.
 </ParamField>
 
-<ParamField body="metadata" type="object">
-  Optional partner-side identifiers. Map of `string` → `string`. Stored on the transaction and echoed back on reads.
+<ParamField body="walletAddress" type="string">
+  Source wallet address for stablecoin-to-fiat flows.
+</ParamField>
+
+<ParamField body="routeProtocol" type="string">
+  Opaque route token (`rt_…`) from a previous `/quotes/*` call. Pinning it constrains the engine to that route; omitting it lets the engine pick best-available at lock time.
+</ParamField>
+
+<ParamField body="paymentPurpose" type="string">
+  Optional partner-side classification (e.g. `salary`, `supplier_invoice`).
+</ParamField>
+
+<ParamField body="reference" type="string">
+  Optional free-text reference. Stored on the transaction and echoed back on reads.
+</ParamField>
+
+<ParamField body="supportingDocumentKey" type="string">
+  Optional S3 key for an attached supporting document (compliance flows that require proof).
 </ParamField>
 
 ## Response
 
-<ResponseField name="transactionId" type="string">
-  UUID of the newly-created payout. Use it to poll [`GET /rfq/status/{quoteId}`](/api-reference/payouts/status) or [`GET /payouts/{id}`](/api-reference/payouts/get).
+The response envelope is `{ "success": true, "data": <LockAndExecuteResult> }`. The fields below sit on `data`.
+
+<ResponseField name="payoutId" type="string">
+  UUID of the newly-created payout. Use it with [`GET /payouts/{id}`](/api-reference/payouts/get) for the full read.
+</ResponseField>
+
+<ResponseField name="quoteId" type="string">
+  UUID of the quote this call locked. Use it with [`GET /rfq/status/{quoteId}`](/api-reference/payouts/status) to poll for status, or as the lookup key in webhook event payloads.
 </ResponseField>
 
 <ResponseField name="status" type="string">
-  Initial payout status — typically `pending` (about to be picked up) or `processing` (already in flight).
+  Initial status. Fiat-to-fiat is hard-coded to `accepted`. Stablecoin-to-fiat returns `awaiting_escrow_deposit` until your wallet sends the source stablecoin. Onramp flows pass the provider status through.
 </ResponseField>
 
-<ResponseField name="depositAddress" type="string">
-  **Stablecoin-to-fiat flows only.** On-chain address your wallet must send the source stablecoin to. Funds sent to a different address are not credited.
+<ResponseField name="toAmount" type="number">
+  Destination amount the recipient will receive in `toCurrency`. Truncated to currency precision.
 </ResponseField>
 
-<ResponseField name="depositAmount" type="string">
-  **Stablecoin-to-fiat flows only.** Atomic-units integer string. Parse with `BigInt` — JSON numbers lose precision for 18-decimal tokens. Example: `"300000"` = 0.3 USDC at 6 decimals.
+<ResponseField name="partnerFxRate" type="number">
+  The FX rate you're quoted at (before fees).
+</ResponseField>
+
+<ResponseField name="effectiveRate" type="number">
+  The effective rate net of all fees in `fees`.
+</ResponseField>
+
+<ResponseField name="fees" type="object">
+  Per-payout fee breakdown.
+  <Expandable title="fees">
+    <ResponseField name="teelFee" type="number">Teel's fee on this payout, denominated in `fromCurrency`.</ResponseField>
+    <ResponseField name="teelFeeBps" type="integer">Teel's fee in basis points (1 bp = 0.01%).</ResponseField>
+    <ResponseField name="partnerFee" type="number">Your markup on top of Teel's rate. `0` unless configured.</ResponseField>
+    <ResponseField name="gasFee" type="number">On-chain gas cost passed through (S2F / stablecoin flows).</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="paymentUrl" type="string">
+  For onramp flows that require a hosted payment page. Redirect the user here.
+</ResponseField>
+
+<ResponseField name="bankingInstructions" type="object">
+  For fiat-to-fiat / onramp flows that settle by bank transfer. Map of `string` → `string`. Keys vary by rail (`accountNumber`, `bankName`, `swiftCode`, etc.).
+</ResponseField>
+
+### Stablecoin-to-fiat only
+
+<ResponseField name="escrowAddress" type="string">
+  On-chain address your wallet must send the source stablecoin to. Funds sent to a different address are not credited.
+</ResponseField>
+
+<ResponseField name="depositAmountAtomic" type="string">
+  Atomic-units integer string. Parse with `BigInt` — JSON numbers lose precision for 18-decimal tokens. Example: `"300000"` = 0.3 USDC at 6 decimals.
+</ResponseField>
+
+<ResponseField name="tokenAddress" type="string">
+  ERC-20 contract address of the source stablecoin on `chainId`.
 </ResponseField>
 
 <ResponseField name="chainId" type="integer">
-  **Stablecoin-to-fiat flows only.** EVM chain id of the deposit address (e.g. `137` for Polygon).
+  EVM chain id of `escrowAddress` (e.g. `137` for Polygon, `42161` for Arbitrum).
 </ResponseField>
 
 <ResponseExample>
-```json 200 — Fiat-to-fiat or onramp
+```json 200 — Fiat-to-fiat
 {
-  "transactionId": "8b1a4c1d-7a3c-4a08-94ad-9f1ef1e0c3a2",
-  "status": "processing"
+  "success": true,
+  "data": {
+    "payoutId": "8b1a4c1d-7a3c-4a08-94ad-9f1ef1e0c3a2",
+    "quoteId":  "4c2b7e8f-3a3c-4a08-94ad-1234567890ab",
+    "status": "accepted",
+    "toAmount": 4425.00,
+    "partnerFxRate": 4.4250,
+    "effectiveRate": 4.4070,
+    "fees": { "teelFee": 4.05, "teelFeeBps": 40, "partnerFee": 0, "gasFee": 0 },
+    "bankingInstructions": {
+      "accountNumber": "1234567890",
+      "bankName": "Maybank",
+      "swiftCode": "MBBEMYKL"
+    }
+  }
 }
 ```
 ```json 200 — Stablecoin-to-fiat (deposit instructions returned)
 {
-  "transactionId": "8b1a4c1d-7a3c-4a08-94ad-9f1ef1e0c3a2",
-  "status": "pending",
-  "depositAddress": "0xAbcDef0123456789AbcDef0123456789AbcDef01",
-  "depositAmount": "300000",
-  "chainId": 137
+  "success": true,
+  "data": {
+    "payoutId": "8b1a4c1d-7a3c-4a08-94ad-9f1ef1e0c3a2",
+    "quoteId":  "4c2b7e8f-3a3c-4a08-94ad-1234567890ab",
+    "status": "awaiting_escrow_deposit",
+    "toAmount": 4425.00,
+    "partnerFxRate": 4.4250,
+    "effectiveRate": 4.4070,
+    "fees": { "teelFee": 0.91, "teelFeeBps": 40, "partnerFee": 0, "gasFee": 0.05 },
+    "escrowAddress": "0xAbcDef0123456789AbcDef0123456789AbcDef01",
+    "depositAmountAtomic": "227250000",
+    "tokenAddress": "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+    "chainId": 137
+  }
 }
 ```
 </ResponseExample>
@@ -86,15 +178,16 @@ Scope: `payouts:write`. Rate-limited.
 
 | Status | Code | When |
 |---|---|---|
-| `400` | `INVALID_REQUEST` | Missing required field, quote expired, or quote/recipient/PM doesn't belong to your partner account. |
+| `400` | `INVALID_JSON` | Body isn't valid JSON, or required field missing. |
+| `400` | `INVALID_PARAMETER` | A UUID field is malformed, or `amount <= 0`, or the recipient/PM doesn't belong to your account. |
 | `401` | `UNAUTHORIZED` | Missing or invalid key. |
 | `403` | `FORBIDDEN` | Key lacks `payouts:write` scope. |
-| `409` | `IDEMPOTENCY_KEY_REUSED` | Same `Idempotency-Key` already used with a different body. |
+| `409` | `IDEMPOTENCY_KEY_REUSED` | Same `Idempotency-Key` used with a different body. |
 | `409` | `IDEMPOTENCY_REQUEST_IN_FLIGHT` | A concurrent retry with the same key is still processing. Back off per `Retry-After`. |
-| `429` | `RATE_LIMITED` | Per-key payout-write rate limit exceeded. |
+| `429` | `RATE_LIMITED` | Per-key payouts-write rate limit exceeded. |
 
 ## Next steps
 
-For stablecoin-to-fiat payouts, your wallet sends the `depositAmount` (atomic units) to the `depositAddress` on the indicated `chainId`. Teel auto-detects the on-chain transfer via log polling for ~5 minutes; after that, fall back to [`POST /rfq/confirm-escrow-deposit`](/api-reference/payouts/confirm-escrow-deposit) with the tx hash.
+For stablecoin-to-fiat payouts, your wallet sends `depositAmountAtomic` (parsed via `BigInt`) of the token at `tokenAddress` to `escrowAddress` on `chainId`. The engine auto-detects the on-chain transfer; if detection misses the tx, fall back to [`POST /rfq/confirm-escrow-deposit`](/api-reference/payouts/confirm-escrow-deposit) with the tx hash.
 
-For other flows, poll [`GET /rfq/status/{quoteId}`](/api-reference/payouts/status) or subscribe to `payout.status.updated` via [Webhooks](/guides/webhooks) for status updates.
+For all flows, poll [`GET /rfq/status/{quoteId}`](/api-reference/payouts/status) or — preferred for production — subscribe to `payout.status.updated` and `payout.delivered` via [Webhooks](/guides/webhooks).

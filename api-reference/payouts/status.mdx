@@ -1,12 +1,12 @@
 ---
 title: Get payout status
 api: GET /api/rfq/status/{quoteId}
-description: Read the current status of a payout, by quote ID.
+description: Current status of a payout, by quote ID. Fields are progressively populated as the payout moves through its lifecycle.
 ---
 
-Lookup is by `quoteId` — the same value you got back from `/quotes/*` and passed to [`POST /rfq/execute`](/api-reference/payouts/execute). Returns the current status, the granular `step` within the lifecycle, and the resulting `transactionId`.
+Lookup is by `quoteId` — the value returned from [`POST /rfq/execute`](/api-reference/payouts/execute) (or any successful row of [`POST /rfq/execute-batch`](/api-reference/payouts/execute-batch)). Response is wrapped in `{ "success": true, "data": <QuoteStatus> }`.
 
-For a deeper read (fees, amounts, addresses, metadata), use [`GET /payouts/{id}`](/api-reference/payouts/get) once you have the `transactionId`.
+Fields on `data` are populated progressively. Pre-settle reads typically show just `quoteId`, `status`, `quotedToAmount`, plus the deposit instructions for S2F flows. Post-settle reads add `actualToAmount`, `deltaAmount`, `settleTxHash`, and the resolved `transactionId`.
 
 Scope: `payouts:read`.
 
@@ -19,7 +19,7 @@ Scope: `payouts:read`.
 ## Path parameters
 
 <ParamField path="quoteId" type="string" required>
-  UUID of the locked quote.
+  UUID of the locked quote, as returned from `/rfq/execute`.
 </ParamField>
 
 ## Response
@@ -28,29 +28,116 @@ Scope: `payouts:read`.
   Echoed back.
 </ResponseField>
 
-<ResponseField name="transactionId" type="string">
-  UUID of the underlying payout. Use this with [`GET /payouts/{id}`](/api-reference/payouts/get) for full detail.
-</ResponseField>
-
 <ResponseField name="status" type="string">
-  Coarse-grained payout status. See [Core Concepts](/concepts#transaction-status) for the lifecycle.
+  Coarse-grained payout status. See [Core Concepts](/concepts#transaction-status) for the lifecycle. Common values include `awaiting_escrow_deposit` (S2F, pre-deposit), `processing`, `delivered`, `failed`.
 </ResponseField>
 
-<ResponseField name="step" type="string">
-  Granular position in the payout lifecycle. One of `initiated`, `compliance_cleared`, `instructions_sent`, `collected`, `converting`, `settling`, `delivered`. Useful for surfacing partial progress in your UI.
+<ResponseField name="transactionId" type="string">
+  UUID of the underlying payout. Use with [`GET /payouts/{id}`](/api-reference/payouts/get) for the full transaction read (fees, amounts, metadata, etc.). Populated once the payout has been written to the transactions table.
+</ResponseField>
+
+<ResponseField name="quotedToAmount" type="number">
+  Destination amount as quoted at lock time, in the destination currency.
+</ResponseField>
+
+<ResponseField name="actualToAmount" type="number">
+  Destination amount that actually settled. Populated after delivery.
+</ResponseField>
+
+<ResponseField name="deltaAmount" type="number">
+  Signed difference between `actualToAmount` and `quotedToAmount` — useful for surfacing FX slippage post-fact.
+</ResponseField>
+
+<ResponseField name="settleTxHash" type="string">
+  On-chain settlement transaction hash (S2F and fiat-to-stablecoin flows).
+</ResponseField>
+
+<ResponseField name="onrampProvider" type="string">
+  Opaque routing identifier of the onramp leg.
+</ResponseField>
+
+<ResponseField name="offrampProvider" type="string">
+  Opaque routing identifier of the offramp leg.
+</ResponseField>
+
+<ResponseField name="paymentUrl" type="string">
+  For onramp flows that required a hosted payment page.
+</ResponseField>
+
+<ResponseField name="bankingInstructions" type="object">
+  Map of `string` → `string`. For F2F / onramp flows that settle by bank transfer. Keys vary by rail.
+</ResponseField>
+
+<ResponseField name="errorMessage" type="string">
+  Set when `status` is `failed`. Surfaces the root cause for partner-side debugging.
+</ResponseField>
+
+### Stablecoin-to-fiat fields
+
+<ResponseField name="escrowAddress" type="string">
+  On-chain address your wallet sent (or must send) the source stablecoin to.
+</ResponseField>
+
+<ResponseField name="depositAmountAtomic" type="string">
+  Atomic-units integer string. Parse with `BigInt`. Example: `"300000"` = 0.3 USDC at 6 decimals.
+</ResponseField>
+
+<ResponseField name="tokenAddress" type="string">
+  ERC-20 contract address of the source stablecoin.
+</ResponseField>
+
+<ResponseField name="chainId" type="integer">
+  EVM chain id of the source token.
+</ResponseField>
+
+<ResponseField name="escrowChainId" type="integer">
+  Chain on which this quote's escrow slot lives.
+</ResponseField>
+
+<ResponseField name="escrowState" type="string">
+  Escrow lifecycle state for S2F flows. Typical progression: `awaiting_deposit` → `confirmed` → `released`.
+</ResponseField>
+
+<ResponseField name="actualUsdcReceived" type="number">
+  Final USDC amount the escrow received before settle. Populated after deposit confirmation.
 </ResponseField>
 
 <ResponseExample>
-```json 200
+```json 200 — Pre-settle (S2F, awaiting deposit)
 {
-  "quoteId": "4c2b7e8f-3a3c-4a08-94ad-1234567890ab",
-  "transactionId": "8b1a4c1d-7a3c-4a08-94ad-9f1ef1e0c3a2",
-  "status": "processing",
-  "step": "settling"
+  "success": true,
+  "data": {
+    "quoteId": "4c2b7e8f-3a3c-4a08-94ad-1234567890ab",
+    "status": "awaiting_escrow_deposit",
+    "quotedToAmount": 4425.00,
+    "escrowAddress": "0xAbcDef0123456789AbcDef0123456789AbcDef01",
+    "depositAmountAtomic": "227250000",
+    "tokenAddress": "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
+    "chainId": 137,
+    "escrowState": "awaiting_deposit"
+  }
+}
+```
+```json 200 — Post-settle
+{
+  "success": true,
+  "data": {
+    "quoteId": "4c2b7e8f-3a3c-4a08-94ad-1234567890ab",
+    "status": "delivered",
+    "transactionId": "8b1a4c1d-7a3c-4a08-94ad-9f1ef1e0c3a2",
+    "quotedToAmount": 4425.00,
+    "actualToAmount": 4423.50,
+    "deltaAmount": -1.50,
+    "settleTxHash": "0x1234abcd…",
+    "onrampProvider": "provider_a",
+    "offrampProvider": "provider_a",
+    "escrowState": "released",
+    "actualUsdcReceived": 227.25
+  }
 }
 ```
 </ResponseExample>
 
-## When to poll vs. subscribe
+## When to poll vs subscribe
 
 Polling is fine for low-volume integrations and for ad-hoc status checks. For production traffic, subscribe to `payout.status.updated` and `payout.delivered` via [Webhooks](/guides/webhooks) — same data, push-based, no polling cost.
