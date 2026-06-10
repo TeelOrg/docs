@@ -67,28 +67,8 @@
         "icon": "code",
         "groups": [
           {
-            "group": "Users",
-            "pages": ["api-reference/users/me", "api-reference/users/sync"]
-          },
-          {
-            "group": "Businesses",
-            "pages": [
-              "api-reference/businesses/create",
-              "api-reference/businesses/get"
-            ]
-          },
-          {
             "group": "Configuration",
             "pages": ["api-reference/config/coverage"]
-          },
-          {
-            "group": "KYB",
-            "pages": [
-              "api-reference/kyb/capabilities-currencies",
-              "api-reference/kyb/capabilities-counterparty",
-              "api-reference/kyb/register",
-              "api-reference/kyb/onboarding-status"
-            ]
           },
           {
             "group": "Recipients",
@@ -99,16 +79,6 @@
               "api-reference/recipients/create",
               "api-reference/recipients/update",
               "api-reference/recipients/delete"
-            ]
-          },
-          {
-            "group": "Payment Methods",
-            "pages": [
-              "api-reference/payment-methods/requirements",
-              "api-reference/payment-methods/list",
-              "api-reference/payment-methods/get",
-              "api-reference/payment-methods/create",
-              "api-reference/payment-methods/delete"
             ]
           },
           {
@@ -132,18 +102,7 @@
             "group": "Payouts",
             "pages": [
               "api-reference/payouts/list",
-              "api-reference/payouts/get",
-              "api-reference/payouts/create",
-              "api-reference/payouts/update",
-              "api-reference/payouts/delete"
-            ]
-          },
-          {
-            "group": "Bridge",
-            "pages": [
-              "api-reference/bridge/quote",
-              "api-reference/bridge/execute",
-              "api-reference/bridge/status"
+              "api-reference/payouts/get"
             ]
           },
           {

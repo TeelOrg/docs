@@ -51,4 +51,4 @@ Returns **all** available onramp quotes for converting fiat into crypto, one per
 
 ## Route tokens
 
-The `protocol` value is an **opaque route token** (`rt_...`) — Teel does not expose which underlying provider backs a route. To execute a specific route, pass the token back verbatim as `routeProtocol` on [`POST /rfq/execute`](/api-reference/payouts/create); Teel resolves it server-side. Treat it as an opaque string; do not parse or construct it.
+The `protocol` value is an **opaque route token** (`rt_...`) — Teel does not expose which underlying provider backs a route. To execute a specific route, pass the token back verbatim as `routeProtocol` on `POST /rfq/execute` (see the [Quickstart](/quickstart#step-5-execute-the-payout)). Teel resolves it server-side. Treat it as an opaque string; do not parse or construct it.

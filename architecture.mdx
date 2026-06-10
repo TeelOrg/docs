@@ -133,7 +133,7 @@ flowchart LR
     PC --> Status
 ```
 
-Each partner runs their own independent compliance review under their license. Teel surfaces the per-partner approval state via [`GET /kyb/onboarding-status`](/api-reference/kyb/onboarding-status), and routes transactions only to partners that have approved your KYB for the relevant corridor.
+Each partner runs their own independent compliance review under their license. Teel routes transactions only through partners that have approved your KYB for the relevant corridor — corridor availability shows up in [`GET /config/coverage`](/api-reference/config/coverage) once your KYB has cleared.
 
 Per-transaction screening (sanctions, PEP, transaction monitoring) is performed by the executing partner under their license, with Teel forwarding the relevant payload at execution time.
 
