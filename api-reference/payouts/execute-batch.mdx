@@ -20,18 +20,22 @@ Scope: `payouts:write`. Rate-limited.
 
 ## Request body
 
+<Info>
+  **Batch is exact-output by design.** Each row's `targetAmount` is what the recipient receives; the engine sizes the source spend. `items[].amount` is accepted on the wire but informational only — `targetAmount` drives quoting.
+</Info>
+
 <Tabs>
   <Tab title="Fiat-to-fiat / Onramp">
     <ParamField body="fromCurrency" type="string" required>Shared source currency.</ParamField>
-    <ParamField body="userPaymentMethodId" type="string">Shared funding source.</ParamField>
-    <ParamField body="onrampProtocol" type="string">Pin every row to the same onramp provider.</ParamField>
+    <ParamField body="onrampProtocol" type="string" required>Opaque onramp route token. Pins every row to the same onramp provider.</ParamField>
+    <ParamField body="userPaymentMethodId" type="string" required>Shared funding source.</ParamField>
     <ParamField body="items" type="object[]" required>
       Non-empty array of payouts.
       <Expandable title="items[]">
         <ParamField body="toCurrency" type="string" required>Destination currency.</ParamField>
-        <ParamField body="amount" type="number" required>Source amount.</ParamField>
+        <ParamField body="targetAmount" type="number" required>Destination amount the recipient receives. Must be `> 0`.</ParamField>
         <ParamField body="recipientId" type="string" required>Recipient UUID.</ParamField>
-        <ParamField body="targetAmount" type="number">Exact-output target.</ParamField>
+        <ParamField body="amount" type="number">Informational source amount. Accepted but not used for sizing — `targetAmount` drives quoting.</ParamField>
         <ParamField body="recipientPaymentMethodId" type="string">Recipient PM UUID.</ParamField>
         <ParamField body="offrampProvider" type="string">Offramp routing hint.</ParamField>
         <ParamField body="routeProtocol" type="string">Per-row opaque route token.</ParamField>
@@ -44,6 +48,8 @@ Scope: `payouts:write`. Rate-limited.
 
   <Tab title="Stablecoin-to-fiat">
     <ParamField body="fromCurrency" type="string" required>Stablecoin ticker (e.g. `USDC`).</ParamField>
+    <ParamField body="onrampProtocol" type="string" required>Required at the top level even for S2F (handler-level constraint).</ParamField>
+    <ParamField body="userPaymentMethodId" type="string" required>Required at the top level even for S2F (handler-level constraint).</ParamField>
     <ParamField body="walletAddresses" type="object">Per-chain source wallet — `{"polygon": "0x…", "arbitrum": "0x…"}`.</ParamField>
     <ParamField body="items" type="object[]" required>
       Non-empty array of payouts. Same `items[]` shape as the other tab.
@@ -65,6 +71,10 @@ Always `{ "success": true, "data": { "rows": [...], "items": [...] } }`. Use `ro
     <ResponseField name="errorCode" type="string">Present when `failed`.</ResponseField>
     <ResponseField name="retryable" type="boolean">When `true`, re-fire just this row with the same `idempotency_key`.</ResponseField>
   </Expandable>
+</ResponseField>
+
+<ResponseField name="items" type="object[]">
+  Deprecation alias for `rows`. Same shape, same order, same contents — kept for one major-version of backward compatibility. New code should read `rows`.
 </ResponseField>
 
 <ResponseExample>

@@ -31,6 +31,7 @@ Scope: `payouts:write`. Rate-limited.
 <ParamField body="routeProtocol" type="string">Opaque route token (`rt_…`) from a `/quotes/*` call. Pins the route.</ParamField>
 <ParamField body="paymentPurpose" type="string">Partner-side classification (e.g. `salary`).</ParamField>
 <ParamField body="reference" type="string">Free-text reference echoed back on reads.</ParamField>
+<ParamField body="supportingDocumentKey" type="string">S3 key for an attached supporting document. Required by some compliance-bearing onramp flows.</ParamField>
 
 ## Request body
 
