@@ -35,10 +35,10 @@ Scope: `payouts:write`. Rate-limited.
 
 | Status | When |
 |---|---|
-| `400` | `txHash` malformed, on-chain tx doesn't match (wrong amount/address/chain), or not yet confirmed. |
+| `400` | Request body malformed (missing `quoteId` / `txHash`, or non-JSON body). Returns `{"success": false, "error": "invalid request"}`. |
 | `401` | Missing or invalid key. |
-| `404` | Quote not in `awaiting_escrow_deposit` — auto-detect already credited the deposit, or it's not an S2F payout. |
+| `500` | Confirmation failed. Returns `{"success": false, "error": "escrow deposit confirmation failed"}`. **Every** persistent failure mode the handler can hit collapses here today — wrong `txHash`, amount mismatch, chain mismatch, quote not in the expected state, on-chain tx not yet confirmed. There is no granular error-shape distinction. **Don't blind-retry a 500 from this endpoint** — verify your tx hash, amount, and chain first. |
 
 ## When not to call this
 
-Don't call in the first few minutes — auto-detect is actively watching. Only fall back here if the quote is still `awaiting_escrow_deposit` minutes after your tx confirmed on-chain.
+Don't call in the first few minutes — auto-detect is actively watching. Only fall back here if the quote status hasn't moved minutes after your tx confirmed on-chain.

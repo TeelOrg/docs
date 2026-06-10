@@ -46,8 +46,8 @@ Fields are populated progressively. Pre-settle reads show core + escrow detail; 
     <ResponseField name="tokenAddress" type="string">ERC-20 contract of the source stablecoin.</ResponseField>
     <ResponseField name="chainId" type="integer">Chain id of the source token.</ResponseField>
     <ResponseField name="escrowChainId" type="integer">Chain on which the escrow slot lives.</ResponseField>
-    <ResponseField name="escrowState" type="string">`awaiting_deposit` → `confirmed` → `released`.</ResponseField>
-    <ResponseField name="actualUsdcReceived" type="number">USDC the escrow received. Populated after deposit confirmation.</ResponseField>
+    <ResponseField name="escrowState" type="string">One of `none` (no escrow yet), `active` (deposit pending or in flight), `settled` (post-settle), `cancelled` (explicitly cancelled). Don't branch on other values — none are emitted.</ResponseField>
+    <ResponseField name="actualUsdcReceived" type="string">Atomic-units integer string of USDC the escrow received (e.g. `"227250000"` for 227.25 USDC at 6 decimals). Parse with `BigInt`. `"0"` until deposit confirmation.</ResponseField>
   </Tab>
 </Tabs>
 
@@ -63,7 +63,7 @@ Fields are populated progressively. Pre-settle reads show core + escrow detail; 
     "depositAmountAtomic": "227250000",
     "tokenAddress": "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
     "chainId": 137,
-    "escrowState": "awaiting_deposit"
+    "escrowState": "active"
   }
 }
 ```
@@ -80,8 +80,8 @@ Fields are populated progressively. Pre-settle reads show core + escrow detail; 
     "settleTxHash": "0x1234abcd…",
     "onrampProvider": "provider_a",
     "offrampProvider": "provider_a",
-    "escrowState": "released",
-    "actualUsdcReceived": 227.25
+    "escrowState": "settled",
+    "actualUsdcReceived": "227250000"
   }
 }
 ```
