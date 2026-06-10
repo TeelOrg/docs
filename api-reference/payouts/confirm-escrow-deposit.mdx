@@ -1,0 +1,56 @@
+---
+title: Confirm escrow deposit
+api: POST /api/rfq/confirm-escrow-deposit
+description: Manual fallback for stablecoin-to-fiat payouts when on-chain auto-detection times out.
+---
+
+Stablecoin-to-fiat payouts are funded by your wallet sending the source stablecoin to the `depositAddress` returned by [`POST /rfq/execute`](/api-reference/payouts/execute). Teel auto-detects the deposit by polling on-chain Transfer logs for **5 minutes**. If the deposit lands after that window — slow chain, late transfer, dropped log — call this endpoint with the tx hash to register the deposit manually.
+
+Idempotent: re-submitting the same `quoteId` + `txHash` after the deposit is already confirmed returns the same `200`.
+
+Scope: `payouts:write`. Rate-limited.
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
+</ParamField>
+
+<ParamField header="Idempotency-Key" type="string">
+  Optional. Up to 255 url-safe characters (≥ 8).
+</ParamField>
+
+## Request body
+
+<ParamField body="quoteId" type="string" required>
+  UUID of the original quote. Must currently be in the `awaiting_transfer` state.
+</ParamField>
+
+<ParamField body="txHash" type="string" required>
+  `0x`-prefixed transaction hash of the on-chain transfer your wallet sent. Teel verifies on-chain: the tx must be confirmed, the value must match `depositAmount`, the recipient must match `depositAddress`.
+</ParamField>
+
+## Response
+
+`200 OK` with a confirmation envelope. The offramp leg of the payout proceeds immediately.
+
+<ResponseExample>
+```json 200
+{
+  "ok": true,
+  "transactionId": "8b1a4c1d-7a3c-4a08-94ad-9f1ef1e0c3a2",
+  "status": "processing"
+}
+```
+</ResponseExample>
+
+## Errors
+
+| Status | When |
+|---|---|
+| `400` | `txHash` malformed, the on-chain tx doesn't match the expected deposit (wrong amount, wrong address, wrong chain), or the chain hasn't confirmed it yet. Wait for finality and retry. |
+| `404` | The quote isn't in the `awaiting_transfer` state. Either it's not a stablecoin-to-fiat payout, or auto-detection already credited the deposit (in which case there's nothing for you to do). |
+
+## When NOT to call this
+
+For the first 5 minutes after `POST /rfq/execute`, **don't call this** — Teel's log poller is watching for your deposit and will pick it up automatically. Only fall back here if (a) the 5 minutes have elapsed, or (b) you're testing a recovery path.

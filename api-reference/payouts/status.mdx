@@ -1,0 +1,56 @@
+---
+title: Get payout status
+api: GET /api/rfq/status/{quoteId}
+description: Read the current status of a payout, by quote ID.
+---
+
+Lookup is by `quoteId` — the same value you got back from `/quotes/*` and passed to [`POST /rfq/execute`](/api-reference/payouts/execute). Returns the current status, the granular `step` within the lifecycle, and the resulting `transactionId`.
+
+For a deeper read (fees, amounts, addresses, metadata), use [`GET /payouts/{id}`](/api-reference/payouts/get) once you have the `transactionId`.
+
+Scope: `payouts:read`.
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
+</ParamField>
+
+## Path parameters
+
+<ParamField path="quoteId" type="string" required>
+  UUID of the locked quote.
+</ParamField>
+
+## Response
+
+<ResponseField name="quoteId" type="string">
+  Echoed back.
+</ResponseField>
+
+<ResponseField name="transactionId" type="string">
+  UUID of the underlying payout. Use this with [`GET /payouts/{id}`](/api-reference/payouts/get) for full detail.
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Coarse-grained payout status. See [Core Concepts](/concepts#transaction-status) for the lifecycle.
+</ResponseField>
+
+<ResponseField name="step" type="string">
+  Granular position in the payout lifecycle. One of `initiated`, `compliance_cleared`, `instructions_sent`, `collected`, `converting`, `settling`, `delivered`. Useful for surfacing partial progress in your UI.
+</ResponseField>
+
+<ResponseExample>
+```json 200
+{
+  "quoteId": "4c2b7e8f-3a3c-4a08-94ad-1234567890ab",
+  "transactionId": "8b1a4c1d-7a3c-4a08-94ad-9f1ef1e0c3a2",
+  "status": "processing",
+  "step": "settling"
+}
+```
+</ResponseExample>
+
+## When to poll vs. subscribe
+
+Polling is fine for low-volume integrations and for ad-hoc status checks. For production traffic, subscribe to `payout.status.updated` and `payout.delivered` via [Webhooks](/guides/webhooks) — same data, push-based, no polling cost.

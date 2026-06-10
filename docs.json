@@ -101,6 +101,10 @@
           {
             "group": "Payouts",
             "pages": [
+              "api-reference/payouts/execute",
+              "api-reference/payouts/execute-batch",
+              "api-reference/payouts/status",
+              "api-reference/payouts/confirm-escrow-deposit",
               "api-reference/payouts/list",
               "api-reference/payouts/get"
             ]

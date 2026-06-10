@@ -1,0 +1,98 @@
+---
+title: Execute a batch of payouts
+api: POST /api/rfq/execute-batch
+description: Lock in multiple quotes in one call. Each row succeeds or fails independently.
+---
+
+Useful for fan-out scenarios (payroll, marketplace settlements) where you want to send N payouts at once without N round-trips. Each input row is validated and dispatched independently — a partial-failure result is normal and the response carries a per-row envelope so you know which rows landed and which need a retry.
+
+Scope: `payouts:write`. Rate-limited.
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
+</ParamField>
+
+<ParamField header="Idempotency-Key" type="string">
+  Optional but **strongly recommended**. The batch envelope is deduplicated against this key for 24 hours. Per-row `idempotency_key` is independent and dedupes the underlying RFQ execution.
+</ParamField>
+
+## Request body
+
+<ParamField body="items" type="object[]" required>
+  Non-empty array of payouts to execute. Each entry mirrors the [single-execute](/api-reference/payouts/execute) request body.
+  <Expandable title="items[]">
+    <ParamField body="quoteId" type="string" required>
+      UUID of the quote to execute.
+    </ParamField>
+    <ParamField body="recipientId" type="string">
+      UUID of the recipient. Required when the route pays out to a counterparty.
+    </ParamField>
+    <ParamField body="idempotency_key" type="string">
+      Per-row idempotency. Independent of the envelope-level `Idempotency-Key`. Recommended so a partial-failure retry can re-fire just the failed rows.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+## Response
+
+<ResponseField name="data" type="object">
+  <Expandable title="data">
+    <ResponseField name="rows" type="object[]">
+      One entry per input row, **in the same order as `items`**. Each row tells you whether that specific payout was accepted or failed.
+      <Expandable title="rows[]">
+        <ResponseField name="idx" type="integer">
+          Zero-based index back into the input `items` array.
+        </ResponseField>
+        <ResponseField name="status" type="string">
+          `accepted` or `failed`.
+        </ResponseField>
+        <ResponseField name="transactionId" type="string">
+          UUID of the new payout. Present when `status` is `accepted`.
+        </ResponseField>
+        <ResponseField name="quoteId" type="string">
+          Echoed back so you can correlate without looking at `idx`.
+        </ResponseField>
+        <ResponseField name="errorCode" type="string">
+          Stable error code. Present when `status` is `failed`.
+        </ResponseField>
+        <ResponseField name="retryable" type="boolean">
+          Whether the failure is transient. If `true`, re-fire just this row with the same `idempotency_key`.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json 200
+{
+  "data": {
+    "rows": [
+      {
+        "idx": 0,
+        "status": "accepted",
+        "transactionId": "8b1a4c1d-7a3c-4a08-94ad-9f1ef1e0c3a2",
+        "quoteId": "4c2b7e8f-3a3c-4a08-94ad-1234567890ab"
+      },
+      {
+        "idx": 1,
+        "status": "failed",
+        "quoteId": "9f1ef1e0-c3a2-4a08-94ad-8b1a4c1d7a3c",
+        "errorCode": "QUOTE_NOT_FOUND",
+        "retryable": false
+      },
+      {
+        "idx": 2,
+        "status": "accepted",
+        "transactionId": "4f9e5f15-33bd-4b52-970d-88ad31dfe3ce",
+        "quoteId": "1c84203c-b4e3-40de-83a9-51bc0d9c991f"
+      }
+    ]
+  }
+}
+```
+</ResponseExample>
+
+The HTTP status is `200` even when some rows fail — `data.rows[].status` is the source of truth per row. Treat the response like a checklist: walk `rows`, retry the `retryable: true` failures with the same per-row `idempotency_key`, and proceed for the `accepted` ones.

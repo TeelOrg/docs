@@ -1,0 +1,100 @@
+---
+title: Execute a payout
+api: POST /api/rfq/execute
+description: Execute a previously-returned quote to create and settle a payout.
+---
+
+Locks in the quote returned from any `/quotes/*` endpoint and starts the payout. The `quoteId` is opaque — Teel resolves the underlying provider and route server-side. Returns the new transaction's id and (for stablecoin-to-fiat flows) the escrow deposit instructions your wallet needs to fund.
+
+Quotes are short-lived. Execute before the quote's `expiresAt`; otherwise the call fails with `400` and you'll need a fresh quote.
+
+Scope: `payouts:write`. Rate-limited.
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
+</ParamField>
+
+<ParamField header="Idempotency-Key" type="string">
+  Optional. Up to 255 url-safe characters (≥ 8). Replays the cached response within 24 hours; mismatched bodies on the same key return `409 IDEMPOTENCY_KEY_REUSED`. Strongly recommended for write retries.
+</ParamField>
+
+## Request body
+
+<ParamField body="quoteId" type="string" required>
+  UUID of the quote returned from `/quotes/fiat-to-fiat/best`, `/quotes/onramp/best`, `/quotes/offramp/best`, `/quotes/fiat-to-stablecoin/best`, or any of their `/all` variants.
+</ParamField>
+
+<ParamField body="recipientId" type="string">
+  UUID of the recipient. Required for routes that pay out to a counterparty (fiat-to-fiat, offramp). Omit for self-onramp.
+</ParamField>
+
+<ParamField body="recipientPaymentMethodId" type="string">
+  UUID of the specific recipient payment method to use, when the recipient has more than one. Defaults to the only / best match for the corridor.
+</ParamField>
+
+<ParamField body="userPaymentMethodId" type="string">
+  UUID of your funding method (source of funds). Used by onramp + fiat-to-fiat flows. For stablecoin-to-fiat the source is your wallet — no `userPaymentMethodId` is needed.
+</ParamField>
+
+<ParamField body="metadata" type="object">
+  Optional partner-side identifiers. Map of `string` → `string`. Stored on the transaction and echoed back on reads.
+</ParamField>
+
+## Response
+
+<ResponseField name="transactionId" type="string">
+  UUID of the newly-created payout. Use it to poll [`GET /rfq/status/{quoteId}`](/api-reference/payouts/status) or [`GET /payouts/{id}`](/api-reference/payouts/get).
+</ResponseField>
+
+<ResponseField name="status" type="string">
+  Initial payout status — typically `pending` (about to be picked up) or `processing` (already in flight).
+</ResponseField>
+
+<ResponseField name="depositAddress" type="string">
+  **Stablecoin-to-fiat flows only.** On-chain address your wallet must send the source stablecoin to. Funds sent to a different address are not credited.
+</ResponseField>
+
+<ResponseField name="depositAmount" type="string">
+  **Stablecoin-to-fiat flows only.** Atomic-units integer string. Parse with `BigInt` — JSON numbers lose precision for 18-decimal tokens. Example: `"300000"` = 0.3 USDC at 6 decimals.
+</ResponseField>
+
+<ResponseField name="chainId" type="integer">
+  **Stablecoin-to-fiat flows only.** EVM chain id of the deposit address (e.g. `137` for Polygon).
+</ResponseField>
+
+<ResponseExample>
+```json 200 — Fiat-to-fiat or onramp
+{
+  "transactionId": "8b1a4c1d-7a3c-4a08-94ad-9f1ef1e0c3a2",
+  "status": "processing"
+}
+```
+```json 200 — Stablecoin-to-fiat (deposit instructions returned)
+{
+  "transactionId": "8b1a4c1d-7a3c-4a08-94ad-9f1ef1e0c3a2",
+  "status": "pending",
+  "depositAddress": "0xAbcDef0123456789AbcDef0123456789AbcDef01",
+  "depositAmount": "300000",
+  "chainId": 137
+}
+```
+</ResponseExample>
+
+## Errors
+
+| Status | Code | When |
+|---|---|---|
+| `400` | `INVALID_REQUEST` | Missing required field, quote expired, or quote/recipient/PM doesn't belong to your partner account. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `FORBIDDEN` | Key lacks `payouts:write` scope. |
+| `409` | `IDEMPOTENCY_KEY_REUSED` | Same `Idempotency-Key` already used with a different body. |
+| `409` | `IDEMPOTENCY_REQUEST_IN_FLIGHT` | A concurrent retry with the same key is still processing. Back off per `Retry-After`. |
+| `429` | `RATE_LIMITED` | Per-key payout-write rate limit exceeded. |
+
+## Next steps
+
+For stablecoin-to-fiat payouts, your wallet sends the `depositAmount` (atomic units) to the `depositAddress` on the indicated `chainId`. Teel auto-detects the on-chain transfer via log polling for ~5 minutes; after that, fall back to [`POST /rfq/confirm-escrow-deposit`](/api-reference/payouts/confirm-escrow-deposit) with the tx hash.
+
+For other flows, poll [`GET /rfq/status/{quoteId}`](/api-reference/payouts/status) or subscribe to `payout.status.updated` via [Webhooks](/guides/webhooks) for status updates.
