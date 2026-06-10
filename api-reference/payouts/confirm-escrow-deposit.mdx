@@ -1,42 +1,29 @@
 ---
 title: Confirm escrow deposit
 api: POST /api/rfq/confirm-escrow-deposit
-description: Manual fallback for stablecoin-to-fiat payouts — register an on-chain deposit when auto-detection misses it.
+description: Manual fallback when auto-detection misses your on-chain deposit.
 ---
 
-Stablecoin-to-fiat payouts are funded by your wallet sending the source stablecoin to the `escrowAddress` returned by [`POST /rfq/execute`](/api-reference/payouts/execute). Teel's depositwatcher polls on-chain Transfer logs every ~10 seconds for as long as the quote lock is alive and auto-credits matching deposits.
-
-If your transfer lands but auto-detection misses it — slow chain, late tx, dropped log — call this endpoint with the tx hash to register the deposit manually. The offramp leg proceeds as soon as the on-chain amount and destination are verified.
-
-Idempotent: re-submitting the same `quoteId` + `txHash` after the deposit is already confirmed returns `{ "success": true }` again.
+S2F payouts auto-detect deposits to `escrowAddress` via on-chain log polling (~10 s interval, runs for as long as the quote lock is alive). If your transfer lands but auto-detect misses it, post the tx hash here to register the deposit manually. Idempotent on duplicate `(quoteId, txHash)`.
 
 Scope: `payouts:write`. Rate-limited.
 
 ## Headers
 
 <ParamField header="Authorization" type="string" required>
-  `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
+  `Bearer sk_test_…` / `Bearer sk_live_…`.
 </ParamField>
 
-<ParamField header="Idempotency-Key" type="string">
-  Optional. Up to 255 url-safe characters (≥ 8).
-</ParamField>
+<ParamField header="Idempotency-Key" type="string">Optional.</ParamField>
 
 ## Request body
 
-<ParamField body="quoteId" type="string" required>
-  UUID of the original quote, as returned from `/rfq/execute`. Must currently be in the `awaiting_escrow_deposit` state.
-</ParamField>
-
-<ParamField body="txHash" type="string" required>
-  `0x`-prefixed transaction hash of the on-chain transfer your wallet sent. Teel verifies on-chain: the tx must be confirmed, the value must match `depositAmountAtomic`, and the recipient must match `escrowAddress`.
-</ParamField>
+<ParamField body="quoteId" type="string" required>UUID of the original quote. Must be in `awaiting_escrow_deposit`.</ParamField>
+<ParamField body="txHash" type="string" required>`0x`-prefixed transaction hash. Teel verifies the on-chain amount, address, and chain match.</ParamField>
 
 ## Response
 
-<ResponseField name="success" type="boolean">
-  Always `true` on success. The handler returns no other fields — fetch detail via [`GET /rfq/status/{quoteId}`](/api-reference/payouts/status) once the call returns.
-</ResponseField>
+<ResponseField name="success" type="boolean">Always `true` on success. No other fields — fetch detail via [`GET /rfq/status/{quoteId}`](/api-reference/payouts/status).</ResponseField>
 
 <ResponseExample>
 ```json 200
@@ -48,10 +35,10 @@ Scope: `payouts:write`. Rate-limited.
 
 | Status | When |
 |---|---|
-| `400` | `txHash` is malformed, the on-chain tx doesn't match the expected deposit (wrong amount, wrong address, wrong chain), or the chain hasn't confirmed it yet. Wait for finality and retry. |
+| `400` | `txHash` malformed, on-chain tx doesn't match (wrong amount/address/chain), or not yet confirmed. |
 | `401` | Missing or invalid key. |
-| `404` | The quote isn't in the `awaiting_escrow_deposit` state. Either it's not a stablecoin-to-fiat payout, or auto-detection already credited the deposit (so there's nothing to do). |
+| `404` | Quote not in `awaiting_escrow_deposit` — auto-detect already credited the deposit, or it's not an S2F payout. |
 
-## When NOT to call this
+## When not to call this
 
-For the first few minutes after `/rfq/execute`, **don't call this** — the depositwatcher is actively looking for your tx and will credit it automatically. Only fall back here if auto-detect demonstrably didn't pick the tx up (e.g. the quote is still `awaiting_escrow_deposit` minutes after your tx was mined and confirmed).
+Don't call in the first few minutes — auto-detect is actively watching. Only fall back here if the quote is still `awaiting_escrow_deposit` minutes after your tx confirmed on-chain.
