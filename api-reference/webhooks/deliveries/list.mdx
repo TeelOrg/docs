@@ -4,7 +4,7 @@ api: GET /api/webhooks/deliveries
 description: List webhook delivery attempts with filters
 ---
 
-Every event Teel POSTs to your subscriptions creates a `webhook_deliveries` row that records the attempt count, the response code, the response body excerpt, and (on failure) the error message. Use this endpoint to debug what reached your endpoint.
+Debug what reached your endpoint — attempt count, response code, response body excerpt, error.
 
 <Info>**Scope** `webhooks:read`</Info>
 

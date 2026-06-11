@@ -4,7 +4,7 @@ api: GET /api/recipients
 description: List every recipient on your account
 ---
 
-Returns every recipient registered on your account. To narrow by counterparty status or transfer type, fetch the list then filter on your side — server-side filters by attribute aren't exposed today.
+Paginated. Filter client-side — no server-side attribute filters.
 
 <Info>**Scope** `recipients:read`</Info>
 
@@ -26,63 +26,7 @@ Returns every recipient registered on your account. To narrow by counterparty st
 
 ## Response
 
-Each list entry has the same shape as a single recipient from [Get recipient](/api-reference/recipients/get).
-
-<ResponseField name="id" type="string">
-  Recipient UUID.
-</ResponseField>
-
-<ResponseField name="email" type="string">
-  Recipient email.
-</ResponseField>
-
-<ResponseField name="is_business" type="boolean">
-  `true` for business, `false` for individual.
-</ResponseField>
-
-<ResponseField name="business_name" type="string">
-  Legal business name, when `is_business` is `true`.
-</ResponseField>
-
-<ResponseField name="first_name" type="string">
-  Individual first name, when `is_business` is `false`.
-</ResponseField>
-
-<ResponseField name="last_name" type="string">
-  Individual last name, when `is_business` is `false`.
-</ResponseField>
-
-<ResponseField name="country" type="string">
-  ISO 3166-1 alpha-2 country code.
-</ResponseField>
-
-<ResponseField name="currency" type="string">
-  Default currency for the recipient.
-</ResponseField>
-
-<ResponseField name="transfer_type" type="string">
-  `"fiat"` or `"stablecoin"`.
-</ResponseField>
-
-<ResponseField name="wallet_addresses" type="object">
-  Map of chain ID to wallet address, when `transfer_type` is `"stablecoin"`.
-</ResponseField>
-
-<ResponseField name="external_reference" type="object">
-  Map of `string` → `string`, echoed from create.
-</ResponseField>
-
-<ResponseField name="status" type="string">
-  Aggregated review status — `"pending"`, `"accepted"`, or `"rejected"`.
-</ResponseField>
-
-<ResponseField name="created_at" type="string">
-  ISO 8601 timestamp.
-</ResponseField>
-
-<ResponseField name="updated_at" type="string">
-  ISO 8601 timestamp.
-</ResponseField>
+Array of [recipients](/api-reference/recipients/get#response).
 
 <ResponseExample>
 ```json 200

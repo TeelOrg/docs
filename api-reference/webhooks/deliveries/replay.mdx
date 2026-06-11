@@ -4,7 +4,7 @@ api: POST /api/webhooks/deliveries/{id}/replay
 description: Enqueue a fresh delivery from the same source row
 ---
 
-Enqueues a **fresh** delivery row pointing at the same subscription with the same payload as the source. The worker picks it up on its next tick (within ~2s). The new delivery has its own `Teel-Delivery-Id`.
+Enqueues a fresh delivery with the same payload + subscription. Worker picks it up within ~2 s; new delivery gets its own `Teel-Delivery-Id`.
 
 Use this for:
 

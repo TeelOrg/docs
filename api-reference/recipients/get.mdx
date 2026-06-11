@@ -4,7 +4,7 @@ api: GET /api/recipients/{id}
 description: Fetch a single recipient by ID
 ---
 
-Returns the full recipient record. Returns `404` if the ID isn't yours.
+Returns `404` if the ID isn't yours.
 
 <Info>**Scope** `recipients:read`</Info>
 
@@ -22,69 +22,32 @@ Returns the full recipient record. Returns `404` if the ID isn't yours.
 
 ## Response
 
-<ResponseField name="id" type="string">
-  Recipient UUID.
-</ResponseField>
-
-<ResponseField name="email" type="string">
-  Recipient email.
-</ResponseField>
-
-<ResponseField name="is_business" type="boolean">
-  `true` for business, `false` for individual.
-</ResponseField>
-
-<ResponseField name="business_name" type="string">
-  Legal business name, when `is_business` is `true`.
-</ResponseField>
-
-<ResponseField name="first_name" type="string">
-  Individual first name, when `is_business` is `false`.
-</ResponseField>
-
-<ResponseField name="last_name" type="string">
-  Individual last name, when `is_business` is `false`.
-</ResponseField>
-
-<ResponseField name="country" type="string">
-  ISO 3166-1 alpha-2 country code.
-</ResponseField>
-
-<ResponseField name="currency" type="string">
-  Default currency for the recipient.
-</ResponseField>
-
-<ResponseField name="phone" type="string">
-  E.164 phone number.
-</ResponseField>
-
+<ResponseField name="id" type="string">UUID.</ResponseField>
+<ResponseField name="email" type="string" />
+<ResponseField name="is_business" type="boolean" />
+<ResponseField name="business_name" type="string" />
+<ResponseField name="first_name" type="string" />
+<ResponseField name="last_name" type="string" />
+<ResponseField name="country" type="string">ISO 3166-1 alpha-2.</ResponseField>
+<ResponseField name="currency" type="string" />
+<ResponseField name="phone" type="string" />
 <ResponseField name="address" type="object">
-  Postal address. Fields: `streetLine1`, `streetLine2`, `city`, `state`, `postalCode`, `country` — all camelCase, even on this otherwise-snake_case response.
+  Nested fields are camelCase.
+  <Expandable title="address">
+    <ResponseField name="streetLine1" type="string" />
+    <ResponseField name="streetLine2" type="string" />
+    <ResponseField name="city" type="string" />
+    <ResponseField name="state" type="string" />
+    <ResponseField name="postalCode" type="string" />
+    <ResponseField name="country" type="string" />
+  </Expandable>
 </ResponseField>
-
-<ResponseField name="transfer_type" type="string">
-  `"fiat"` or `"stablecoin"`.
-</ResponseField>
-
-<ResponseField name="wallet_addresses" type="object">
-  Map of chain ID to wallet address, when `transfer_type` is `"stablecoin"`.
-</ResponseField>
-
-<ResponseField name="external_reference" type="object">
-  Map of `string` → `string`, echoed from create.
-</ResponseField>
-
-<ResponseField name="status" type="string">
-  Aggregated review status — `"pending"`, `"accepted"`, or `"rejected"`.
-</ResponseField>
-
-<ResponseField name="created_at" type="string">
-  ISO 8601 timestamp.
-</ResponseField>
-
-<ResponseField name="updated_at" type="string">
-  ISO 8601 timestamp.
-</ResponseField>
+<ResponseField name="transfer_type" type="string">`"fiat"` or `"stablecoin"`.</ResponseField>
+<ResponseField name="wallet_addresses" type="object">Chain ID → address, when `transfer_type` is `"stablecoin"`.</ResponseField>
+<ResponseField name="external_reference" type="object">Map of `string` → `string`.</ResponseField>
+<ResponseField name="status" type="string">`"pending"`, `"accepted"`, or `"rejected"`.</ResponseField>
+<ResponseField name="created_at" type="string">ISO 8601.</ResponseField>
+<ResponseField name="updated_at" type="string">ISO 8601.</ResponseField>
 
 <ResponseExample>
 ```json 200

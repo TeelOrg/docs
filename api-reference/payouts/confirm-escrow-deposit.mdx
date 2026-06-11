@@ -4,7 +4,7 @@ api: POST /api/rfq/confirm-escrow-deposit
 description: Manual fallback when auto-detection misses your on-chain deposit.
 ---
 
-S2F payouts auto-detect deposits to `escrowAddress` via on-chain log polling (~10 s interval, runs for as long as the quote lock is alive). If your transfer lands but auto-detect misses it, post the tx hash here to register the deposit manually. Idempotent on duplicate `(quoteId, txHash)`.
+Manual deposit-confirmation fallback when on-chain auto-detect misses your transfer. Idempotent on duplicate `(quoteId, txHash)`.
 
 <Info>**Scope** `payouts:write` · rate-limited</Info>
 

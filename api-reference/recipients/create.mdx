@@ -1,17 +1,10 @@
 ---
 title: Create recipient
 api: POST /api/recipients
-description: Register a recipient. Required fields vary by country, currency, and recipient type.
+description: Register a recipient.
 ---
 
-A recipient is the counterparty who will receive funds when you execute a payout. Required fields vary by country, currency, and whether you're paying to a bank account or to an on-chain wallet — so the body has a small common section plus a type-specific section selected by `transferType`.
-
-Partners typically follow a two-step pattern:
-
-1. Call [`GET /recipients/requirements`](/api-reference/recipients/requirements) to discover the live field schema for your account.
-2. POST the populated fields here.
-
-The requirements endpoint returns a merged shape with `bank` and `wallet` sub-sections so a single response covers both recipient types — your form picks the relevant section after the user has chosen Fiat vs Stablecoin.
+Body is a common section + a type-specific section keyed on `transferType`. Call [`GET /recipients/requirements`](/api-reference/recipients/requirements) first for the live field list.
 
 <Info>**Scope** `recipients:write` · rate-limited</Info>
 
@@ -27,86 +20,59 @@ The requirements endpoint returns a merged shape with `bank` and `wallet` sub-se
 
 ## Request body
 
-The body has two parts: a small set of fields common to every recipient, and a type-specific section selected by `transferType`. Switch the tab below to see the type-specific fields.
+### Common
 
-### Common fields
-
-<ParamField body="email" type="string" required>
-  Recipient email. Used for KYB notifications and webhook addressing.
-</ParamField>
-
-<ParamField body="country" type="string" required>
-  ISO 3166-1 alpha-2 country code (e.g. `PH`, `MX`, `NG`). Drives routing and the per-country rail subset.
-</ParamField>
-
-<ParamField body="isBusiness" type="string">
-  `"business"` (default) or `"individual"`. Determines whether `businessName` or `firstName`/`lastName` is required.
-</ParamField>
-
-<ParamField body="businessName" type="string">
-  Legal name of the receiving business. Required when `isBusiness="business"`.
-</ParamField>
-
-<ParamField body="firstName" type="string">
-  Required when `isBusiness="individual"`.
-</ParamField>
-
-<ParamField body="lastName" type="string">
-  Required when `isBusiness="individual"`.
-</ParamField>
-
-<ParamField body="phone" type="string">
-  E.164 phone number. Required for some corridors.
-</ParamField>
-
+<ParamField body="email" type="string" required />
+<ParamField body="country" type="string" required>ISO 3166-1 alpha-2.</ParamField>
+<ParamField body="isBusiness" type="string">`"business"` (default) or `"individual"`.</ParamField>
+<ParamField body="businessName" type="string">Required when `isBusiness="business"`.</ParamField>
+<ParamField body="firstName" type="string">Required when `isBusiness="individual"`.</ParamField>
+<ParamField body="lastName" type="string">Required when `isBusiness="individual"`.</ParamField>
+<ParamField body="phone" type="string">E.164.</ParamField>
 <ParamField body="address" type="object">
-  Postal address. Fields: `streetLine1`, `streetLine2`, `city`, `state`, `postalCode`, `country` — all camelCase. Required fields vary by corridor.
+  <Expandable title="address">
+    <ParamField body="streetLine1" type="string" />
+    <ParamField body="streetLine2" type="string" />
+    <ParamField body="city" type="string" />
+    <ParamField body="state" type="string" />
+    <ParamField body="postalCode" type="string" />
+    <ParamField body="country" type="string">ISO 3166-1 alpha-2.</ParamField>
+  </Expandable>
 </ParamField>
-
 <ParamField body="externalReference" type="object">
-  Optional partner-side identifiers. Map of `string` → `string` only (nested objects are not supported). Echoed back on reads.
+  Map of `string` → `string`. Echoed back on reads.
 </ParamField>
 
-### Type-specific fields
+### Type-specific
 
 <Tabs>
   <Tab title="Fiat (bank)">
-    Use this shape when the recipient is paid in fiat to a bank account. The combination of `country` + the payment method's `currency` + `rail` selects the destination rail (ACH, SEPA, PIX, Mobile Money, etc.).
-
-    <ParamField body="transferType" type="string" required>
-      Set to `"fiat"`.
-    </ParamField>
-
+    <ParamField body="transferType" type="string" required>`"fiat"`</ParamField>
     <ParamField body="paymentMethods" type="object[]" required>
-      One entry per (currency, rail) the recipient can receive on. Common rail-specific fields include `accountNumber`, `bankName`, `routingNumber`, `swiftCode`, `iban`, `bsb`, `ifsc`, `nuban`, `pixKey`, `mobileMoneyPhone` — send only what the chosen rail requires. [`GET /recipients/requirements`](/api-reference/recipients/requirements) lists the active set per rail for your account.
+      One entry per (currency, rail). Send only fields the chosen `rail` needs.
       <Expandable title="paymentMethods[]">
-        <ParamField body="type" type="string" required>Always `"bank"` for fiat recipients.</ParamField>
-        <ParamField body="rail" type="string" required>Rail identifier (e.g. `ach`, `sepa`, `pix`, `mobile_money`).</ParamField>
-        <ParamField body="accountNumber" type="string">Bank account number.</ParamField>
-        <ParamField body="bankName" type="string">Bank name. Required by some rails.</ParamField>
-        <ParamField body="accountOwnerName" type="string">Name on the account. Required by some rails.</ParamField>
-        <ParamField body="routingNumber" type="string">US routing number (ACH).</ParamField>
-        <ParamField body="swiftCode" type="string">SWIFT/BIC code (international wire).</ParamField>
-        <ParamField body="iban" type="string">IBAN (SEPA and similar).</ParamField>
-        <ParamField body="bsb" type="string">BSB code (Australia).</ParamField>
-        <ParamField body="ifsc" type="string">IFSC code (India).</ParamField>
-        <ParamField body="nuban" type="string">NUBAN (Nigeria).</ParamField>
-        <ParamField body="pixKey" type="string">PIX key (Brazil).</ParamField>
-        <ParamField body="brebKey" type="string">Bre-B key (Colombia).</ParamField>
-        <ParamField body="mobileMoneyPhone" type="string">E.164 phone registered with the operator (Mobile Money rails).</ParamField>
+        <ParamField body="type" type="string" required>`"bank"`</ParamField>
+        <ParamField body="rail" type="string" required>e.g. `ach`, `sepa`, `pix`, `mobile_money`.</ParamField>
+        <ParamField body="accountNumber" type="string" />
+        <ParamField body="bankName" type="string" />
+        <ParamField body="accountOwnerName" type="string" />
+        <ParamField body="routingNumber" type="string">US (ACH).</ParamField>
+        <ParamField body="swiftCode" type="string">SWIFT/BIC.</ParamField>
+        <ParamField body="iban" type="string">SEPA + similar.</ParamField>
+        <ParamField body="bsb" type="string">Australia.</ParamField>
+        <ParamField body="ifsc" type="string">India.</ParamField>
+        <ParamField body="nuban" type="string">Nigeria.</ParamField>
+        <ParamField body="pixKey" type="string">Brazil.</ParamField>
+        <ParamField body="brebKey" type="string">Colombia.</ParamField>
+        <ParamField body="mobileMoneyPhone" type="string">E.164 phone (Mobile Money).</ParamField>
       </Expandable>
     </ParamField>
   </Tab>
 
   <Tab title="Stablecoin (wallet)">
-    Use this shape when the recipient is paid on-chain in stablecoin. One recipient can hold wallet addresses on multiple chains; the chosen chain at payout time decides which one is used.
-
-    <ParamField body="transferType" type="string" required>
-      Set to `"stablecoin"`.
-    </ParamField>
-
+    <ParamField body="transferType" type="string" required>`"stablecoin"`</ParamField>
     <ParamField body="walletAddresses" type="object" required>
-      Map of chain ID (as a string) to wallet address. Supported chains are listed under `wallet.rails` on [`GET /recipients/requirements`](/api-reference/recipients/requirements).
+      Chain ID → wallet address.
 
       ```json
       {
@@ -121,71 +87,31 @@ The body has two parts: a small set of fields common to every recipient, and a t
 
 ## Response
 
-Returns the persisted recipient. `id` is a UUID — store it on your side to reference the recipient at payout time.
-
-<ResponseField name="id" type="string">
-  Recipient UUID.
-</ResponseField>
-
-<ResponseField name="email" type="string">
-  Recipient email.
-</ResponseField>
-
-<ResponseField name="is_business" type="boolean">
-  `true` for business, `false` for individual.
-</ResponseField>
-
-<ResponseField name="business_name" type="string">
-  Legal business name, when `is_business` is `true`.
-</ResponseField>
-
-<ResponseField name="first_name" type="string">
-  Individual first name, when `is_business` is `false`.
-</ResponseField>
-
-<ResponseField name="last_name" type="string">
-  Individual last name, when `is_business` is `false`.
-</ResponseField>
-
-<ResponseField name="country" type="string">
-  ISO 3166-1 alpha-2 country code.
-</ResponseField>
-
-<ResponseField name="currency" type="string">
-  Default currency for the recipient. Inferred from the country when omitted on create.
-</ResponseField>
-
-<ResponseField name="phone" type="string">
-  E.164 phone number.
-</ResponseField>
-
+<ResponseField name="id" type="string">UUID.</ResponseField>
+<ResponseField name="email" type="string" />
+<ResponseField name="is_business" type="boolean" />
+<ResponseField name="business_name" type="string" />
+<ResponseField name="first_name" type="string" />
+<ResponseField name="last_name" type="string" />
+<ResponseField name="country" type="string">ISO 3166-1 alpha-2.</ResponseField>
+<ResponseField name="currency" type="string">Inferred from `country` when omitted.</ResponseField>
+<ResponseField name="phone" type="string" />
 <ResponseField name="address" type="object">
-  Postal address as submitted.
+  <Expandable title="address">
+    <ResponseField name="streetLine1" type="string" />
+    <ResponseField name="streetLine2" type="string" />
+    <ResponseField name="city" type="string" />
+    <ResponseField name="state" type="string" />
+    <ResponseField name="postalCode" type="string" />
+    <ResponseField name="country" type="string" />
+  </Expandable>
 </ResponseField>
-
-<ResponseField name="transfer_type" type="string">
-  `"fiat"` or `"stablecoin"`. Legacy 4-way values (`fiat_to_fiat`, `fiat_to_stablecoin`, etc.) are normalised to the 2-way form on read.
-</ResponseField>
-
-<ResponseField name="wallet_addresses" type="object">
-  Map of chain ID to wallet address, when `transfer_type` is `"stablecoin"`.
-</ResponseField>
-
-<ResponseField name="external_reference" type="object">
-  Map of `string` → `string`, echoed back from the request.
-</ResponseField>
-
-<ResponseField name="status" type="string">
-  Aggregated review status — `"pending"`, `"accepted"`, or `"rejected"`. While `"pending"`, the recipient exists but compliance review hasn't completed.
-</ResponseField>
-
-<ResponseField name="created_at" type="string">
-  ISO 8601 timestamp.
-</ResponseField>
-
-<ResponseField name="updated_at" type="string">
-  ISO 8601 timestamp.
-</ResponseField>
+<ResponseField name="transfer_type" type="string">`"fiat"` or `"stablecoin"`.</ResponseField>
+<ResponseField name="wallet_addresses" type="object">Chain ID → address, when `transfer_type` is `"stablecoin"`.</ResponseField>
+<ResponseField name="external_reference" type="object">Map of `string` → `string`.</ResponseField>
+<ResponseField name="status" type="string">`"pending"`, `"accepted"`, or `"rejected"`.</ResponseField>
+<ResponseField name="created_at" type="string">ISO 8601.</ResponseField>
+<ResponseField name="updated_at" type="string">ISO 8601.</ResponseField>
 
 <ResponseExample>
 ```json 201 — Fiat recipient

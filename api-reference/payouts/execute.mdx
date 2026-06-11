@@ -4,9 +4,9 @@ api: POST /api/rfq/execute
 description: Lock a quote and start the payout in one call.
 ---
 
-This single call generates a quote, locks it, and starts the payout. The shape of the request and response depends on which corridor you're paying out on — pick the matching tab.
+Lock + start a payout in one call. Pick the matching tab — shapes differ by corridor.
 
-Response is wrapped: `{ "success": true, "data": { … } }`. The fields below sit on `data`.
+Response: `{ "success": true, "data": { … } }`.
 
 <Info>**Scope** `payouts:write` · rate-limited</Info>
 

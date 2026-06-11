@@ -4,7 +4,7 @@ api: POST /api/rfq/execute-batch
 description: Lock and execute N payouts that share a source currency, in one call.
 ---
 
-Same lock-and-execute model as [`POST /rfq/execute`](/api-reference/payouts/execute), batched. All rows share one `fromCurrency`; each row picks its own destination + recipient. The response carries a per-row envelope so partial failure is graceful — walk `data.rows`, retry the `retryable: true` failures.
+Batched [`POST /rfq/execute`](/api-reference/payouts/execute). Rows share `fromCurrency`. Partial failure is per-row — walk `data.rows`, retry `retryable: true`.
 
 <Info>**Scope** `payouts:write` · rate-limited</Info>
 

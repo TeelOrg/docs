@@ -1,12 +1,10 @@
 ---
 title: Get recipient requirements
 api: GET /api/recipients/requirements
-description: Discover the merged field schema for creating a recipient on your account
+description: Field schema for creating a recipient.
 ---
 
-Returns the field schema your account needs to create a recipient. The shape has two sections: `bank` for fiat recipients and `wallet` for stablecoin recipients.
-
-Use this before [`POST /recipients`](/api-reference/recipients/create) to build a dynamic form that matches what your account supports today.
+Two sections: `bank` for fiat, `wallet` for stablecoin. Call before [`POST /recipients`](/api-reference/recipients/create).
 
 <Info>**Scope** `recipients:read`</Info>
 
@@ -19,11 +17,11 @@ Use this before [`POST /recipients`](/api-reference/recipients/create) to build 
 ## Query parameters
 
 <ParamField query="relationship" type="string">
-  Optional. Recipient relationship — `self` (the recipient is the same business as the partner) or `third_party` (a separate counterparty). Some corridors gate fields by relationship.
+  Optional. `self` or `third_party`.
 </ParamField>
 
 <ParamField query="country" type="string">
-  Optional ISO 3166-1 alpha-2 country code. When provided, rails not valid for that country are filtered out (e.g. ACH is dropped for non-US recipients).
+  Optional ISO 3166-1 alpha-2. Filters out rails not valid for the country.
 </ParamField>
 
 ## Response
@@ -40,32 +38,32 @@ Use this before [`POST /recipients`](/api-reference/recipients/create) to build 
     </ResponseField>
 
     <ResponseField name="fields" type="array">
-      Every field that may apply to the create-recipient body — both common fields (e.g. `email`, `country`, `transferType`) and rail-specific fields (e.g. `accountNumber`, `routingNumber`, `iban`). Rail-specific fields carry `visibleWhen` conditions so your form can show them only when the chosen rail needs them. See the field-requirement object shape below.
+      Every field that may apply. Rail-specific fields carry `visibleWhen` conditions. See [Field object](#field-requirement-object).
     </ResponseField>
 
     <ResponseField name="bank" type="object">
-      Currency / rail catalogue for fiat recipients. **Note:** no `fields` sub-property here — every field, including bank rail-gated ones, sits on the top-level `data.fields` array.
+      Currencies + rails for fiat. All rail-gated fields sit on `data.fields`, not here.
       <Expandable title="bank">
         <ResponseField name="currencies" type="string[]">
-          Currencies the bank section supports.
+          Supported currencies.
         </ResponseField>
         <ResponseField name="currencyRailMap" type="object">
-          Map of currency → list of rails available for that currency (e.g. `{ "USD": ["ach", "wire"], "EUR": ["sepa"] }`).
+          Currency → list of rails.
         </ResponseField>
       </Expandable>
     </ResponseField>
 
     <ResponseField name="wallet" type="object">
-      Currency / chain catalogue for stablecoin recipients.
+      Currencies + chains for stablecoin.
       <Expandable title="wallet">
         <ResponseField name="currencies" type="string[]">
-          Stablecoin tickers supported (e.g. `USDC`, `USDCPOLYGON`).
+          Stablecoin tickers (e.g. `USDC`, `USDCPOLYGON`).
         </ResponseField>
         <ResponseField name="rails" type="string[]">
-          Chain names (e.g. `polygon`, `arbitrum`, `ethereum`), sorted alphabetically.
+          Chain names, sorted.
         </ResponseField>
         <ResponseField name="railLabels" type="string[]">
-          Human-readable labels parallel to `rails` — `railLabels[i]` is the label for `rails[i]`.
+          Labels parallel to `rails`.
         </ResponseField>
       </Expandable>
     </ResponseField>
@@ -77,27 +75,27 @@ Use this before [`POST /recipients`](/api-reference/recipients/create) to build 
 Every entry in `data.fields` has this shape:
 
 <ResponseField name="name" type="string">
-  Field identifier — use as the JSON key on the create-recipient body (e.g. `accountNumber`, `routingNumber`, `bankName`).
+  JSON key on the create-recipient body.
 </ResponseField>
 
 <ResponseField name="type" type="string">
-  One of `string`, `number`, `enum`, `object`, `array`.
+  `string` · `number` · `enum` · `object` · `array`.
 </ResponseField>
 
 <ResponseField name="required" type="boolean">
-  Whether the field must be present on submit.
+  Required on submit.
 </ResponseField>
 
 <ResponseField name="description" type="string">
-  Human-readable description suitable for a form label or hint.
+  Form label / hint.
 </ResponseField>
 
 <ResponseField name="enum" type="string[]">
-  Allowed values, when `type` is `enum`.
+  Allowed values (enum).
 </ResponseField>
 
 <ResponseField name="visibleWhen" type="object">
-  Conditional visibility — render this field only when sibling fields satisfy the listed equality (e.g. `{ rail: ["ach", "wire"] }`).
+  Show only when sibling fields match (e.g. `{ rail: ["ach", "wire"] }`).
 </ResponseField>
 
 <ResponseExample>
@@ -136,6 +134,6 @@ Every entry in `data.fields` has this shape:
 
 | Status | Code | Meaning |
 | --- | --- | --- |
-| `400` | — | No active routing for your account yet. Complete KYB onboarding before creating recipients. |
-| `401` | `UNAUTHORIZED` | Missing or invalid key. |
-| `403` | `FORBIDDEN` | Key is valid but lacks the `recipients:read` scope. |
+| `400` | — | No active routing yet — complete KYB first. |
+| `401` | `UNAUTHORIZED` | Missing/invalid key. |
+| `403` | `FORBIDDEN` | Key lacks `recipients:read`. |
