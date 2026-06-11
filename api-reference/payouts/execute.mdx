@@ -8,12 +8,12 @@ This single call generates a quote, locks it, and starts the payout. The shape o
 
 Response is wrapped: `{ "success": true, "data": { … } }`. The fields below sit on `data`.
 
-Scope: `payouts:write`. Rate-limited.
+<Info>**Scope** `payouts:write` · rate-limited</Info>
 
 ## Headers
 
 <ParamField header="Authorization" type="string" required>
-  `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
+  API key.
 </ParamField>
 
 <ParamField header="Idempotency-Key" type="string">
@@ -129,7 +129,7 @@ Switch tabs for the type-specific fields and response shape.
 
     <ResponseField name="payoutId" type="string">UUID of the new payout.</ResponseField>
     <ResponseField name="quoteId" type="string">UUID of the locked quote.</ResponseField>
-    <ResponseField name="status" type="string">Passed through from the onramp provider.</ResponseField>
+    <ResponseField name="status" type="string">Passed through from the onramp route.</ResponseField>
     <ResponseField name="toAmount" type="number">Destination stablecoin amount.</ResponseField>
     <ResponseField name="partnerFxRate" type="number">Quoted FX rate, pre-fees.</ResponseField>
     <ResponseField name="effectiveRate" type="number">Effective rate net of fees.</ResponseField>

@@ -6,10 +6,12 @@ description: Fetch a single recipient by ID
 
 Returns the full recipient record. Returns `404` if the ID isn't yours.
 
+<Info>**Scope** `recipients:read`</Info>
+
 ## Headers
 
 <ParamField header="Authorization" type="string" required>
-  `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
+  API key.
 </ParamField>
 
 ## Path parameters
@@ -73,7 +75,7 @@ Returns the full recipient record. Returns `404` if the ID isn't yours.
 </ResponseField>
 
 <ResponseField name="status" type="string">
-  Aggregated provider review status — `"pending"`, `"accepted"`, or `"rejected"`.
+  Aggregated review status — `"pending"`, `"accepted"`, or `"rejected"`.
 </ResponseField>
 
 <ResponseField name="created_at" type="string">

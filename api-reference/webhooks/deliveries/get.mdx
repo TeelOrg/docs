@@ -6,10 +6,12 @@ description: Fetch one webhook delivery by ID
 
 Returns a single delivery row. Useful as a follow-up after [Replay](/api-reference/webhooks/deliveries/replay) to poll for the new delivery's outcome.
 
+<Info>**Scope** `webhooks:read`</Info>
+
 ## Headers
 
 <ParamField header="Authorization" type="string" required>
-  `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
+  API key.
 </ParamField>
 
 ## Path parameters

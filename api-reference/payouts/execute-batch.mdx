@@ -6,12 +6,12 @@ description: Lock and execute N payouts that share a source currency, in one cal
 
 Same lock-and-execute model as [`POST /rfq/execute`](/api-reference/payouts/execute), batched. All rows share one `fromCurrency`; each row picks its own destination + recipient. The response carries a per-row envelope so partial failure is graceful — walk `data.rows`, retry the `retryable: true` failures.
 
-Scope: `payouts:write`. Rate-limited.
+<Info>**Scope** `payouts:write` · rate-limited</Info>
 
 ## Headers
 
 <ParamField header="Authorization" type="string" required>
-  `Bearer sk_test_…` / `Bearer sk_live_…`.
+  API key.
 </ParamField>
 
 <ParamField header="Idempotency-Key" type="string">
@@ -27,7 +27,7 @@ Scope: `payouts:write`. Rate-limited.
 <Tabs>
   <Tab title="Fiat-to-fiat / Onramp">
     <ParamField body="fromCurrency" type="string" required>Shared source currency.</ParamField>
-    <ParamField body="onrampProtocol" type="string" required>Opaque onramp route token. Pins every row to the same onramp provider.</ParamField>
+    <ParamField body="onrampProtocol" type="string" required>Opaque onramp route token. Pins every row to the same onramp route.</ParamField>
     <ParamField body="userPaymentMethodId" type="string" required>Shared funding source.</ParamField>
     <ParamField body="items" type="object[]" required>
       Non-empty array of payouts.

@@ -1,10 +1,10 @@
 ---
 title: Get Best Fiat-to-Fiat Quote
 api: GET https://api.teel.finance/api/quotes/fiat-to-fiat/best
-description: Get the best exchange rate across all providers for a fiat-to-fiat transfer
+description: Get the best exchange rate available for a fiat-to-fiat transfer
 ---
 
-Returns the single best quote (lowest effective rate) across all connected providers for converting one fiat currency to another.
+Returns the single best quote (lowest effective rate) available for converting one fiat currency to another.
 
 ## Query parameters
 <ParamField query="source_currency" type="string" required>
@@ -45,7 +45,7 @@ Returns the single best quote (lowest effective rate) across all connected provi
 </ResponseField>
 
 <ResponseField name="provider" type="string">
-  The provider offering this quote.
+  Opaque routing identifier.
 </ResponseField>
 
 <ResponseField name="fee" type="number">

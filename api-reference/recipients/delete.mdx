@@ -4,12 +4,14 @@ api: DELETE /api/recipients/{id}
 description: Delete a recipient
 ---
 
-Removes the recipient and its counterparty rows across providers. Past payouts that reference the recipient are unaffected.
+Removes the recipient. Past payouts that reference the recipient are unaffected.
+
+<Info>**Scope** `recipients:write` · rate-limited</Info>
 
 ## Headers
 
 <ParamField header="Authorization" type="string" required>
-  `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
+  API key.
 </ParamField>
 
 ## Path parameters

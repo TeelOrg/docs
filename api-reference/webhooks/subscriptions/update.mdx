@@ -6,10 +6,12 @@ description: Update a webhook subscription
 
 All fields are optional — any field you omit stays unchanged. Returns the updated subscription. Pausing stops new deliveries from being enqueued; in-flight retries continue.
 
+<Info>**Scope** `webhooks:write` · rate-limited</Info>
+
 ## Headers
 
 <ParamField header="Authorization" type="string" required>
-  `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
+  API key.
 </ParamField>
 
 ## Path parameters

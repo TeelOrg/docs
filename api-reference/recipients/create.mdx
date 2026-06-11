@@ -13,10 +13,12 @@ Partners typically follow a two-step pattern:
 
 The requirements endpoint returns a merged shape with `bank` and `wallet` sub-sections so a single response covers both recipient types — your form picks the relevant section after the user has chosen Fiat vs Stablecoin.
 
+<Info>**Scope** `recipients:write` · rate-limited</Info>
+
 ## Headers
 
 <ParamField header="Authorization" type="string" required>
-  `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
+  API key.
 </ParamField>
 
 <ParamField header="Idempotency-Key" type="string">
@@ -34,7 +36,7 @@ The body has two parts: a small set of fields common to every recipient, and a t
 </ParamField>
 
 <ParamField body="country" type="string" required>
-  ISO 3166-1 alpha-2 country code (e.g. `PH`, `MX`, `NG`). Drives provider selection and the per-country rail subset.
+  ISO 3166-1 alpha-2 country code (e.g. `PH`, `MX`, `NG`). Drives routing and the per-country rail subset.
 </ParamField>
 
 <ParamField body="isBusiness" type="string">
@@ -54,7 +56,7 @@ The body has two parts: a small set of fields common to every recipient, and a t
 </ParamField>
 
 <ParamField body="phone" type="string">
-  E.164 phone number. Required by some providers for certain corridors.
+  E.164 phone number. Required for some corridors.
 </ParamField>
 
 <ParamField body="address" type="object">
@@ -174,7 +176,7 @@ Returns the persisted recipient. `id` is a UUID — store it on your side to ref
 </ResponseField>
 
 <ResponseField name="status" type="string">
-  Aggregated provider review status — `"pending"`, `"accepted"`, or `"rejected"`. Driven by the underlying counterparty rows. While `"pending"`, the recipient exists on Teel's side but at least one provider hasn't finished its compliance check.
+  Aggregated review status — `"pending"`, `"accepted"`, or `"rejected"`. While `"pending"`, the recipient exists but compliance review hasn't completed.
 </ResponseField>
 
 <ResponseField name="created_at" type="string">

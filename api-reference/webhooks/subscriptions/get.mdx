@@ -6,10 +6,12 @@ description: Fetch one webhook subscription by ID
 
 Returns a single subscription. Returns `404` if the id isn't yours.
 
+<Info>**Scope** `webhooks:read`</Info>
+
 ## Headers
 
 <ParamField header="Authorization" type="string" required>
-  `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
+  API key.
 </ParamField>
 
 ## Path parameters

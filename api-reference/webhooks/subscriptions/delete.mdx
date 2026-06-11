@@ -6,10 +6,12 @@ description: Delete a webhook subscription
 
 Removes the subscription **and** all of its pending / historical deliveries (cascade). Use [Update](/api-reference/webhooks/subscriptions/update) with `status: "paused"` instead if you want to stop deliveries without losing the audit trail.
 
+<Info>**Scope** `webhooks:write` · rate-limited</Info>
+
 ## Headers
 
 <ParamField header="Authorization" type="string" required>
-  `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
+  API key.
 </ParamField>
 
 ## Path parameters

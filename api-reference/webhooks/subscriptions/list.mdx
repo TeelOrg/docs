@@ -16,10 +16,12 @@ Returns every subscription on your account. Each row carries its delivery URL, t
 
 Loopback, RFC1918 private, link-local, and known cloud metadata host/IP ranges are rejected at create time and at delivery time (DNS is re-resolved before every POST).
 
+<Info>**Scope** `webhooks:read`</Info>
+
 ## Headers
 
 <ParamField header="Authorization" type="string" required>
-  `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
+  API key.
 </ParamField>
 
 ## Response

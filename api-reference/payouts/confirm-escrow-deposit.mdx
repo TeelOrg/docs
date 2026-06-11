@@ -6,12 +6,12 @@ description: Manual fallback when auto-detection misses your on-chain deposit.
 
 S2F payouts auto-detect deposits to `escrowAddress` via on-chain log polling (~10 s interval, runs for as long as the quote lock is alive). If your transfer lands but auto-detect misses it, post the tx hash here to register the deposit manually. Idempotent on duplicate `(quoteId, txHash)`.
 
-Scope: `payouts:write`. Rate-limited.
+<Info>**Scope** `payouts:write` · rate-limited</Info>
 
 ## Headers
 
 <ParamField header="Authorization" type="string" required>
-  `Bearer sk_test_…` / `Bearer sk_live_…`.
+  API key.
 </ParamField>
 
 <ParamField header="Idempotency-Key" type="string">Optional.</ParamField>

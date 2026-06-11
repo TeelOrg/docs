@@ -4,10 +4,12 @@ api: GET /api/payouts/{id}
 description: Get a payout by ID
 ---
 
+<Info>**Scope** `payouts:read`</Info>
+
 ## Headers
 
 <ParamField header="Authorization" type="string" required>
-  `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
+  API key.
 </ParamField>
 
 ## Path parameters

@@ -6,10 +6,12 @@ description: Update a recipient. Any field you omit stays unchanged.
 
 All fields are optional — only the fields you include are written. To change recipient type (fiat ↔ stablecoin), submit the relevant `transferType` plus the corresponding `paymentMethods` (fiat) or `walletAddresses` (stablecoin).
 
+<Info>**Scope** `recipients:write` · rate-limited</Info>
+
 ## Headers
 
 <ParamField header="Authorization" type="string" required>
-  `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
+  API key.
 </ParamField>
 
 ## Path parameters
@@ -37,7 +39,7 @@ All fields are optional — only the fields you include are written. To change r
 </ParamField>
 
 <ParamField body="country" type="string">
-  New ISO 3166-1 alpha-2 country code. Changing this can change which provider services the recipient.
+  New ISO 3166-1 alpha-2 country code. Changing this can change the available routing.
 </ParamField>
 
 <ParamField body="phone" type="string">

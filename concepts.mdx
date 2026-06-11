@@ -32,7 +32,7 @@ flowchart LR
 ## Lifecycle of a payout
 
 1. **KYB once** — submit your business verification through Teel. We propagate it to every provider that licenses your corridors.
-2. **Add recipients** — created in Teel, provisioned across providers in the background.
+2. **Add recipients** — created in Teel, provisioned in the background.
 3. **Quote** — one request fans out to every provider on the corridor; the best route comes back.
 4. **Execute** — Teel pins the chosen route with an opaque token and settles through the winning provider.
 

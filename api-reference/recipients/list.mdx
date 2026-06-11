@@ -6,10 +6,12 @@ description: List every recipient on your account
 
 Returns every recipient registered on your account. To narrow by counterparty status or transfer type, fetch the list then filter on your side — server-side filters by attribute aren't exposed today.
 
+<Info>**Scope** `recipients:read`</Info>
+
 ## Headers
 
 <ParamField header="Authorization" type="string" required>
-  `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
+  API key.
 </ParamField>
 
 ## Query parameters
@@ -71,7 +73,7 @@ Each list entry has the same shape as a single recipient from [Get recipient](/a
 </ResponseField>
 
 <ResponseField name="status" type="string">
-  Aggregated provider review status — `"pending"`, `"accepted"`, or `"rejected"`.
+  Aggregated review status — `"pending"`, `"accepted"`, or `"rejected"`.
 </ResponseField>
 
 <ResponseField name="created_at" type="string">

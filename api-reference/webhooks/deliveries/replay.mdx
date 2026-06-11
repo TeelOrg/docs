@@ -11,10 +11,12 @@ Use this for:
 - Debugging your verifier — drop a row, fix the bug, replay, watch it land.
 - Recovering from a long outage on your side — walk the `permanently_failed` deliveries and replay them once your endpoint is healthy.
 
+<Info>**Scope** `webhooks:write` · rate-limited</Info>
+
 ## Headers
 
 <ParamField header="Authorization" type="string" required>
-  `Bearer sk_test_…` (sandbox) or `Bearer sk_live_…` (production).
+  API key.
 </ParamField>
 
 ## Path parameters

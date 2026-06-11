@@ -4,14 +4,14 @@ api: GET /api/rfq/status/{quoteId}
 description: Current status of a payout, by quote ID.
 ---
 
-Lookup by the `quoteId` returned from [`POST /rfq/execute`](/api-reference/payouts/execute). Response is wrapped: `{ "success": true, "data": <QuoteStatus> }`.
+Lookup by the `quoteId` returned from [`POST /rfq/execute`](/api-reference/payouts/execute). Response is wrapped: `{ "success": true, "data": <QuoteStatus> }`. For push-based updates, subscribe to `payout.status.updated` and `payout.delivered` via [Webhooks](/guides/webhooks) instead of polling.
 
-Scope: `payouts:read`. For push-based updates, subscribe to `payout.status.updated` and `payout.delivered` via [Webhooks](/guides/webhooks) instead of polling.
+<Info>**Scope** `payouts:read`</Info>
 
 ## Headers
 
 <ParamField header="Authorization" type="string" required>
-  `Bearer sk_test_…` / `Bearer sk_live_…`.
+  API key.
 </ParamField>
 
 ## Path parameters

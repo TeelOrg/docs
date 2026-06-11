@@ -6,7 +6,7 @@ description: Currencies, rails, directions, and amount bounds the platform can o
 
 Returns the full currency & rails coverage matrix for the platform: which fiat currencies are supported, the payment rails available for each, whether each can be used for onramp (pay-in) and/or offramp (pay-out), and the per-currency amount bounds. It also lists the supported stablecoin tokens and the chains they settle on.
 
-This endpoint is derived entirely from live platform configuration — as corridors, currencies, rails, or providers change, the response updates automatically. Provider identities are never exposed.
+This endpoint is derived entirely from live platform configuration — as corridors, currencies, and rails change, the response updates automatically.
 
 <Note>
   This endpoint requires no authentication and can be called publicly. Coverage
@@ -23,8 +23,8 @@ This endpoint is derived entirely from live platform configuration — as corrid
     <ResponseField name="decimals" type="integer">Decimal precision for amounts in this currency (e.g. `2`, or `0` for IDR/VND).</ResponseField>
     <ResponseField name="onramp" type="boolean">Whether the currency can be used as a pay-in (onramp) source.</ResponseField>
     <ResponseField name="offramp" type="boolean">Whether the currency can be paid out (offramp) to a recipient.</ResponseField>
-    <ResponseField name="minAmount" type="number">Smallest supported amount across providers, when known. Omitted if unbounded.</ResponseField>
-    <ResponseField name="maxAmount" type="number">Largest supported amount across providers, when known. Omitted if unbounded.</ResponseField>
+    <ResponseField name="minAmount" type="number">Smallest supported amount, when known. Omitted if unbounded.</ResponseField>
+    <ResponseField name="maxAmount" type="number">Largest supported amount, when known. Omitted if unbounded.</ResponseField>
     <ResponseField name="rails" type="array">
       Payment rails available for this currency.
       <Expandable title="Rail object">
