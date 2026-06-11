@@ -50,24 +50,24 @@ This guide walks you through making your first payout against the Teel **sandbox
       -H "Idempotency-Key: $(uuidgen)" \
       -d '{
         "email": "payments@acme-ph.com",
-        "is_business": true,
-        "business_name": "Acme Corp Philippines",
+        "isBusiness": true,
+        "businessName": "Acme Corp Philippines",
         "country": "PH",
         "currency": "PHP",
-        "transfer_type": "fiat",
-        "payment_methods": [
+        "transferType": "fiat",
+        "paymentMethods": [
           {
             "currency": "PHP",
             "type": "bank_account",
             "rail": "bank_transfer",
-            "bank_name": "BDO",
-            "account_number": "1234567890"
+            "bankName": "BDO",
+            "accountNumber": "1234567890"
           }
         ]
       }'
     ```
 
-    Save the `id` from the response — that's your `recipient_id`.
+    Save the `id` from the response — that's your `recipientId`.
 
     The `Idempotency-Key` header is optional but recommended: a timeout-retry with the same key replays the cached response (24h window) instead of creating a duplicate recipient. See [`POST /recipients`](/api-reference/recipients/create) for every field.
   </Step>

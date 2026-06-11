@@ -24,15 +24,14 @@ Returns `404` if the ID isn't yours.
 
 <ResponseField name="id" type="string">UUID.</ResponseField>
 <ResponseField name="email" type="string" />
-<ResponseField name="is_business" type="boolean" />
-<ResponseField name="business_name" type="string" />
-<ResponseField name="first_name" type="string" />
-<ResponseField name="last_name" type="string" />
+<ResponseField name="isBusiness" type="boolean" />
+<ResponseField name="businessName" type="string" />
+<ResponseField name="firstName" type="string" />
+<ResponseField name="lastName" type="string" />
 <ResponseField name="country" type="string">ISO 3166-1 alpha-2.</ResponseField>
 <ResponseField name="currency" type="string" />
 <ResponseField name="phone" type="string" />
 <ResponseField name="address" type="object">
-  Nested fields are camelCase.
   <Expandable title="address">
     <ResponseField name="streetLine1" type="string" />
     <ResponseField name="streetLine2" type="string" />
@@ -42,20 +41,20 @@ Returns `404` if the ID isn't yours.
     <ResponseField name="country" type="string" />
   </Expandable>
 </ResponseField>
-<ResponseField name="transfer_type" type="string">`"fiat"` or `"stablecoin"`.</ResponseField>
-<ResponseField name="wallet_addresses" type="object">Chain ID → address, when `transfer_type` is `"stablecoin"`.</ResponseField>
-<ResponseField name="external_reference" type="object">Map of `string` → `string`.</ResponseField>
+<ResponseField name="transferType" type="string">`"fiat"` or `"stablecoin"`.</ResponseField>
+<ResponseField name="walletAddresses" type="object">Chain ID → address, when `transferType` is `"stablecoin"`.</ResponseField>
+<ResponseField name="externalReference" type="object">Map of `string` → `string`.</ResponseField>
 <ResponseField name="status" type="string">`"pending"`, `"accepted"`, or `"rejected"`.</ResponseField>
-<ResponseField name="created_at" type="string">ISO 8601.</ResponseField>
-<ResponseField name="updated_at" type="string">ISO 8601.</ResponseField>
+<ResponseField name="createdAt" type="string">ISO 8601.</ResponseField>
+<ResponseField name="updatedAt" type="string">ISO 8601.</ResponseField>
 
 <ResponseExample>
 ```json 200
 {
   "id": "8b1a4c1d-7a3c-4a08-94ad-9f1ef1e0c3a2",
   "email": "payments@acme-ph.com",
-  "is_business": true,
-  "business_name": "Acme Corp Philippines",
+  "isBusiness": true,
+  "businessName": "Acme Corp Philippines",
   "country": "PH",
   "currency": "PHP",
   "phone": "+639170000000",
@@ -66,11 +65,11 @@ Returns `404` if the ID isn't yours.
     "postalCode": "1226",
     "country": "PH"
   },
-  "transfer_type": "fiat",
-  "external_reference": { "vendor_id": "ACME-001" },
+  "transferType": "fiat",
+  "externalReference": { "vendor_id": "ACME-001" },
   "status": "accepted",
-  "created_at": "2026-06-09T10:00:00Z",
-  "updated_at": "2026-06-09T10:00:00Z"
+  "createdAt": "2026-06-09T10:00:00Z",
+  "updatedAt": "2026-06-09T10:00:00Z"
 }
 ```
 </ResponseExample>

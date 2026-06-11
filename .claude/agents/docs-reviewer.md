@@ -39,8 +39,8 @@ Each finding gets one of these axes. Skip axes that don't apply — don't manufa
 #### Accuracy
 
 - Endpoint exists at the documented path + method. Middleware allows the documented auth scheme (`sk_` for partner-callable, JWT for `denyPartner`).
-- Path / body parameter names match the DTO struct's JSON tags exactly. CamelCase vs snake_case mismatches happen surprisingly often.
-- Query-parameter names match what the handler reads. Grep the handler for `c.Query`, `c.DefaultQuery`, and `c.QueryArray` and confirm each documented `<ParamField query="…">` name appears in that handler. The Go variable name and the query-string name often differ (e.g. `recipientCountry := c.DefaultQuery("country", "")` — docs must say `country`, not `recipient_country`).
+- Path / body / response field names match the DTO struct's JSON tags exactly. Drift happens surprisingly often when models change but docs don't (and vice versa).
+- Query-parameter names match what the handler reads. Grep the handler for `c.Query`, `c.DefaultQuery`, and `c.QueryArray` and confirm each documented `<ParamField query="…">` name appears in that handler. The Go variable name and the query-string name often differ (e.g. `recipientCountry := c.DefaultQuery("country", "")` — docs must say `country`, not `recipientCountry`). Query params are snake_case where the handler reads them that way (`subscription_id`, `user_payment_method_id`) — do not auto-flip these to camelCase.
 - Response fields match the actual response struct's JSON tags. Watch for fields that the model has but the docs omit, and fields the docs claim but the model doesn't have (deprecation candidates leaked into docs).
 - Enum values are the live ones — not historical. Teel has had several 4-way → 2-way enum migrations (e.g. `transferType` was `fiat_to_fiat / fiat_to_stablecoin / stablecoin_to_stablecoin / stablecoin_to_fiat`, now `fiat / stablecoin`). Search `providers/rail.go` for the constants.
 - Status codes (`201 Created` vs `200 OK`, `404` vs `409`) match what the handler actually returns.
@@ -63,8 +63,7 @@ Each finding gets one of these axes. Skip axes that don't apply — don't manufa
 
 #### Consistency
 
-- Casing matches across pages. Recipient JSON responses are snake_case (`business_name`, `transfer_type`, `wallet_addresses`); webhook payloads also snake_case. Request DTOs are camelCase (`businessName`, `transferType`). Don't let example JSON drift between them.
-- **Casing applies per-struct, not per-page.** A snake_case parent response can carry a camelCase nested struct (e.g. `Recipient` is snake_case but its embedded `Address` ships as `streetLine1`, `postalCode` — `models/address.go`). Re-grep each nested type's JSON tags before mirroring the example; don't assume the parent's casing propagates.
+- Casing matches across pages. The partner API speaks one shape: **camelCase, everywhere** — responses, request bodies, JSON examples, webhook event payloads (TEELS-276, 2026-06-10). The only carve-outs are user-supplied map keys inside `externalReference` (partner decides) and a few legacy query-string params kept snake_case for back-compat (`?subscription_id`, `?user_payment_method_id`). Don't let example JSON drift back to snake_case.
 - Section headers are lowercase per the template (`## Path parameters`, not `## Path Parameters`).
 - Same terminology for the same thing — "partner" not "user" / "customer" / "client"; "recipient" not "counterparty" in partner-facing prose (counterparty is the internal term, surfaced in capabilities endpoint names but explained as recipient-equivalent).
 - Cross-link patterns are uniform: `/api-reference/<group>/<page>` for endpoint pages, `/concepts#<anchor>` for concept anchors, `/guides/<page>` for guides.

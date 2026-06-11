@@ -24,7 +24,7 @@ description: Get a payout by ID
   Payout ID.
 </ResponseField>
 
-<ResponseField name="transaction_type" type="string">
+<ResponseField name="transactionType" type="string">
   `payout` or `swap`.
 </ResponseField>
 
@@ -32,31 +32,31 @@ description: Get a payout by ID
   `pending`, `processing`, `completed`, `failed`, or `cancelled`. See [Core Concepts](/concepts#transaction-status) for the lifecycle.
 </ResponseField>
 
-<ResponseField name="source_amount" type="number">
+<ResponseField name="sourceAmount" type="number">
   Amount debited.
 </ResponseField>
 
-<ResponseField name="source_currency" type="string">
+<ResponseField name="sourceCurrency" type="string">
   ISO 4217 code.
 </ResponseField>
 
-<ResponseField name="payout_amount" type="number">
+<ResponseField name="payoutAmount" type="number">
   Amount credited to the recipient.
 </ResponseField>
 
-<ResponseField name="payout_currency" type="string">
+<ResponseField name="payoutCurrency" type="string">
   ISO 4217 code.
 </ResponseField>
 
-<ResponseField name="recipient_id" type="string">
+<ResponseField name="recipientId" type="string">
   Recipient ID.
 </ResponseField>
 
-<ResponseField name="payment_method" type="string">
+<ResponseField name="paymentMethod" type="string">
   Funding method.
 </ResponseField>
 
-<ResponseField name="payment_purpose" type="string">
+<ResponseField name="paymentPurpose" type="string">
   Stated purpose.
 </ResponseField>
 
@@ -64,10 +64,10 @@ description: Get a payout by ID
   Free-text reference you set at execution time.
 </ResponseField>
 
-<ResponseField name="provider_metadata" type="object">
+<ResponseField name="providerMetadata" type="object">
   Routing detail for the executed payout.
 
-  <Expandable title="provider_metadata">
+  <Expandable title="providerMetadata">
     <ResponseField name="version" type="integer">
       Schema version.
     </ResponseField>
@@ -80,11 +80,11 @@ description: Get a payout by ID
   </Expandable>
 </ResponseField>
 
-<ResponseField name="created_at" type="string">
+<ResponseField name="createdAt" type="string">
   ISO 8601 timestamp.
 </ResponseField>
 
-<ResponseField name="completed_at" type="string">
+<ResponseField name="completedAt" type="string">
   ISO 8601 timestamp. Present when `status` is `completed`.
 </ResponseField>
 
@@ -92,22 +92,22 @@ description: Get a payout by ID
 ```json 200
 {
   "id": "pay_abc123",
-  "transaction_type": "payout",
+  "transactionType": "payout",
   "status": "completed",
-  "source_amount": 1000.00,
-  "source_currency": "USD",
-  "payout_amount": 4425.00,
-  "payout_currency": "MYR",
-  "recipient_id": "rec_xyz",
-  "payment_method": "fiat_bank_transfer",
-  "payment_purpose": "trade_settlement",
-  "provider_metadata": {
+  "sourceAmount": 1000.00,
+  "sourceCurrency": "USD",
+  "payoutAmount": 4425.00,
+  "payoutCurrency": "MYR",
+  "recipientId": "rec_xyz",
+  "paymentMethod": "fiat_bank_transfer",
+  "paymentPurpose": "trade_settlement",
+  "providerMetadata": {
     "version": 1,
     "onramp": { "protocol": "provider_a", "status": "completed" },
     "offramp": { "protocol": "provider_a", "amount": 4425, "currency": "MYR" }
   },
-  "created_at": "2026-03-01T10:00:00Z",
-  "completed_at": "2026-03-01T10:05:00Z"
+  "createdAt": "2026-03-01T10:00:00Z",
+  "completedAt": "2026-03-01T10:05:00Z"
 }
 ```
 </ResponseExample>

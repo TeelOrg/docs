@@ -41,7 +41,7 @@ Batched [`POST /rfq/execute`](/api-reference/payouts/execute). Rows share `fromC
         <ParamField body="routeProtocol" type="string">Per-row opaque route token.</ParamField>
         <ParamField body="paymentPurpose" type="string">Per-row classification.</ParamField>
         <ParamField body="reference" type="string">Per-row free-text reference.</ParamField>
-        <ParamField body="idempotency_key" type="string">Per-row dedup key — retry just this row.</ParamField>
+        <ParamField body="idempotencyKey" type="string">Per-row dedup key — retry just this row.</ParamField>
       </Expandable>
     </ParamField>
   </Tab>
@@ -69,7 +69,7 @@ Always `{ "success": true, "data": { "rows": [...], "items": [...] } }`. Use `ro
     <ResponseField name="transactionId" type="string">Present when `accepted`.</ResponseField>
     <ResponseField name="quoteId" type="string">Echoed for correlation.</ResponseField>
     <ResponseField name="errorCode" type="string">Present when `failed`.</ResponseField>
-    <ResponseField name="retryable" type="boolean">When `true`, re-fire just this row with the same `idempotency_key`.</ResponseField>
+    <ResponseField name="retryable" type="boolean">When `true`, re-fire just this row with the same `idempotencyKey`.</ResponseField>
   </Expandable>
 </ResponseField>
 

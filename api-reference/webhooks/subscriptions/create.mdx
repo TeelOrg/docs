@@ -6,7 +6,7 @@ description: Register a new webhook subscription
 
 Register a delivery URL.
 
-<Warning>The response includes `secret` (a `whsec_…` signing secret) **once**. Store it on receipt — only the `secret_prefix` is retrievable later.</Warning>
+<Warning>The response includes `secret` (a `whsec_…` signing secret) **once**. Store it on receipt — only the `secretPrefix` is retrievable later.</Warning>
 
 <Info>**Scope** `webhooks:write` · rate-limited</Info>
 
@@ -40,7 +40,7 @@ Register a delivery URL.
   The signing secret in plaintext. Returned only on create — store it immediately.
 </ResponseField>
 
-<ResponseField name="secret_prefix" type="string">
+<ResponseField name="secretPrefix" type="string">
   First few characters of the secret for partner-side identification on subsequent reads.
 </ResponseField>
 
@@ -48,7 +48,7 @@ Register a delivery URL.
   Always `active` on a new subscription.
 </ResponseField>
 
-The other fields (`url`, `events`, `label`, `last_success_at`, `last_failure_at`, `created_at`, `updated_at`) match the shape on [List subscriptions](/api-reference/webhooks/subscriptions/list).
+The other fields (`url`, `events`, `label`, `lastSuccessAt`, `lastFailureAt`, `createdAt`, `updatedAt`) match the shape on [List subscriptions](/api-reference/webhooks/subscriptions/list).
 
 <ResponseExample>
 ```json 201
@@ -57,13 +57,13 @@ The other fields (`url`, `events`, `label`, `last_success_at`, `last_failure_at`
   "url": "https://hooks.example.com/teel",
   "events": ["payout.created", "payout.status.updated"],
   "status": "active",
-  "secret_prefix": "whsec_Pdt_BP",
+  "secretPrefix": "whsec_Pdt_BP",
   "secret": "whsec_Pdt_BP3ft-nIDl86430kZrGEy8qd7zB4pCUmeU1GVB0",
   "label": "Production receiver",
-  "last_success_at": null,
-  "last_failure_at": null,
-  "created_at": "2026-05-27T09:30:00Z",
-  "updated_at": "2026-05-27T09:30:00Z"
+  "lastSuccessAt": null,
+  "lastFailureAt": null,
+  "createdAt": "2026-05-27T09:30:00Z",
+  "updatedAt": "2026-05-27T09:30:00Z"
 }
 ```
 </ResponseExample>

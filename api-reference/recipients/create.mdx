@@ -89,10 +89,10 @@ Body is a common section + a type-specific section keyed on `transferType`. Call
 
 <ResponseField name="id" type="string">UUID.</ResponseField>
 <ResponseField name="email" type="string" />
-<ResponseField name="is_business" type="boolean" />
-<ResponseField name="business_name" type="string" />
-<ResponseField name="first_name" type="string" />
-<ResponseField name="last_name" type="string" />
+<ResponseField name="isBusiness" type="boolean" />
+<ResponseField name="businessName" type="string" />
+<ResponseField name="firstName" type="string" />
+<ResponseField name="lastName" type="string" />
 <ResponseField name="country" type="string">ISO 3166-1 alpha-2.</ResponseField>
 <ResponseField name="currency" type="string">Inferred from `country` when omitted.</ResponseField>
 <ResponseField name="phone" type="string" />
@@ -106,44 +106,44 @@ Body is a common section + a type-specific section keyed on `transferType`. Call
     <ResponseField name="country" type="string" />
   </Expandable>
 </ResponseField>
-<ResponseField name="transfer_type" type="string">`"fiat"` or `"stablecoin"`.</ResponseField>
-<ResponseField name="wallet_addresses" type="object">Chain ID → address, when `transfer_type` is `"stablecoin"`.</ResponseField>
-<ResponseField name="external_reference" type="object">Map of `string` → `string`.</ResponseField>
+<ResponseField name="transferType" type="string">`"fiat"` or `"stablecoin"`.</ResponseField>
+<ResponseField name="walletAddresses" type="object">Chain ID → address, when `transferType` is `"stablecoin"`.</ResponseField>
+<ResponseField name="externalReference" type="object">Map of `string` → `string`.</ResponseField>
 <ResponseField name="status" type="string">`"pending"`, `"accepted"`, or `"rejected"`.</ResponseField>
-<ResponseField name="created_at" type="string">ISO 8601.</ResponseField>
-<ResponseField name="updated_at" type="string">ISO 8601.</ResponseField>
+<ResponseField name="createdAt" type="string">ISO 8601.</ResponseField>
+<ResponseField name="updatedAt" type="string">ISO 8601.</ResponseField>
 
 <ResponseExample>
 ```json 201 — Fiat recipient
 {
   "id": "8b1a4c1d-7a3c-4a08-94ad-9f1ef1e0c3a2",
   "email": "payments@acme-ph.com",
-  "is_business": true,
-  "business_name": "Acme Corp Philippines",
+  "isBusiness": true,
+  "businessName": "Acme Corp Philippines",
   "country": "PH",
   "currency": "PHP",
-  "transfer_type": "fiat",
-  "external_reference": { "vendor_id": "ACME-001" },
+  "transferType": "fiat",
+  "externalReference": { "vendor_id": "ACME-001" },
   "status": "pending",
-  "created_at": "2026-06-09T10:00:00Z",
-  "updated_at": "2026-06-09T10:00:00Z"
+  "createdAt": "2026-06-09T10:00:00Z",
+  "updatedAt": "2026-06-09T10:00:00Z"
 }
 ```
 ```json 201 — Stablecoin recipient
 {
   "id": "8b1a4c1d-7a3c-4a08-94ad-9f1ef1e0c3a2",
   "email": "treasury@acme-singapore.com",
-  "is_business": true,
-  "business_name": "Acme Singapore",
+  "isBusiness": true,
+  "businessName": "Acme Singapore",
   "country": "SG",
-  "transfer_type": "stablecoin",
-  "wallet_addresses": {
+  "transferType": "stablecoin",
+  "walletAddresses": {
     "137": "0xAbcDef0123456789AbcDef0123456789AbcDef01",
     "42161": "0xAbcDef0123456789AbcDef0123456789AbcDef01"
   },
   "status": "accepted",
-  "created_at": "2026-06-09T10:00:00Z",
-  "updated_at": "2026-06-09T10:00:00Z"
+  "createdAt": "2026-06-09T10:00:00Z",
+  "updatedAt": "2026-06-09T10:00:00Z"
 }
 ```
 </ResponseExample>
