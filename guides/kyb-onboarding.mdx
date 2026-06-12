@@ -1,140 +1,45 @@
 ---
-title: "KYB Onboarding"
-description: "Complete Know Your Business verification to start transacting"
+title: "KYB onboarding"
+description: "Complete Know Your Business verification before you start transacting"
 ---
 
 ## Overview
 
-Before you can send or receive payments through Teel, your business must complete Know Your Business (KYB) verification. Teel submits your KYB application to all relevant payment providers simultaneously, so you only need to fill out one form.
-
-## How It Works
-
-- KYB is submitted to **all relevant providers at once** based on the currencies and rails you need.
-- Different providers may require different fields. The capabilities endpoint returns a **merged schema** from all providers, so a single form submission satisfies all of them.
-- Some providers may require **additional documents** after initial submission (e.g., proof of address, articles of incorporation).
-
-## Step 1: Check Requirements
-
-Determine which fields are required for KYB based on the currencies you plan to transact in.
-
-```bash
-curl -X POST "https://api.teel.finance/api/kyb/capabilities/requirements" \
-  -H "Authorization: Bearer YOUR_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "currencies": ["USD", "EUR", "MXN"]
-  }'
-```
-
-### Response
-
-The response contains a dynamic form schema with all fields required for your selected currencies.
-
-```json
-{
-  "schema": {
-    "fields": [
-      {
-        "name": "business_name",
-        "type": "string",
-        "required": true,
-        "label": "Legal Business Name"
-      },
-      {
-        "name": "registration_number",
-        "type": "string",
-        "required": true,
-        "label": "Business Registration Number"
-      },
-      {
-        "name": "country",
-        "type": "string",
-        "required": true,
-        "label": "Country of Incorporation"
-      },
-      {
-        "name": "documents",
-        "type": "file_array",
-        "required": false,
-        "label": "Supporting Documents"
-      }
-    ]
-  }
-}
-```
-
-## Step 2: Build Your Form
-
-Use the dynamic schema from Step 1 to render a form in your application. Each field includes its type, label, and whether it is required. The schema adapts based on the currencies you selected -- if you add or remove currencies, re-fetch the requirements to get an updated schema.
-
-## Step 3: Submit KYB
-
-Submit the completed form data. Teel routes the submission to all providers that match your currency needs.
-
-```bash
-curl -X POST "https://api.teel.finance/api/kyb/register" \
-  -H "Authorization: Bearer YOUR_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "business_name": "Acme Corp",
-    "registration_number": "12345678",
-    "country": "US",
-    "address": {
-      "street": "123 Main St",
-      "city": "San Francisco",
-      "state": "CA",
-      "postal_code": "94105",
-      "country": "US"
-    },
-    "representative": {
-      "first_name": "Jane",
-      "last_name": "Doe",
-      "email": "jane@acmecorp.com",
-      "date_of_birth": "1990-01-15"
-    }
-  }'
-```
-
-## Step 4: Check Status
-
-Poll the onboarding status endpoint to track your verification progress.
-
-```bash
-curl -X GET "https://api.teel.finance/api/kyb/onboarding/status" \
-  -H "Authorization: Bearer YOUR_API_TOKEN"
-```
-
-### Response
-
-```json
-{
-  "status": "approved",
-  "updatedAt": "2026-03-11T14:00:00Z"
-}
-```
-
-### Status Values
-
-| Status         | What it means                                                                  |
-|----------------|--------------------------------------------------------------------------------|
-| `pending`      | Submission received, verification hasn't started yet                           |
-| `under_review` | Compliance review in progress                                                  |
-| `approved`     | You can transact in the currencies you requested in Step 1                     |
-| `rejected`     | Verification failed — check the response's `reason` field and contact support  |
+Before you can call the Teel API, your business completes Know Your Business (KYB) verification in the **Teel dashboard**. This is a one-time setup step. Once your KYB is approved you receive API keys scoped to the corridors you were approved for, and everything after that — recipients, quotes, payouts — happens through the API.
 
 <Note>
-KYB is reviewed independently for each corridor you requested. `status` reports the overall verdict; some corridors may approve before others. Once `status` becomes `approved`, your account is fully provisioned — there is no further action required from you before you can start transacting.
+KYB is a dashboard flow, not an API flow. Partner API keys (`sk_live_…` / `sk_test_…`) are scoped to operational endpoints (recipients, quotes, payouts, webhooks) and cannot submit or query KYB. If you haven't onboarded yet, contact **support@teel.finance** to get started.
 </Note>
 
-## Step 5: Confirm what you can route
+## How it works
 
-After approval, check `/config/coverage` to see the live matrix of currencies, rails, directions, and amount bounds available to your account. This is the authoritative view of what you can quote and execute.
+- You submit your business details and documents **once**, in the dashboard.
+- Teel propagates the relevant subset of your record to every payment provider whose license is needed for the corridors you requested — you don't fill out a separate form per provider.
+- Different providers require different fields; the dashboard presents a single merged form that satisfies all of them.
+- Each provider runs its own compliance review under its own license, so some corridors may approve before others.
+
+## What you'll provide
+
+The dashboard collects the information needed across your requested corridors. Typically:
+
+- **Business details** — legal name, registration number, country of incorporation, registered address.
+- **Beneficial owners / control persons** — names, ownership percentages, and identity details.
+- **Supporting documents** — certificate of registration, proof of address, and others depending on your jurisdiction and corridors.
+
+The exact fields adapt to the currencies and corridors you request — add a corridor and the form may ask for additional documents.
+
+## Tracking approval
+
+Approval status is shown in the dashboard. KYB is reviewed independently per corridor, so some corridors may go live before others. Once a corridor is approved it becomes routable with your API key — there's no further action required from you before you start transacting on it.
+
+## After approval: confirm what you can route
+
+Once your KYB clears, check the public coverage endpoint to see the live matrix of currencies, rails, directions, and amount bounds. No authentication is required:
 
 ```bash
-curl -X GET "https://api.teel.finance/config/coverage" \
-  -H "Authorization: Bearer YOUR_API_TOKEN"
+curl https://api.teel.finance/config/coverage
 ```
 
-See the [Coverage page](/coverage) for the full response schema.
+The coverage endpoint returns the **platform-wide** matrix; the corridors available to *your* account are the subset your KYB was approved for. See the [Coverage page](/coverage) for the full response schema.
 
-Once you've confirmed your corridors, move on to [payment methods](/guides/payment-methods) and [recipients](/guides/recipients) to start sending payouts.
+Once you've confirmed your corridors, move on to [recipients](/guides/recipients) to start sending payouts.

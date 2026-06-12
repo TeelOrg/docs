@@ -1,143 +1,36 @@
 ---
-title: "Crypto Payout"
-description: "Send stablecoins across chains using managed smart wallets"
+title: "Crypto payouts"
+description: "Send stablecoins across chains (dashboard feature)"
 ---
 
 ## Overview
 
-Crypto payouts allow you to send stablecoins from one chain to another using managed smart wallets and a cross-chain bridge. This is useful for cross-chain settlement, paying recipients in their preferred stablecoin, or moving funds between networks.
+Crypto payouts move stablecoins from one chain to another — funding a payout **with** stablecoin and delivering stablecoin to a recipient, including cross-chain (e.g. USDC on Arbitrum → USDC on Polygon) via a managed smart wallet and a cross-chain bridge. This is useful for cross-chain settlement and moving funds between networks.
 
 <Note>
-Requires smart wallet and bridge configuration on the server. Contact your account manager if you have not completed bridge setup.
+Crypto payouts (stablecoin-to-stablecoin) are a **dashboard feature**, not part of the partner API. Partner API keys (`sk_live_…` / `sk_test_…`) are scoped to fiat-funded payouts — a [Payout](/guides/fiat-to-fiat-payout) or a [Stablecoin payout](/guides/stablecoin-transfer) via `/rfq/execute`. The crypto-payout, bridge, and conversion endpoints reject partner keys.
 </Note>
 
-## Flow
+## When you'd use this
 
-```mermaid
-sequenceDiagram
-    participant Client
-    participant API
-    participant Wallet as Smart Wallet
-    participant Bridge as Cross-Chain Bridge
-    participant Dest as Destination Chain
-    participant Recipient as Recipient Wallet
+- Settling between chains in stablecoin without touching fiat.
+- Paying a recipient in their preferred stablecoin / network from a stablecoin balance you hold.
 
-    Client->>API: GET /api/crypto-payout/quote
-    API-->>Client: Quote (fees, estimated amount, expiry)
-    Client->>API: POST /api/crypto-payout/initiate
-    API->>Wallet: Sign and submit transaction
-    Wallet->>Bridge: Send tokens via bridge
-    Bridge->>Dest: Deliver tokens on destination chain
-    Dest->>Recipient: Transfer to recipient wallet
-    API-->>Client: Payout ID + status
-    Client->>API: GET /api/crypto-payout/status/:id
-    API-->>Client: Current status
-```
+## How to run one
 
-## Step 1: Get a Quote
+Crypto payouts run from the Teel dashboard:
 
-Request a quote to see fees, estimated delivery amount, and expiry time before committing to a payout.
+1. Choose the source token and chain (the stablecoin you're funding from) and the destination token and chain.
+2. Enter the amount and the recipient's wallet address on the destination chain.
+3. Review the quote — fees, estimated delivered amount, and expiry — then confirm.
+4. Track the payout in the dashboard as it bridges and settles to the recipient wallet.
 
-```bash
-curl -X GET "https://api.teel.finance/api/crypto-payout/quote?\
-sourceToken=MYRC&\
-destToken=USDC&\
-sourceChain=arbitrum&\
-destChain=polygon&\
-amount=1000&\
-walletAddress=0xYourWalletAddress&\
-recipientAddress=0xRecipientAddress" \
-  -H "Authorization: Bearer YOUR_API_TOKEN"
-```
+The dashboard signs the transaction from your managed smart wallet and submits it to the cross-chain bridge; gas is sponsored, so you don't need native tokens in the wallet.
 
-### Query Parameters
+<Note>
+Requires smart-wallet and bridge configuration. If you haven't completed bridge setup, contact your account manager. For programmatic stablecoin-to-stablecoin access, contact **support@teel.finance**.
+</Note>
 
-| Parameter          | Type   | Description                                      |
-|--------------------|--------|--------------------------------------------------|
-| `sourceToken`      | string | Token to send (e.g., `MYRC`, `USDC`)             |
-| `destToken`        | string | Token the recipient receives (e.g., `USDC`)      |
-| `sourceChain`      | string | Origin chain (e.g., `arbitrum`, `ethereum`)       |
-| `destChain`        | string | Destination chain (e.g., `polygon`, `base`)       |
-| `amount`           | number | Amount in the source token's smallest unit        |
-| `walletAddress`    | string | Your smart wallet address                         |
-| `recipientAddress` | string | Recipient's wallet address on the destination chain |
+## Paying a recipient in stablecoin, funded with fiat
 
-### Response
-
-```json
-{
-  "quote": {
-    "sourceAmount": "1000",
-    "destAmount": "998.50",
-    "fee": "1.50",
-    "exchangeRate": "1.0",
-    "expiresAt": "2026-03-11T12:05:00Z"
-  }
-}
-```
-
-## Step 2: Initiate the Payout
-
-Once you have a quote, initiate the payout. The server will sign the transaction using your smart wallet and submit it to the cross-chain bridge.
-
-```bash
-curl -X POST "https://api.teel.finance/api/crypto-payout/initiate" \
-  -H "Authorization: Bearer YOUR_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "sourceToken": "MYRC",
-    "destToken": "USDC",
-    "sourceChain": "arbitrum",
-    "destChain": "polygon",
-    "amount": 1000,
-    "walletAddress": "0xYourWalletAddress",
-    "recipientAddress": "0xRecipientAddress"
-  }'
-```
-
-### Response
-
-```json
-{
-  "id": "cp_abc123",
-  "status": "pending",
-  "sourceChain": "arbitrum",
-  "destChain": "polygon",
-  "amount": "1000",
-  "createdAt": "2026-03-11T12:00:00Z"
-}
-```
-
-## Step 3: Check Status
-
-Poll the status endpoint to track the payout through its lifecycle.
-
-```bash
-curl -X GET "https://api.teel.finance/api/crypto-payout/status/cp_abc123" \
-  -H "Authorization: Bearer YOUR_API_TOKEN"
-```
-
-### Response
-
-```json
-{
-  "id": "cp_abc123",
-  "status": "completed",
-  "sourceChain": "arbitrum",
-  "destChain": "polygon",
-  "sourceTxHash": "0xabc...",
-  "destTxHash": "0xdef...",
-  "amount": "1000",
-  "destAmount": "998.50",
-  "completedAt": "2026-03-11T12:02:30Z"
-}
-```
-
-### Status Values
-
-| Status       | Description                                         |
-|--------------|-----------------------------------------------------|
-| `pending`    | Payout created, transaction not yet submitted        |
-| `processing` | Transaction submitted, waiting for bridge completion |
-| `completed`  | Tokens delivered to recipient on destination chain   |
-| `failed`     | Transaction or bridge failed                         |
+If you want to pay a recipient in stablecoin but fund the payout with **fiat**, that's a Stablecoin payout — fully supported on the partner API. See [Stablecoin payout](/guides/stablecoin-transfer).

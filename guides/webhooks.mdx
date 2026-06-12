@@ -1,5 +1,5 @@
 ---
-title: "Webhooks & Real-Time Updates"
+title: "Webhooks & real-time updates"
 description: "Receive real-time notifications for payout status changes — over WebSocket or HTTP"
 ---
 
@@ -16,19 +16,30 @@ You can use either, or both — they carry the same events.
 
 ---
 
-## HTTP Webhooks (outbound delivery)
+## HTTP webhooks (outbound delivery)
 
 You register one or more URLs, Teel POSTs signed events to them whenever activity occurs on your account.
 
 ### Register an endpoint
 
-Add a subscription via the **Webhooks** page in the dashboard. You'll provide:
+Create a subscription with `POST /webhooks/subscriptions` (scope `webhooks:write`), or from the **Webhooks** page in the dashboard. You provide:
 
-- **URL** — must be `https://`. Loopback, RFC1918 / private IPv4 and IPv6 ranges, link-local addresses, and known cloud metadata hosts are rejected at create time and at delivery time (DNS is re-resolved before each POST).
-- **Events** — pick from the allow list (`payout.created`, `payout.status.updated`).
-- **Label** — optional, helps you identify the subscription later (we never send it to your endpoint).
+- **url** — must be `https://`. Loopback, RFC1918 / private IPv4 and IPv6 ranges, link-local addresses, and known cloud metadata hosts are rejected at create time and at delivery time (DNS is re-resolved before each POST).
+- **events** — pick from the allow list (`payout.created`, `payout.status.updated`).
+- **label** — optional; helps you identify the subscription later (never sent to your endpoint).
 
-When the subscription is created, Teel shows you a `whsec_…` signing secret **exactly once**. Copy it into your verifier's secret store immediately — there is no way to retrieve it again. Use the **Rotate secret** action in the dashboard if it's ever lost or you suspect it's been exposed; the rotation invalidates the old secret immediately (no overlap window).
+```bash
+curl -X POST https://api.teel.finance/webhooks/subscriptions \
+  -H "Authorization: Bearer $TEEL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://your.app/teel-webhook",
+    "events": ["payout.created", "payout.status.updated"],
+    "label": "prod receiver"
+  }'
+```
+
+The response includes a `whsec_…` signing secret **exactly once**. Copy it into your verifier's secret store immediately — there is no way to retrieve it again. Use **rotate secret** (`POST /webhooks/subscriptions/{id}/rotate-secret` or the dashboard) if it's ever lost or you suspect it's been exposed; the rotation invalidates the old secret immediately (no overlap window).
 
 ### Account limits
 
@@ -197,19 +208,19 @@ def teel_webhook():
 
 #### `payout.created`
 
-Fires once when a payout is first created (any flow — fiat-to-fiat, stablecoin-to-fiat, batch row).
+Fires once when a payout is first created (any flow — a Payout, a Stablecoin payout, or a batch row).
 
 ```json
 {
   "type": "payout.created",
   "created_at": "2026-05-27T09:30:46Z",
   "data": {
-    "payoutId": "txn_def456",
+    "payoutId": "3d1f7c20-9b8a-4e6d-bf12-7a4c9e2d1f0b",
     "transaction_type": "fiat_to_fiat",
     "payout_amount": 10000.0,
     "payout_currency": "EUR",
     "source_currency": "USD",
-    "recipient_id": "rec_abc123",
+    "recipient_id": "8f3c2a91-4e5b-4d8c-9a1f-3e2b1c4d5e6f",
     "status": "pending",
     "created_at": "2026-05-27T09:30:46Z"
   }
@@ -225,7 +236,7 @@ Fires every time a payout's status or step changes. Multiple events are emitted 
   "type": "payout.status.updated",
   "created_at": "2026-05-27T09:31:02Z",
   "data": {
-    "payoutId": "txn_def456",
+    "payoutId": "3d1f7c20-9b8a-4e6d-bf12-7a4c9e2d1f0b",
     "status": "processing",
     "provider": "provider_b",
     "step": "settling",
@@ -236,9 +247,9 @@ Fires every time a payout's status or step changes. Multiple events are emitted 
 
 ---
 
-## WebSocket Connection
+## WebSocket connection
 
-If you can hold an open connection, the WebSocket delivers the same events with sub-100ms latency. Authenticate in-band with your Auth0 access token:
+If you can hold an open connection, the WebSocket delivers the same events with sub-100ms latency. Authenticate in-band with your API key as the first message:
 
 ```javascript
 const ws = new WebSocket("wss://api.teel.finance/ws");
@@ -246,7 +257,7 @@ const ws = new WebSocket("wss://api.teel.finance/ws");
 ws.onopen = () => {
   // Send auth as the first message — we close the socket if we don't see it
   // within 10 seconds.
-  ws.send(JSON.stringify({ type: "auth", token: "YOUR_AUTH0_ACCESS_TOKEN" }));
+  ws.send(JSON.stringify({ type: "auth", apiKey: "sk_live_..." }));
 };
 
 ws.onmessage = (event) => {
@@ -261,7 +272,7 @@ The WebSocket scopes events to your account — you only see events for payouts 
 
 ---
 
-## Status Transitions
+## Status transitions
 
 All payouts follow the same status state machine regardless of the underlying provider:
 
@@ -297,7 +308,7 @@ Steps are monotonic — they only ever move forward.
 
 ## End-to-end example
 
-A fiat-to-fiat payout from your dashboard generates roughly this sequence of events (some steps fire multiple times depending on the providers involved):
+A Payout generates roughly this sequence of events (some steps fire multiple times depending on the providers involved):
 
 ```
 payout.created           { status: pending,    step: initiated }

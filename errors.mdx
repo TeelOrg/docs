@@ -3,15 +3,16 @@ title: Errors & retries
 description: HTTP status codes, error shape, idempotency, and retry guidance for the Teel API
 ---
 
-Teel returns standard HTTP status codes. The body is JSON with a single `error` field carrying a human-readable message — short enough to log, descriptive enough for the cause to be obvious from the message alone.
+Teel returns standard HTTP status codes. The body is JSON with a stable, machine-readable `code` you can switch on, plus a human-readable `error` message.
 
 ```json
 {
+  "code": "MAX_ACTIVE_SUBSCRIPTIONS_EXCEEDED",
   "error": "subscription limit reached (max 25 per account)"
 }
 ```
 
-Some responses include additional context fields (`details`, `field`, `code`) — these are opt-in per endpoint; treat `error` as the only field guaranteed to exist.
+**Switch on `code`, not `error`.** Each `code` has exactly one meaning and never changes once shipped — it's part of the contract. The `error` message is for humans and may be reworded at any time. Some errors also include a `details` object with structured context (e.g. the offending field and the bound it violated).
 
 ## Status codes
 
@@ -64,19 +65,19 @@ Retry-After: 13
 
 ## Idempotency
 
-`POST /payouts` and `POST /payouts/batch` accept an **`Idempotency-Key`** header. Include a UUID you generate; if the same key is sent within 24 hours, Teel returns the original response without creating a duplicate payout.
+Mutating POSTs accept an **`Idempotency-Key`** header — `POST /rfq/execute`, `POST /rfq/execute-batch`, `POST /recipients`, `POST /recipients/bulk`, and `POST /webhooks/subscriptions`. Include a UUID you generate; if the same key is sent within 24 hours, Teel returns the original response without creating a duplicate.
 
 ```bash
-curl https://api.teel.finance/payouts \
+curl https://api.teel.finance/rfq/execute \
   -H "Authorization: Bearer sk_live_…" \
   -H "Idempotency-Key: 7f3c2a91-4e5b-4d8c-9a1f-3e2b1c4d5e6f" \
   -H "Content-Type: application/json" \
-  -d '{"recipientId": "rec_abc", "amount": 1000, "currency": "USD", ...}'
+  -d '{"fromCurrency": "USD", "toCurrency": "PHP", "amount": 1000, "recipientId": "...", "routeProtocol": "..."}'
 ```
 
-**Always set this on payout creation.** A network timeout on a POST without `Idempotency-Key` leaves you uncertain whether the payout was created — and retrying might double-charge your customer. With the header set, retry is safe.
+**Always set this on payout execution.** A network timeout on a POST without `Idempotency-Key` leaves you uncertain whether the payout was created — and retrying might double-charge your customer. With the header set, retry is safe. Reusing a key with a *different* body returns `409 IDEMPOTENCY_KEY_REUSED`.
 
-The header is **not** required on quotes (those are idempotent by request shape) or on reads. It's accepted but ignored on update / delete endpoints.
+The header is **not** required on quotes (those are idempotent by request shape) or on reads, and is not honored on update / delete endpoints.
 
 ## Rate limiting
 
@@ -85,7 +86,7 @@ Per-key default: **60 requests per minute, burst 20**. Specific endpoint familie
 | Endpoint | Limit | Notes |
 | --- | --- | --- |
 | `GET /quotes/*` | 120/min, burst 40 | Quotes are cheap; higher limit reflects their typical poll-during-checkout pattern |
-| `POST /payouts` | 30/min, burst 10 | Creating money movements should be relatively rare |
+| `POST /rfq/execute` | 30/min, burst 10 | Creating money movements should be relatively rare |
 | `POST /webhooks/deliveries/:id/replay` | **5/min, burst 5** per account | Stricter — manual ops affordance, not a programmatic endpoint |
 
 Every response carries:
@@ -98,13 +99,13 @@ X-RateLimit-Reset: 1700001234
 
 `X-RateLimit-Reset` is a Unix timestamp (seconds) when the bucket fully refills.
 
-If you find yourself consistently near the limit, batch where possible (`POST /payouts/batch` instead of N calls to `POST /payouts`) and cache quote results client-side for ~30s rather than re-quoting on every page render.
+If you find yourself consistently near the limit, batch where possible (`POST /rfq/execute-batch` instead of N calls to `POST /rfq/execute`) and cache quote results client-side for ~30s rather than re-quoting on every page render.
 
 ## What we never do
 
 - **We do not return 4xx for transient issues.** If you got a `400` / `401` / `403` / `404` / `409`, the request is wrong; do not retry.
 - **We do not silently truncate fields.** If a field exceeds a limit, you get a `400` with the field name and the violated bound. Quietly truncating user-supplied amounts is a class of bug we deliberately avoid.
-- **We do not return generic 500s if we can avoid it.** Validation failures are `400` / `422`; permission failures are `403`; missing resources are `404`. A `500` from our side really means "something we didn't expect went wrong" — please report it via the GitHub issues link in [Support](/support) so we can fix it.
+- **We do not return generic 500s if we can avoid it.** Validation failures are `400` / `422`; permission failures are `403`; missing resources are `404`. A `500` from our side really means "something we didn't expect went wrong" — please report it to **support@teel.finance** so we can fix it.
 
 ## Examples
 
@@ -117,7 +118,7 @@ async function createPayoutWithRetries(payload) {
   const idemKey = randomUUID();
   let delay = 1000;
   for (let attempt = 1; attempt <= 5; attempt++) {
-    const res = await fetch("https://api.teel.finance/payouts", {
+    const res = await fetch("https://api.teel.finance/rfq/execute", {
       method: "POST",
       headers: {
         "Authorization": `Bearer ${process.env.TEEL_API_KEY}`,

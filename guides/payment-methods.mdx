@@ -1,161 +1,38 @@
 ---
-title: "Payment Methods"
-description: "Set up payment methods for sending funds"
+title: "Payment methods"
+description: "How your funding sources and recipient payment methods differ"
 ---
 
-## Overview
+## Two kinds of payment methods
 
-Payment methods represent **your** bank accounts and wallets used to fund payouts. These are distinct from recipient payment methods, which are configured when you [create a recipient](/guides/recipients).
+Teel has two distinct concepts that are easy to confuse:
 
-- **Your payment methods**: The accounts you send funds from (configured here).
-- **Recipient payment methods**: The accounts your recipients receive funds into (configured during recipient creation).
+- **Your payment methods** — the accounts you fund payouts *from*. Configured in the **Teel dashboard**, not via the API.
+- **Recipient payment methods** — the accounts your recipients receive funds *into*. Managed via the API, as part of [creating a recipient](/guides/recipients).
 
-Requirements vary by currency and rail. For example, ACH transfers need a routing number while SEPA transfers need an IBAN.
+| | Your payment method | Recipient payment method |
+|---|---|---|
+| **Purpose** | Fund outgoing payouts | Receive incoming payments |
+| **Configured via** | Teel dashboard | API — `POST /recipients` and `POST /recipients/{id}/payment-methods` |
+| **Belongs to** | Your organization | The recipient |
+| **Example** | Your company's USD bank account | A vendor's EUR IBAN |
 
-## Step 1: Get Requirements
+## Your funding payment methods (dashboard)
 
-Fetch the dynamic form schema for creating a payment method. The fields returned depend on the currencies and rails available to your account.
+Your funding sources are set up in the Teel dashboard, during or after onboarding. Partner API keys (`sk_live_…` / `sk_test_…`) are scoped to operational endpoints (recipients, quotes, payouts, webhooks) and **cannot** create or list your funding payment methods — those endpoints are dashboard-only and reject partner keys.
 
-```bash
-curl -X GET "https://api.teel.finance/api/payment-methods/requirements" \
-  -H "Authorization: Bearer YOUR_API_TOKEN"
-```
+<Note>
+To add or change a funding source, use the dashboard. If you need programmatic access to your funding configuration, contact **support@teel.finance**.
+</Note>
 
-### Response
+When you execute a payout, the source of funds is your dashboard-configured funding — you don't create or pass a funding payment method through the public API.
 
-```json
-{
-  "schemas": [
-    {
-      "currency": "USD",
-      "rail": "ach",
-      "fields": [
-        { "name": "account_number", "type": "string", "required": true, "label": "Account Number" },
-        { "name": "routing_number", "type": "string", "required": true, "label": "Routing Number" },
-        { "name": "account_type", "type": "enum", "required": true, "values": ["checking", "savings"], "label": "Account Type" }
-      ]
-    },
-    {
-      "currency": "EUR",
-      "rail": "sepa",
-      "fields": [
-        { "name": "iban", "type": "string", "required": true, "label": "IBAN" },
-        { "name": "bic", "type": "string", "required": false, "label": "BIC/SWIFT Code" }
-      ]
-    },
-    {
-      "currency": "MXN",
-      "rail": "spei",
-      "fields": [
-        { "name": "clabe", "type": "string", "required": true, "label": "CLABE" }
-      ]
-    }
-  ]
-}
-```
+## Recipient payment methods (API)
 
-## Step 2: Build Your Form
+The accounts your recipients receive into are created through the recipients API. See [Managing recipients](/guides/recipients) for:
 
-Use the schema from Step 1 to render a form in your application. Each currency/rail combination has its own set of fields. Common examples:
+- Creating a recipient with one or more payment methods
+- Adding a payment method to an existing recipient
+- Removing a payment method
 
-| Currency | Rail | Key Fields                          |
-|----------|------|-------------------------------------|
-| USD      | ACH  | Account number, routing number      |
-| EUR      | SEPA | IBAN, BIC (optional)                |
-| GBP      | FPS  | Account number, sort code           |
-| MXN      | SPEI | CLABE                               |
-
-## Step 3: Create a Payment Method
-
-Submit the form data to create a payment method. Teel provisions it across all of your active providers.
-
-### ACH (USD) Example
-
-```bash
-curl -X POST "https://api.teel.finance/api/payment-methods" \
-  -H "Authorization: Bearer YOUR_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "currency": "USD",
-    "rail": "ach",
-    "account_number": "1234567890",
-    "routing_number": "021000021",
-    "account_type": "checking",
-    "label": "Primary USD Account"
-  }'
-```
-
-### SEPA (EUR) Example
-
-```bash
-curl -X POST "https://api.teel.finance/api/payment-methods" \
-  -H "Authorization: Bearer YOUR_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "currency": "EUR",
-    "rail": "sepa",
-    "iban": "DE89370400440532013000",
-    "bic": "COBADEFFXXX",
-    "label": "Euro Account"
-  }'
-```
-
-### Response
-
-```json
-{
-  "id": "pm_abc123",
-  "currency": "USD",
-  "rail": "ach",
-  "label": "Primary USD Account",
-  "status": "active",
-  "providers": [
-    { "provider": "provider_a", "status": "active" },
-    { "provider": "provider_b", "status": "active" }
-  ],
-  "createdAt": "2026-03-11T10:00:00Z"
-}
-```
-
-## Step 4: List Payment Methods
-
-Retrieve all payment methods configured for your account.
-
-```bash
-curl -X GET "https://api.teel.finance/api/payment-methods" \
-  -H "Authorization: Bearer YOUR_API_TOKEN"
-```
-
-### Response
-
-```json
-{
-  "payment_methods": [
-    {
-      "id": "pm_abc123",
-      "currency": "USD",
-      "rail": "ach",
-      "label": "Primary USD Account",
-      "status": "active",
-      "createdAt": "2026-03-11T10:00:00Z"
-    },
-    {
-      "id": "pm_def456",
-      "currency": "EUR",
-      "rail": "sepa",
-      "label": "Euro Account",
-      "status": "active",
-      "createdAt": "2026-03-11T11:00:00Z"
-    }
-  ]
-}
-```
-
-## Payment Method vs. Recipient Payment Method
-
-| Aspect              | Your Payment Method             | Recipient Payment Method              |
-|----------------------|---------------------------------|---------------------------------------|
-| **Purpose**          | Fund outgoing payouts           | Receive incoming payments             |
-| **Configured via**   | `POST /api/payment-methods`     | Included in `POST /api/recipients`    |
-| **Belongs to**       | Your organization               | The recipient                         |
-| **Example**          | Your company's USD bank account | Vendor's EUR IBAN                     |
+Requirements vary by currency and rail — for example, ACH transfers need a routing number while SEPA transfers need an IBAN. Fetch the dynamic schema from `GET /recipients/requirements` and render it as a form rather than hard-coding fields.

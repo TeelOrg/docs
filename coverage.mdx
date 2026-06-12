@@ -5,35 +5,29 @@ description: "Supported countries, currencies, and payment rails"
 
 Teel aggregates multiple payment providers behind a single API, giving you broad coverage across currencies, countries, and payment rails. The specific corridors available to your business depend on your KYB onboarding status.
 
-## Payment Corridors
+## Payment corridors
 
-Teel supports four types of payment flows:
+The API supports two transfer types:
 
 <CardGroup cols={2}>
-  <Card title="Fiat-to-Fiat">
-    Cross-border bank transfers from one fiat currency to another. Teel handles
-    the onramp and offramp legs automatically, selecting the best route.
+  <Card title="Payout">
+    Cross-border payment; the recipient receives fiat in a bank account. Teel
+    handles the internal settlement legs automatically, selecting the best route.
   </Card>
-  <Card title="Fiat-to-Stablecoin">
-    Onramp from fiat currency to stablecoins (USDC, USDT). Funds are deposited
-    to a blockchain wallet address.
-  </Card>
-  <Card title="Stablecoin-to-Fiat">
-    Offramp from stablecoins to fiat currency. Stablecoins are converted and
-    delivered to a bank account.
-  </Card>
-  <Card title="Stablecoin-to-Stablecoin">
-    Cross-chain stablecoin transfers via bridge. Move tokens between supported
-    blockchain networks.
+  <Card title="Stablecoin payout">
+    Pay a recipient in stablecoin (USDC, USDT), funded with fiat. Funds are
+    deposited to a blockchain wallet address.
   </Card>
 </CardGroup>
 
-## Supported Currencies & Rails
+**Stablecoin-to-stablecoin** (cross-chain stablecoin payouts) runs in the dashboard rather than the partner API — see [Crypto payouts](/guides/crypto-payout).
+
+## Supported currencies & rails
 
 Coverage is driven entirely by live platform configuration, so the authoritative, always-current list is served by the API rather than duplicated here. Call the [coverage endpoint](/api-reference/config/coverage) to get every supported fiat currency, the payment rails available for each, whether it can be used for onramp and/or offramp, and the per-currency amount bounds:
 
 ```bash
-curl https://api.teel.finance/api/config/coverage
+curl https://api.teel.finance/config/coverage
 ```
 
 ```json
@@ -59,7 +53,7 @@ curl https://api.teel.finance/api/config/coverage
 
 Each fiat entry tells you exactly **how much you can onramp/offramp** (`minAmount`/`maxAmount`), in **which direction** (`onramp`/`offramp`), and over **which rails**. No authentication is required — this is the platform-wide matrix.
 
-## Blockchain Networks
+## Blockchain networks
 
 The `wallet` section of the [coverage endpoint](/api-reference/config/coverage) lists the supported stablecoin tokens and the chains they settle on. Today this covers:
 
@@ -74,7 +68,7 @@ The `wallet` section of the [coverage endpoint](/api-reference/config/coverage) 
 
 ## Coverage vs. your onboarding status
 
-The coverage endpoint returns the **platform-wide** matrix. The corridors available to *your* business additionally depend on your KYB onboarding status. To see what you specifically can transact, complete onboarding and consult your capabilities (see [KYB Onboarding](/guides/kyb-onboarding)).
+The coverage endpoint returns the **platform-wide** matrix. The corridors available to *your* business additionally depend on your KYB onboarding status. To see what you specifically can transact, complete onboarding and consult your capabilities (see [KYB onboarding](/guides/kyb-onboarding)).
 
 <Note>
   The platform coverage matrix is public and unauthenticated. Per-business

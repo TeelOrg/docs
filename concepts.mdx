@@ -1,5 +1,5 @@
 ---
-title: "Core Concepts"
+title: "Core concepts"
 description: "How Teel routes payouts across a network of providers"
 ---
 
@@ -31,8 +31,8 @@ flowchart LR
 
 ## Lifecycle of a payout
 
-1. **KYB once** — submit your business verification through Teel. We propagate it to every provider that licenses your corridors.
-2. **Add recipients** — created in Teel, provisioned in the background.
+1. **KYB once** — complete business verification in the dashboard before you get API access. Teel propagates it to every provider that licenses your corridors.
+2. **Add recipients** — created via the API, provisioned across providers in the background.
 3. **Quote** — one request fans out to every provider on the corridor; the best route comes back.
 4. **Execute** — Teel pins the chosen route with an opaque token and settles through the winning provider.
 
@@ -51,32 +51,27 @@ stateDiagram-v2
 | Status | Meaning |
 |---|---|
 | `pending` | Created, awaiting provider hand-off. No funds in motion yet. |
-| `processing` | Submitted to the winning provider. Fiat-to-fiat may involve both an onramp and offramp leg. |
+| `processing` | Submitted to the winning provider. A Payout may involve both a collection and a disbursement leg. |
 | `completed` | Recipient received the funds. Terminal. |
 | `failed` | Compliance, balance, or provider error. Inspect `error` on the payout. Terminal. |
 | `cancelled` | Quote expired or cancelled before execution. Terminal. |
 
-## Onramp, offramp, fiat-to-fiat
+## How payouts settle
 
 ```mermaid
 flowchart LR
-    subgraph Onramp ["Onramp"]
+    subgraph stablecoinpayout ["Stablecoin payout"]
         direction LR
         F1["Fiat"] --> S1["Stablecoin wallet"]
     end
 
-    subgraph Offramp ["Offramp"]
-        direction LR
-        S2["Stablecoin"] --> F2["Fiat bank account"]
-    end
-
-    subgraph F2F ["Fiat-to-fiat"]
+    subgraph payout ["Payout"]
         direction LR
         F3["Source fiat"] --> S3["Stablecoin"] --> F4["Destination fiat"]
     end
 ```
 
-Fiat-to-fiat is implemented as onramp + offramp under the hood. The two legs can be served by different providers — Teel picks each independently.
+A **Payout** is settled as a collection leg (fiat in) plus a disbursement leg (fiat out), with an on-chain stablecoin hop in between. A **Stablecoin payout** uses the collection leg only — the recipient keeps the stablecoin. The legs can be served by different providers, and Teel picks each independently.
 
 ## Real-time updates
 

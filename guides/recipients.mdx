@@ -1,188 +1,171 @@
 ---
-title: "Managing Recipients"
-description: "Create and manage payment recipients (counterparties)"
+title: "Managing recipients"
+description: "Create and manage payment recipients"
 ---
 
 ## Overview
 
-Recipients (also called counterparties) are the businesses or individuals you send payments to. When you create a recipient, Teel automatically provisions them with all of your active payment providers so you can pay them through any available rail.
+Recipients are the businesses or individuals you send payments to. When you create a recipient, Teel automatically provisions them across all of your active payment providers, so you can pay them through any available rail.
 
-## Transfer Types
+Request bodies are **camelCase** (`businessName`, `transferType`, `paymentMethods`); responses are snake_case at the top level, with camelCase fields inside nested payment-method objects.
 
-The transfer type determines what payment method information is required for the recipient.
+## Destination types
 
-| Transfer Type              | Description                              | Required Payment Method         |
-|----------------------------|------------------------------------------|---------------------------------|
-| `fiat_to_fiat`             | Send fiat currency to a bank account     | Bank details (account number, routing number, SWIFT/BIC, etc.) |
-| `fiat_to_stablecoin`       | Convert fiat to stablecoin on delivery   | Wallet address                  |
-| `stablecoin_to_stablecoin` | Send stablecoins across chains           | Wallet addresses per chain      |
+A recipient's `transferType` sets where their funds land:
 
-## Step 1: Get Counterparty Requirements
+| `transferType` | Recipient receives | Payment method |
+|---|---|---|
+| `fiat` | Fiat in a bank account | Bank details (account number, routing/SWIFT, etc.) |
+| `stablecoin` | Stablecoin in a wallet | Wallet address + network |
 
-Fetch the fields required to create a recipient based on your active providers and currencies.
+Whether a `stablecoin` recipient is paid via a **Stablecoin payout** (you fund with fiat) or a **Crypto payout** (you fund with stablecoin) is decided when you execute the payout — not on the recipient.
+
+## Step 1: Get recipient requirements
+
+Fetch the fields required to create a recipient, based on your active providers and currencies. The response is a dynamic schema you can render as a form.
 
 ```bash
-curl -X GET "https://api.teel.finance/api/kyb/capabilities/counterparty" \
-  -H "Authorization: Bearer YOUR_API_TOKEN"
+curl https://api.teel.finance/recipients/requirements \
+  -H "Authorization: Bearer $TEEL_API_KEY"
 ```
 
-### Response
+The schema adapts to your account — fields and required documents differ by currency and rail. Treat it as the source of truth for what to send in step 3 rather than hard-coding fields.
+
+## Step 2: Get wallet networks
+
+If your recipient will receive stablecoins, fetch the supported wallet networks. The response is a JSON array:
+
+```bash
+curl https://api.teel.finance/recipients/wallet-networks \
+  -H "Authorization: Bearer $TEEL_API_KEY"
+```
 
 ```json
-{
-  "schema": {
-    "fields": [
-      { "name": "business_name", "type": "string", "required": true },
-      { "name": "email", "type": "string", "required": true },
-      { "name": "country", "type": "string", "required": true },
-      { "name": "transfer_type", "type": "enum", "required": true, "values": ["fiat_to_fiat", "fiat_to_stablecoin", "stablecoin_to_stablecoin"] }
-    ]
-  }
-}
+[
+  { "name": "ethereum", "displayName": "Ethereum", "chainId": 1 },
+  { "name": "polygon", "displayName": "Polygon", "chainId": 137 },
+  { "name": "arbitrum", "displayName": "Arbitrum", "chainId": 42161 },
+  { "name": "base", "displayName": "Base", "chainId": 8453 }
+]
 ```
 
-## Step 2: Get Wallet Networks
+Use the `name` value (e.g. `polygon`) as the `rail` on a wallet payment method.
 
-If your recipient will receive stablecoins, fetch the list of supported wallet networks.
+## Step 3: Create a recipient
+
+### Fiat recipient (bank account)
 
 ```bash
-curl -X GET "https://api.teel.finance/api/recipients/wallet-networks" \
-  -H "Authorization: Bearer YOUR_API_TOKEN"
-```
-
-### Response
-
-```json
-{
-  "networks": [
-    { "id": "ethereum", "name": "Ethereum", "tokens": ["USDC", "USDT"] },
-    { "id": "polygon", "name": "Polygon", "tokens": ["USDC", "USDT"] },
-    { "id": "arbitrum", "name": "Arbitrum", "tokens": ["USDC"] },
-    { "id": "base", "name": "Base", "tokens": ["USDC"] }
-  ]
-}
-```
-
-## Step 3: Create a Recipient
-
-Create the recipient with their business details and payment method information.
-
-### Fiat-to-Fiat Example
-
-```bash
-curl -X POST "https://api.teel.finance/api/recipients" \
-  -H "Authorization: Bearer YOUR_API_TOKEN" \
+curl -X POST https://api.teel.finance/recipients \
+  -H "Authorization: Bearer $TEEL_API_KEY" \
   -H "Content-Type: application/json" \
+  -H "Idempotency-Key: $(uuidgen)" \
   -d '{
-    "business_name": "Vendor Co",
+    "businessName": "Vendor Co",
     "email": "payments@vendorco.com",
     "country": "US",
-    "transfer_type": "fiat_to_fiat",
-    "payment_methods": [
+    "transferType": "fiat",
+    "paymentMethods": [
       {
         "type": "bank",
         "currency": "USD",
-        "account_number": "1234567890",
-        "routing_number": "021000021",
-        "account_type": "checking"
+        "rail": "ach",
+        "accountNumber": "1234567890",
+        "routingNumber": "021000021",
+        "accountType": "checking"
       }
     ]
   }'
 ```
 
-### Fiat-to-Stablecoin Example
+### Stablecoin recipient (wallet)
 
 ```bash
-curl -X POST "https://api.teel.finance/api/recipients" \
-  -H "Authorization: Bearer YOUR_API_TOKEN" \
+curl -X POST https://api.teel.finance/recipients \
+  -H "Authorization: Bearer $TEEL_API_KEY" \
   -H "Content-Type: application/json" \
+  -H "Idempotency-Key: $(uuidgen)" \
   -d '{
-    "business_name": "Crypto Vendor",
+    "businessName": "Crypto Vendor",
     "email": "treasury@cryptovendor.com",
     "country": "SG",
-    "transfer_type": "fiat_to_stablecoin",
-    "payment_methods": [
+    "transferType": "stablecoin",
+    "paymentMethods": [
       {
         "type": "wallet",
-        "network": "polygon",
-        "token": "USDC",
-        "address": "0xRecipientWalletAddress"
+        "currency": "USDC",
+        "rail": "polygon",
+        "walletAddress": "0xRecipientWalletAddress"
       }
     ]
   }'
 ```
 
-### Stablecoin-to-Stablecoin Example
+A recipient can carry **multiple payment methods** — e.g. wallets on several chains, or a bank account plus a wallet. Add more objects to `paymentMethods`. Save the `id` (a UUID) from the response — that's your `recipientId`.
+
+The `Idempotency-Key` header is optional but recommended: a timeout-retry with the same key replays the cached response (24h window) instead of creating a duplicate recipient.
+
+## Step 4: Auto-provisioning
+
+When a recipient is created, Teel provisions them across all of your active payment providers in the background, so the recipient is ready to receive payments through any rail your providers support — no extra setup needed.
+
+## Step 5: Retry failed provisioning
+
+If provisioning fails for a provider (e.g. a transient error), retry it:
 
 ```bash
-curl -X POST "https://api.teel.finance/api/recipients" \
-  -H "Authorization: Bearer YOUR_API_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "business_name": "DeFi Partner",
-    "email": "ops@defipartner.io",
-    "country": "DE",
-    "transfer_type": "stablecoin_to_stablecoin",
-    "payment_methods": [
-      {
-        "type": "wallet",
-        "network": "arbitrum",
-        "token": "USDC",
-        "address": "0xArbitrumAddress"
-      },
-      {
-        "type": "wallet",
-        "network": "polygon",
-        "token": "USDC",
-        "address": "0xPolygonAddress"
-      }
-    ]
-  }'
+curl -X POST https://api.teel.finance/recipients/{recipientId}/retry \
+  -H "Authorization: Bearer $TEEL_API_KEY" \
+  -H "Idempotency-Key: $(uuidgen)"
 ```
 
-## Step 4: Auto-Provisioning
+## Step 6: Get recipient details
 
-When a recipient is created, Teel automatically provisions them with all of your active payment providers. This means the recipient is ready to receive payments through any rail your providers support -- no additional setup is needed.
-
-## Step 5: Retry Failed Provisioning
-
-If provisioning fails for any provider (e.g., due to a temporary network issue), you can retry.
+Retrieve a recipient with their per-provider counterparty status:
 
 ```bash
-curl -X POST "https://api.teel.finance/api/recipients/rec_abc123/retry" \
-  -H "Authorization: Bearer YOUR_API_TOKEN"
+curl https://api.teel.finance/recipients/{recipientId}/with-counterparty \
+  -H "Authorization: Bearer $TEEL_API_KEY"
 ```
-
-## Step 6: Get Recipient Details
-
-Retrieve a recipient along with their full counterparty data from all providers.
-
-```bash
-curl -X GET "https://api.teel.finance/api/recipients/rec_abc123/with-counterparty" \
-  -H "Authorization: Bearer YOUR_API_TOKEN"
-```
-
-### Response
 
 ```json
 {
-  "id": "rec_abc123",
+  "id": "8f3c2a91-4e5b-4d8c-9a1f-3e2b1c4d5e6f",
   "business_name": "Vendor Co",
   "email": "payments@vendorco.com",
   "country": "US",
-  "transfer_type": "fiat_to_fiat",
-  "payment_methods": [
-    {
-      "type": "bank",
-      "currency": "USD",
-      "account_number": "****7890",
-      "routing_number": "021000021"
-    }
-  ],
-  "providers": [
-    { "provider": "provider_a", "status": "active", "counterparty_id": "cp_xyz" },
-    { "provider": "provider_b", "status": "active", "counterparty_id": "cp_abc" }
-  ],
-  "createdAt": "2026-03-10T10:00:00Z"
+  "transfer_type": "fiat",
+  "status": "accepted",
+  "created_at": "2026-03-10T10:00:00Z"
 }
 ```
+
+## Adding and removing payment methods
+
+You can add payment methods to an existing recipient, or remove one, without recreating the recipient.
+
+### Add a payment method
+
+```bash
+curl -X POST https://api.teel.finance/recipients/{recipientId}/payment-methods \
+  -H "Authorization: Bearer $TEEL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -d '{
+    "type": "wallet",
+    "currency": "USDC",
+    "rail": "arbitrum",
+    "walletAddress": "0xArbitrumAddress"
+  }'
+```
+
+The new payment method is provisioned across your active providers in the background, the same way it is at recipient creation.
+
+### Remove a payment method
+
+```bash
+curl -X DELETE https://api.teel.finance/recipients/{recipientId}/payment-methods/{paymentMethodId} \
+  -H "Authorization: Bearer $TEEL_API_KEY"
+```
+
+Both routes require the `recipients:write` scope.

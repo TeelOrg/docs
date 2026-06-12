@@ -50,43 +50,43 @@ You integrate once with Teel. Underneath, the same payout can route through any 
 
 Teel does **not** custody fiat. We are not a bank or a money transmitter, and we never hold partner or recipient funds in a Teel-owned bank account. Every leg of every transaction is executed by a licensed third-party institution under their license, with Teel acting as the orchestration and reconciliation layer.
 
-There are three movement patterns the orchestration layer supports:
+The partner API supports two payout types — a **Payout** and a **Stablecoin payout**. Each is settled internally through one or more legs — **collection**, **on-chain escrow**, and **disbursement** — every leg executed by a licensed partner. The legs and the escrow are settlement plumbing, not products you opt into.
 
-### Fiat-to-fiat (multi-partner)
+### Payout
 
-The most common partner pattern. Your business sends fiat from your bank account; the recipient receives fiat in theirs.
+The most common pattern. Your business sends fiat from your bank account; the recipient receives fiat in theirs. Settled through a collection leg, an on-chain escrow hop, and a disbursement leg.
 
 ```mermaid
 sequenceDiagram
     autonumber
     participant You as Your app
     participant Teel as Teel API
-    participant POn as Onramp partner<br/>(licensed EMI)
+    participant POn as Collection partner<br/>(licensed EMI)
     participant Esc as Smart-wallet escrow
-    participant POff as Offramp partner<br/>(licensed in destination)
+    participant POff as Disbursement partner<br/>(licensed in destination)
     participant Rec as Recipient bank
 
-    You->>Teel: POST /rfq/execute (quote_id)
+    You->>Teel: POST /rfq/execute (routeProtocol)
     Teel->>POn: Open collection instruction
     POn-->>You: Bank details for inbound transfer
     You->>POn: Send source fiat (e.g. USD)
     POn->>Esc: Mint &amp; deposit stablecoin
     Note over Esc: Funds held on-chain<br/>in audited escrow contract
-    Esc->>POff: Release stablecoin to offramp partner
+    Esc->>POff: Release stablecoin to disbursement partner
     POff->>Rec: Pay out destination fiat (e.g. PHP)
     POff-->>Teel: Settlement confirmation
-    Teel-->>You: payout.delivered webhook
+    Teel-->>You: payout.status.updated webhook (status: delivered)
 ```
 
-Two licensed partners are involved per transaction — one regulated to collect the source fiat, one regulated to disburse the destination fiat. The stablecoin step in the middle exists purely as a settlement primitive between the two regulated legs; it isn't a service you opt into.
+Two licensed partners are involved per transaction — one regulated to collect the source fiat, one regulated to disburse the destination fiat. The stablecoin step in the middle exists purely as a settlement primitive between the two regulated legs.
 
-### Fiat-to-stablecoin (onramp)
+### Stablecoin payout
 
-The recipient receives a stablecoin balance on-chain instead of fiat. The first half of the diagram above; the offramp leg is skipped.
+The recipient receives a stablecoin balance on-chain instead of fiat. Settled through the collection leg only — the first half of the diagram above, with the disbursement leg skipped.
 
-### Stablecoin-to-fiat (offramp)
+### Stablecoin-to-stablecoin (dashboard)
 
-The reverse: you fund the payout with stablecoin from a wallet you control, and the recipient receives fiat. The second half of the diagram; the collection leg is skipped.
+You fund the payout with stablecoin from a wallet you control, and the recipient receives stablecoin — potentially on a different chain. Settled on-chain via DEX swap and/or a cross-chain bridge; no fiat collection or disbursement legs are involved. This is a **dashboard feature** today — it isn't exposed on the partner API. See [Crypto payouts](/guides/crypto-payout).
 
 ## Custody model
 
@@ -101,7 +101,7 @@ Teel's custody surface is minimal by design:
 
 The smart-wallet escrow is an audited on-chain contract with two-key control (an operator key for routine releases, a cold owner key for emergency intervention). Its sole job is to hold stablecoin between the collection and disbursement legs and to release it deterministically when the disbursement partner confirms readiness. Teel cannot move escrowed funds to a destination not pre-authorized by the corresponding quote and partner instruction.
 
-For onramp-only and offramp-only flows, the escrow step is bypassed entirely.
+For Stablecoin payout and Crypto payout flows — which don't have both a fiat collection and a fiat disbursement leg — the intermediate escrow hop is bypassed.
 
 ## Licensing &amp; compliance
 
@@ -122,7 +122,7 @@ flowchart LR
     PA["Partner A<br/>compliance review"]
     PB["Partner B<br/>compliance review"]
     PC["Partner C<br/>compliance review"]
-    Status["Per-partner approval status<br/>(visible via /kyb/onboarding-status)"]
+    Status["Per-partner approval status<br/>(visible in the dashboard)"]
 
     KYB --> TeelComp
     TeelComp -->|fields partner A requires| PA
@@ -154,7 +154,7 @@ If your risk or compliance team asks "who is regulated and where," the answer is
   <Card title="Coverage" href="/coverage">
     Which corridors, currencies, and rails are routable through the partner network today.
   </Card>
-  <Card title="KYB Onboarding" href="/guides/kyb-onboarding">
+  <Card title="KYB onboarding" href="/guides/kyb-onboarding">
     How the unified KYB flow propagates your record to the partners covering your corridors.
   </Card>
   <Card title="Webhooks" href="/guides/webhooks">

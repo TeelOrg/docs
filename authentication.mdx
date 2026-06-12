@@ -6,7 +6,7 @@ description: How to authenticate with the Teel API
 The Teel API uses a **secret API key** sent as a bearer token on every request. Same pattern as Stripe, OpenAI, Anthropic, Resend. Your server holds the key in env vars or a vault and presents it on every call.
 
 ```bash
-curl https://api.teel.finance/users/me \
+curl https://api.teel.finance/recipients \
   -H "Authorization: Bearer sk_live_a3f2x9k7m4q8…"
 ```
 
@@ -28,7 +28,7 @@ sk_<env>_<43 url-safe base64 chars>
 The fixed `sk_` prefix is recognized by GitHub secret scanning, GitGuardian, and TruffleHog — if you accidentally commit a key, you'll get a leak notification. The visible `live` vs `test` distinction prevents the "prod creds in Slack" failure mode.
 
 <Warning>
-  Keys mismatched to the environment fail with `403 ENV_SCOPE_MISMATCH`. `sk_live_…` against `api-sandbox.teel.finance` is rejected, and `sk_test_…` against `api.teel.finance` is rejected.
+  Use each key only against its matching host. A key sent to the wrong environment is rejected with `403` and the body `{"error": "environment_scope mismatch"}` — `sk_live_…` belongs on `api.teel.finance`, `sk_test_…` on `api-sandbox.teel.finance`.
 </Warning>
 
 ## Issuing a key
@@ -51,12 +51,14 @@ Each key carries a subset of scopes. Default for a newly-minted key is read-only
 | Scope | What it allows |
 | --- | --- |
 | `quotes:read` | Fetch quotes (`/quotes/*`) |
-| `payouts:write` | Create payouts (`POST /payouts`) |
+| `payouts:write` | Execute payouts (`POST /rfq/execute`) |
 | `payouts:read` | List / fetch your own payouts |
 | `recipients:write` | Create / update / delete recipients |
 | `recipients:read` | List / fetch recipients |
+| `webhooks:write` | Create / update / delete webhook subscriptions |
+| `webhooks:read` | List / fetch webhook subscriptions and deliveries |
 
-Webhook subscription scopes (`webhooks:read` / `webhooks:write`) are on the roadmap. Today, webhook subscriptions are managed from the dashboard or by contacting support — see the [Webhooks guide](/guides/webhooks).
+Webhook subscriptions are managed entirely through the API with the `webhooks:read` / `webhooks:write` scopes — see the [Webhooks guide](/guides/webhooks).
 
 ## Rotation
 
@@ -84,8 +86,8 @@ If you suspect compromise, contact **support@teel.finance** to revoke the key im
 
 | Status | Meaning |
 | --- | --- |
-| `401 Unauthorized` | Missing / malformed `Authorization` header, key revoked, or wrong environment for the key prefix |
-| `403 Forbidden` | Key is valid but lacks the scope the endpoint requires (e.g. you called `POST /payouts` with a `quotes:read`-only key) |
+| `401 Unauthorized` | Missing / malformed `Authorization` header, or the key is unknown / revoked |
+| `403 Forbidden` | Key is valid but lacks the scope the endpoint requires (e.g. you called `POST /rfq/execute` with a `quotes:read`-only key), or the key was sent to the wrong environment host |
 | `429 Too Many Requests` | Per-key rate limit exceeded — back off per the `Retry-After` header |
 
 ## Rate limiting

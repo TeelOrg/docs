@@ -20,7 +20,7 @@ This guide walks you through making your first payout against the Teel **sandbox
     ```bash
     # 1. Health (no auth) — sanity check the host is reachable
     curl https://api-sandbox.teel.finance/health
-    # → {"env":"sandbox","status":"ok"}
+    # → {"status":"ok","env":"..."}  (env echoes the deployment environment)
 
     # 2. Auth'd read — list your existing recipients
     curl https://api-sandbox.teel.finance/recipients \
@@ -50,15 +50,14 @@ This guide walks you through making your first payout against the Teel **sandbox
       -H "Idempotency-Key: $(uuidgen)" \
       -d '{
         "email": "payments@acme-ph.com",
-        "isBusiness": true,
+        "isBusiness": "business",
         "businessName": "Acme Corp Philippines",
         "country": "PH",
-        "currency": "PHP",
         "transferType": "fiat",
         "paymentMethods": [
           {
             "currency": "PHP",
-            "type": "bank_account",
+            "type": "bank",
             "rail": "bank_transfer",
             "bankName": "BDO",
             "accountNumber": "1234567890"
@@ -67,7 +66,7 @@ This guide walks you through making your first payout against the Teel **sandbox
       }'
     ```
 
-    Save the `id` from the response — that's your `recipientId`.
+    Request bodies are **camelCase** (`isBusiness`, `businessName`, `paymentMethods`); responses are snake_case. Save the `id` from the response — that's your `recipientId`.
 
     The `Idempotency-Key` header is optional but recommended: a timeout-retry with the same key replays the cached response (24h window) instead of creating a duplicate recipient. See [`POST /recipients`](/api-reference/recipients/create) for every field.
   </Step>
@@ -80,13 +79,13 @@ This guide walks you through making your first payout against the Teel **sandbox
       -H "Authorization: Bearer $TEEL_API_KEY"
     ```
 
-    The response includes the exchange rate, fees, estimated delivery amount, the `quoteId` you'll execute against, the `protocol` route token, and the `expiresAt` timestamp. Use the quote before it expires.
+    The response includes the exchange rate, fees, estimated delivery amount, a `quoteId` (use it to poll status in step 6), an opaque `protocol` route token (pass it back as `routeProtocol` at execution to pin this route), and the `expiresAt` timestamp. Use the quote before it expires.
 
     See the [Quotes pages](/api-reference/quotes/fiat-to-fiat-best) for the full quote families (onramp / offramp / fiat-to-fiat / fiat-to-stablecoin).
   </Step>
 
   <Step title="Execute the payout">
-    Partners execute payouts through the RFQ (request-for-quote) endpoint, using the `quoteId` from the previous step. Like recipient creation, this is `Idempotency-Key`-safe — Teel deduplicates retry attempts in a 24h window so a network timeout doesn't double-spend.
+    Partners execute payouts through the RFQ (request-for-quote) endpoint. Re-send the corridor and amount from your quote, plus the `routeProtocol` token to pin the exact route you were quoted. Like recipient creation, this is `Idempotency-Key`-safe — Teel deduplicates retry attempts in a 24h window so a network timeout doesn't double-spend.
 
     ```bash
     curl -X POST https://api-sandbox.teel.finance/rfq/execute \
@@ -94,7 +93,9 @@ This guide walks you through making your first payout against the Teel **sandbox
       -H "Content-Type: application/json" \
       -H "Idempotency-Key: $(uuidgen)" \
       -d '{
-        "quoteId": "<quoteId from step 4>",
+        "fromCurrency": "USD",
+        "toCurrency": "PHP",
+        "amount": 1000,
         "recipientId": "<recipient_id from step 3>",
         "routeProtocol": "<protocol token from step 4>"
       }'
@@ -123,9 +124,11 @@ This guide walks you through making your first payout against the Teel **sandbox
       -H "Content-Type: application/json" \
       -d '{
         "url": "https://your.app/teel-webhooks",
-        "events": ["payout.status.updated", "payout.delivered", "payout.failed"]
+        "events": ["payout.created", "payout.status.updated"]
       }'
     ```
+
+    Today the subscribable events are `payout.created` and `payout.status.updated` — delivery and failure arrive as the `status` field inside `payout.status.updated` (terminal values `delivered` / `failed`), not as separate event types.
 
     The response includes the signing `secret` returned **exactly once**. Store it server-side. See the [Webhooks guide](/guides/webhooks) for signature verification + retry semantics.
 
@@ -138,13 +141,13 @@ This guide walks you through making your first payout against the Teel **sandbox
   </Step>
 </Steps>
 
-## Next Steps
+## Next steps
 
 <CardGroup cols={2}>
   <Card title="Authentication" href="/authentication">
     Key format, scopes, rotation (7-day overlap), revocation, error responses.
   </Card>
-  <Card title="Core Concepts" href="/concepts">
+  <Card title="Core concepts" href="/concepts">
     Multi-provider architecture, quote engine, transaction lifecycle.
   </Card>
   <Card title="Coverage" href="/coverage">

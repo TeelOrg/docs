@@ -1,100 +1,85 @@
 ---
-title: Fiat-to-Fiat Payout
+title: Payout
 description: End-to-end guide for sending a cross-border fiat payment
 ---
 
-# Fiat-to-Fiat Payout
+This guide walks through sending a cross-border fiat payment from one currency to another — e.g. USD → MYR. The flow is: quote, execute, track.
 
-This guide walks through the complete flow for sending a cross-border fiat payment from one currency to another. 
-
-## Flow Overview
+## Flow overview
 
 ```mermaid
 sequenceDiagram
     participant Client
-    participant API
+    participant API as Teel API
     participant Provider
 
     Client->>API: 1. GET /quotes/fiat-to-fiat/best
-    API-->>Client: Best quote with exchange rate
-    Client->>API: 2. POST /payouts
-    API-->>Client: Payout created (pending)
-    Client->>API: 3. POST /payouts/:id/document (if required)
-    API-->>Client: Document uploaded
-    Client->>API: 4. PUT /payouts/:id (execute)
-    API->>Provider: Execute via best provider
-    Provider-->>API: Confirmation
-    API-->>Client: Payout completed
+    API-->>Client: Quote (rate, quoteId, route token)
+    Client->>API: 2. POST /rfq/execute (routeProtocol)
+    API->>Provider: Route through best provider
+    API-->>Client: transactionId + status
+    API-->>Client: 3. payout.status.updated webhooks → delivered
 ```
 
-## Step 1: Get a Quote
+## Prerequisites
 
-Fetch the best available rate for your currency pair:
+- An API key (`sk_live_…` / `sk_test_…`) for an account whose KYB covers the corridor.
+- A [recipient](/guides/recipients) with a fiat (bank) payment method in the destination currency. Save its `recipientId`.
+
+## Step 1: Get a quote
+
+Fetch the best available rate for your currency pair. Pass `recipient_id` so the quote accounts for the recipient's payment method:
 
 ```bash
-curl -X GET "https://api.teel.finance/quotes/fiat-to-fiat/best?source_currency=USD&target_currency=MYR&amount=1000" \
-  -H "Authorization: Bearer YOUR_TOKEN"
+curl "https://api.teel.finance/quotes/fiat-to-fiat/best?from_currency=USD&to_currency=MYR&amount=1000&recipient_id=8f3c2a91-4e5b-4d8c-9a1f-3e2b1c4d5e6f" \
+  -H "Authorization: Bearer $TEEL_API_KEY"
 ```
 
 ```json
 {
-  "fromCcy": "USD",
-  "toCcy": "MYR",
-  "amount": "1000",
-  "exchangeRate": "4.4250",
+  "quoteId": "b1d9…",
   "provider": "provider_a",
-  "payoutAmount": "4425.00"
+  "fromAmount": 1000,
+  "toAmount": 4425.00,
+  "rate": 4.4250,
+  "fee": 5.00,
+  "protocol": "rt_9f8a…",
+  "expiresAt": "2026-03-10T10:05:00Z"
 }
 ```
 
-## Step 2: Create a Payout
+Keep the `quoteId` (to poll status) and the opaque `protocol` route token (to pin this route at execution). Execute before `expiresAt`.
 
-Create the payout record with recipient and amount details:
+## Step 2: Execute the payout
+
+Re-send the corridor and amount, plus the `routeProtocol` token from the quote. Some corridors require a supporting document — pass it as `supportingDocumentKey` when needed (corridor requirements surface in `GET /recipients/requirements`).
 
 ```bash
-curl -X POST "https://api.teel.finance/payouts" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
+curl -X POST https://api.teel.finance/rfq/execute \
+  -H "Authorization: Bearer $TEEL_API_KEY" \
   -H "Content-Type: application/json" \
+  -H "Idempotency-Key: $(uuidgen)" \
   -d '{
-    "transaction_type": "payout",
-    "payout_amount": 4425.00,
-    "source_amount": 1000.00,
-    "source_currency": "USD",
-    "payout_currency": "MYR",
-    "recipient_id": "rec_abc123",
-    "payment_method": "fiat_bank_transfer",
-    "payment_purpose": "trade_settlement"
+    "fromCurrency": "USD",
+    "toCurrency": "MYR",
+    "amount": 1000,
+    "recipientId": "8f3c2a91-4e5b-4d8c-9a1f-3e2b1c4d5e6f",
+    "routeProtocol": "rt_9f8a…",
+    "paymentPurpose": "trade_settlement"
   }'
 ```
 
-## Step 3: Upload Supporting Document (if required)
+The response includes the `transactionId` and initial status. The payout begins processing immediately — there's no separate "create" then "execute" step.
 
-Some corridors require supporting documentation:
+## Step 3: Track status
 
-```bash
-curl -X POST "https://api.teel.finance/payouts/pay_xyz/document" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -F "document=@invoice.pdf"
-```
-
-## Step 4: Execute the Payout
-
-Update the payout status to trigger execution:
+Poll the status endpoint with your `quoteId`, or subscribe to webhooks (recommended):
 
 ```bash
-curl -X PUT "https://api.teel.finance/payouts/pay_xyz" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"status": "processing"}'
+curl https://api.teel.finance/rfq/status/b1d9… \
+  -H "Authorization: Bearer $TEEL_API_KEY"
 ```
 
-## Checking Payout Status
+A Payout is settled internally through a collection leg and a disbursement leg, so it moves through several steps: `initiated → compliance_cleared → instructions_sent → collected → converting → settling → delivered` (terminal: `delivered` or `failed`).
 
-Poll the payout to check completion:
-
-```bash
-curl -X GET "https://api.teel.finance/payouts/pay_xyz" \
-  -H "Authorization: Bearer YOUR_TOKEN"
-```
-
-The `status` field will transition: `pending` → `processing` → `completed` (or `failed`).
+For production, subscribe to `payout.status.updated` instead of polling — see the [Webhooks guide](/guides/webhooks).

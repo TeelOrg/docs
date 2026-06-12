@@ -1,54 +1,80 @@
 ---
-title: Fiat-to-Stablecoin Transfer
-description: Guide for converting fiat currency into stablecoins
+title: Stablecoin payout
+description: Guide for paying a recipient in stablecoin, funded with fiat
 ---
 
-# Fiat-to-Stablecoin Transfer
+Pay a recipient in stablecoin (e.g. USDC) while funding the payout with fiat. The flow is the same quote → execute → track pattern as a fiat payout — the only difference is the recipient receives stablecoin in a wallet instead of fiat in a bank account.
 
-Convert fiat currency into stablecoins like USDC or MYRC through integrated onramp providers.
-
-## Flow Overview
+## Flow overview
 
 ```mermaid
 sequenceDiagram
     participant Client
-    participant API
+    participant API as Teel API
     participant Provider
 
     Client->>API: 1. GET /quotes/fiat-to-stablecoin/best
-    API-->>Client: Best quote
-    Client->>API: 2. POST /stablecoin-transfer/initiate
-    API->>Provider: Initiate transfer
-    Provider-->>API: Transfer started
-    API-->>Client: Transfer ID + payment instructions
-    Client->>API: 3. GET /stablecoin-transfer/status/:id (poll)
-    API-->>Client: Transfer status
+    API-->>Client: Quote (rate, quoteId, route token)
+    Client->>API: 2. POST /rfq/execute (routeProtocol)
+    API->>Provider: Convert fiat → stablecoin
+    API-->>Client: transactionId + status
+    API-->>Client: 3. payout.status.updated webhooks → delivered
 ```
 
-## Step 1: Get a Quote
+## Prerequisites
+
+- An API key whose KYB covers the corridor.
+- A [recipient](/guides/recipients) with `transferType: "stablecoin"` and a wallet payment method (token + `rail` for the chain). Save its `recipientId`.
+
+## Step 1: Get a quote
+
+`to_currency` is the stablecoin the recipient receives:
 
 ```bash
-curl -X GET "https://api.teel.finance/quotes/fiat-to-stablecoin/best?source_currency=USD&amount=1000&crypto_ticker=USDC" \
-  -H "Authorization: Bearer YOUR_TOKEN"
+curl "https://api.teel.finance/quotes/fiat-to-stablecoin/best?from_currency=USD&to_currency=USDC&amount=1000" \
+  -H "Authorization: Bearer $TEEL_API_KEY"
 ```
 
-## Step 2: Initiate Transfer
+```json
+{
+  "quoteId": "c2e8…",
+  "provider": "provider_a",
+  "fromAmount": 1000,
+  "toAmount": 998.50,
+  "rate": 1.0,
+  "fee": 1.50,
+  "protocol": "rt_4b2c…",
+  "expiresAt": "2026-03-11T12:05:00Z"
+}
+```
+
+## Step 2: Execute
 
 ```bash
-curl -X POST "https://api.teel.finance/stablecoin-transfer/initiate" \
-  -H "Authorization: Bearer YOUR_TOKEN" \
+curl -X POST https://api.teel.finance/rfq/execute \
+  -H "Authorization: Bearer $TEEL_API_KEY" \
   -H "Content-Type: application/json" \
+  -H "Idempotency-Key: $(uuidgen)" \
   -d '{
-    "source_currency": "USD",
+    "fromCurrency": "USD",
+    "toCurrency": "USDC",
     "amount": 1000,
-    "crypto_ticker": "USDC",
-    "wallet_address": "0x..."
+    "recipientId": "8f3c2a91-4e5b-4d8c-9a1f-3e2b1c4d5e6f",
+    "routeProtocol": "rt_4b2c…"
   }'
 ```
 
-## Step 3: Poll Transfer Status
+The stablecoin is delivered to the wallet on the recipient's payment method. The response includes the `transactionId` and initial status.
+
+## Step 3: Track status
 
 ```bash
-curl -X GET "https://api.teel.finance/stablecoin-transfer/status/txn_abc123" \
-  -H "Authorization: Bearer YOUR_TOKEN"
+curl https://api.teel.finance/rfq/status/c2e8… \
+  -H "Authorization: Bearer $TEEL_API_KEY"
 ```
+
+Subscribe to `payout.status.updated` for production rather than polling — see the [Webhooks guide](/guides/webhooks).
+
+<Note>
+Sending a payout funded **with** stablecoin (stablecoin-to-stablecoin, including cross-chain) is configured in the dashboard, not the partner API — see [Crypto payouts](/guides/crypto-payout).
+</Note>
