@@ -2,11 +2,16 @@
 #
 # Why this exists: Mintlify is wired to deploy from THIS repo
 # (TeelOrg/docs), but all docs content is authored in
-# TeelOrg/mintlify-docs. This workflow keeps the two in sync without
-# any secrets: it runs on a 10-minute cron (and on demand), clones
-# mintlify-docs over public HTTPS (no auth needed — public repo),
-# rsyncs the tree into this repo, and commits with the built-in
-# GITHUB_TOKEN (which has push access to this repo by default).
+# TeelOrg/mintlify-docs. This workflow keeps the two in sync: it
+# runs on a cron (and on demand), checks out mintlify-docs over SSH
+# using a read-only deploy key (mintlify-docs is private), rsyncs
+# the tree into this repo, and commits with the built-in GITHUB_TOKEN
+# (which has push access to this repo by default).
+#
+# Auth setup:
+#   - Public half: deploy key on TeelOrg/mintlify-docs (read-only)
+#   - Private half: secrets.MINTLIFY_DOCS_DEPLOY_KEY on this repo
+# To rotate: generate a new ed25519 keypair, swap both halves.
 #
 # This is a stop-gap until the Mintlify dashboard is repointed to
 # read directly from TeelOrg/mintlify-docs — delete this workflow
@@ -47,9 +52,14 @@ jobs:
           # token is the default GITHUB_TOKEN, which can push to its
           # own repo when permissions.contents is write (above).
 
-      - name: Clone TeelOrg/mintlify-docs (public, no auth)
-        run: |
-          git clone --depth 1 https://github.com/TeelOrg/mintlify-docs.git source
+      - name: Checkout TeelOrg/mintlify-docs (private, deploy key)
+        uses: actions/checkout@v4
+        with:
+          repository: TeelOrg/mintlify-docs
+          ssh-key: ${{ secrets.MINTLIFY_DOCS_DEPLOY_KEY }}
+          path: source
+          fetch-depth: 1
+          persist-credentials: false
 
       - name: Capture source SHA
         id: src
