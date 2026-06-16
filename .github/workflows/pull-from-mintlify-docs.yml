@@ -11,7 +11,10 @@
 # Auth setup:
 #   - Public half: deploy key on TeelOrg/mintlify-docs (read-only)
 #   - Private half: secrets.MINTLIFY_DOCS_DEPLOY_KEY on this repo
-# To rotate: generate a new ed25519 keypair, swap both halves.
+#
+# Rotation runbook (when it breaks or a key holder rolls off):
+#   docs/superpowers/2026-06-16-deploy-key-rotation.md
+#   (canonical: https://app.notion.com/p/3816d359062f8142af81f292c3715822)
 #
 # This is a stop-gap until the Mintlify dashboard is repointed to
 # read directly from TeelOrg/mintlify-docs — delete this workflow
