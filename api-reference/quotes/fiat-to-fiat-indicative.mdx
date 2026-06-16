@@ -7,11 +7,11 @@ description: A fast, indicative cross-border fiat-to-fiat rate (not lockable)
 Returns a single **indicative** fiat-to-fiat route — a fast estimate suitable for display before a recipient or payment method is selected. Indicative quotes are **not firm**: they are not pinned to a payment-method context and should not be relied on for the exact settled amount. Use [Get Best Fiat-to-Fiat Quote](/api-reference/quotes/fiat-to-fiat-best) for a firm, executable quote.
 
 ## Query parameters
-<ParamField query="source_currency" type="string" required>
+<ParamField query="sourceCurrency" type="string" required>
   ISO 4217 code for the currency you are sending from (e.g. `USD`).
 </ParamField>
 
-<ParamField query="target_currency" type="string" required>
+<ParamField query="targetCurrency" type="string" required>
   ISO 4217 code for the recipient's currency (e.g. `PHP`).
 </ParamField>
 

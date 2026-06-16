@@ -164,8 +164,8 @@
                             "type": "text/plain"
                           },
                           "disabled": false,
-                          "key": "from_currency",
-                          "value": "{{fromCurrency}}"
+                          "key": "sourceCurrency",
+                          "value": "{{sourcecurrency}}"
                         },
                         {
                           "description": {
@@ -173,8 +173,8 @@
                             "type": "text/plain"
                           },
                           "disabled": false,
-                          "key": "to_currency",
-                          "value": "{{toCurrency}}"
+                          "key": "targetCurrency",
+                          "value": "{{targetcurrency}}"
                         },
                         {
                           "description": {
@@ -191,8 +191,8 @@
                             "type": "text/plain"
                           },
                           "disabled": false,
-                          "key": "user_payment_method_id",
-                          "value": "{{userPaymentMethodId}}"
+                          "key": "userPaymentMethodId",
+                          "value": "{{userpaymentmethodid}}"
                         },
                         {
                           "description": {
@@ -248,8 +248,8 @@
                             "type": "text/plain"
                           },
                           "disabled": false,
-                          "key": "from_currency",
-                          "value": "{{fromCurrency}}"
+                          "key": "sourceCurrency",
+                          "value": "{{sourcecurrency}}"
                         },
                         {
                           "description": {
@@ -257,8 +257,8 @@
                             "type": "text/plain"
                           },
                           "disabled": false,
-                          "key": "to_currency",
-                          "value": "{{toCurrency}}"
+                          "key": "targetCurrency",
+                          "value": "{{targetcurrency}}"
                         },
                         {
                           "description": {
@@ -275,8 +275,8 @@
                             "type": "text/plain"
                           },
                           "disabled": false,
-                          "key": "user_payment_method_id",
-                          "value": "{{userPaymentMethodId}}"
+                          "key": "userPaymentMethodId",
+                          "value": "{{userpaymentmethodid}}"
                         },
                         {
                           "description": {
@@ -338,8 +338,8 @@
                             "type": "text/plain"
                           },
                           "disabled": false,
-                          "key": "from_currency",
-                          "value": "{{fromCurrency}}"
+                          "key": "sourceCurrency",
+                          "value": "{{sourcecurrency}}"
                         },
                         {
                           "description": {
@@ -347,8 +347,8 @@
                             "type": "text/plain"
                           },
                           "disabled": false,
-                          "key": "to_currency",
-                          "value": "{{toCurrency}}"
+                          "key": "targetCurrency",
+                          "value": "{{targetcurrency}}"
                         },
                         {
                           "description": {
@@ -365,8 +365,8 @@
                             "type": "text/plain"
                           },
                           "disabled": false,
-                          "key": "recipient_id",
-                          "value": "{{recipientId}}"
+                          "key": "recipientId",
+                          "value": "{{recipientid}}"
                         },
                         {
                           "description": {
@@ -422,8 +422,8 @@
                             "type": "text/plain"
                           },
                           "disabled": false,
-                          "key": "from_currency",
-                          "value": "{{fromCurrency}}"
+                          "key": "sourceCurrency",
+                          "value": "{{sourcecurrency}}"
                         },
                         {
                           "description": {
@@ -431,8 +431,8 @@
                             "type": "text/plain"
                           },
                           "disabled": false,
-                          "key": "to_currency",
-                          "value": "{{toCurrency}}"
+                          "key": "targetCurrency",
+                          "value": "{{targetcurrency}}"
                         },
                         {
                           "description": {
@@ -449,8 +449,8 @@
                             "type": "text/plain"
                           },
                           "disabled": false,
-                          "key": "recipient_id",
-                          "value": "{{recipientId}}"
+                          "key": "recipientId",
+                          "value": "{{recipientid}}"
                         },
                         {
                           "description": {
@@ -468,6 +468,93 @@
                 }
               ],
               "name": "all"
+            },
+            {
+              "description": "",
+              "item": [
+                {
+                  "event": [],
+                  "name": "Exact-output offramp quote \u2014 recipient receives exactly `amount`",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "auth": null,
+                    "body": {},
+                    "description": {
+                      "content": "Exact-output variant of `/quotes/offramp/best`. Pass the destination\nfiat amount the recipient should receive; the engine sizes the source\nstablecoin spend so the post-fee destination amount lands exactly on\nthe target.\n",
+                      "type": "text/plain"
+                    },
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "{{accept}}"
+                      }
+                    ],
+                    "method": "GET",
+                    "name": "Exact-output offramp quote \u2014 recipient receives exactly `amount`",
+                    "url": {
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "quotes",
+                        "offramp",
+                        "exact-output"
+                      ],
+                      "query": [
+                        {
+                          "description": {
+                            "content": "(Required) ",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "sourceCurrency",
+                          "value": "{{sourcecurrency}}"
+                        },
+                        {
+                          "description": {
+                            "content": "(Required) ",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "targetCurrency",
+                          "value": "{{targetcurrency}}"
+                        },
+                        {
+                          "description": {
+                            "content": "(Required) Amount in the FROM currency (or TO currency on exact-output paths).",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "amount",
+                          "value": "{{amount}}"
+                        },
+                        {
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "recipientId",
+                          "value": "{{recipientid}}"
+                        },
+                        {
+                          "description": {
+                            "content": "When true, skip indicative fallbacks; return only quotes the provider will honour at execute time.",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "firm",
+                          "value": "{{firm}}"
+                        }
+                      ],
+                      "variable": []
+                    }
+                  }
+                }
+              ],
+              "name": "exact-output"
             }
           ],
           "name": "offramp"
@@ -512,8 +599,8 @@
                             "type": "text/plain"
                           },
                           "disabled": false,
-                          "key": "from_currency",
-                          "value": "{{fromCurrency}}"
+                          "key": "sourceCurrency",
+                          "value": "{{sourcecurrency}}"
                         },
                         {
                           "description": {
@@ -521,8 +608,8 @@
                             "type": "text/plain"
                           },
                           "disabled": false,
-                          "key": "to_currency",
-                          "value": "{{toCurrency}}"
+                          "key": "targetCurrency",
+                          "value": "{{targetcurrency}}"
                         },
                         {
                           "description": {
@@ -539,8 +626,8 @@
                             "type": "text/plain"
                           },
                           "disabled": false,
-                          "key": "user_payment_method_id",
-                          "value": "{{userPaymentMethodId}}"
+                          "key": "userPaymentMethodId",
+                          "value": "{{userpaymentmethodid}}"
                         },
                         {
                           "description": {
@@ -548,8 +635,8 @@
                             "type": "text/plain"
                           },
                           "disabled": false,
-                          "key": "recipient_id",
-                          "value": "{{recipientId}}"
+                          "key": "recipientId",
+                          "value": "{{recipientid}}"
                         },
                         {
                           "description": {
@@ -567,6 +654,168 @@
                 }
               ],
               "name": "best"
+            },
+            {
+              "description": "",
+              "item": [
+                {
+                  "event": [],
+                  "name": "All fiat-to-fiat quotes (provider breakdown)",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "auth": null,
+                    "body": {},
+                    "description": {},
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "{{accept}}"
+                      }
+                    ],
+                    "method": "GET",
+                    "name": "All fiat-to-fiat quotes (provider breakdown)",
+                    "url": {
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "quotes",
+                        "fiat-to-fiat",
+                        "all"
+                      ],
+                      "query": [
+                        {
+                          "description": {
+                            "content": "(Required) ",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "sourceCurrency",
+                          "value": "{{sourcecurrency}}"
+                        },
+                        {
+                          "description": {
+                            "content": "(Required) ",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "targetCurrency",
+                          "value": "{{targetcurrency}}"
+                        },
+                        {
+                          "description": {
+                            "content": "(Required) Amount in the FROM currency (or TO currency on exact-output paths).",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "amount",
+                          "value": "{{amount}}"
+                        },
+                        {
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "userPaymentMethodId",
+                          "value": "{{userpaymentmethodid}}"
+                        },
+                        {
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "recipientId",
+                          "value": "{{recipientid}}"
+                        },
+                        {
+                          "description": {
+                            "content": "When true, skip indicative fallbacks; return only quotes the provider will honour at execute time.",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "firm",
+                          "value": "{{firm}}"
+                        }
+                      ],
+                      "variable": []
+                    }
+                  }
+                }
+              ],
+              "name": "all"
+            },
+            {
+              "description": "",
+              "item": [
+                {
+                  "event": [],
+                  "name": "Indicative fiat-to-fiat quote (no provider lock, no firm guarantee)",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "auth": null,
+                    "body": {},
+                    "description": {
+                      "content": "Indicative quote used for catalogue / pricing screens. Skips firm-quote\nside-effects: providers are queried but no inventory is reserved and no\nrate is locked. Suitable for shopping flows where the partner just\nwants a representative rate.\n",
+                      "type": "text/plain"
+                    },
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "{{accept}}"
+                      }
+                    ],
+                    "method": "GET",
+                    "name": "Indicative fiat-to-fiat quote (no provider lock, no firm guarantee)",
+                    "url": {
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "quotes",
+                        "fiat-to-fiat",
+                        "indicative"
+                      ],
+                      "query": [
+                        {
+                          "description": {
+                            "content": "(Required) ",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "sourceCurrency",
+                          "value": "{{sourcecurrency}}"
+                        },
+                        {
+                          "description": {
+                            "content": "(Required) ",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "targetCurrency",
+                          "value": "{{targetcurrency}}"
+                        },
+                        {
+                          "description": {
+                            "content": "(Required) Amount in the FROM currency (or TO currency on exact-output paths).",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "amount",
+                          "value": "{{amount}}"
+                        }
+                      ],
+                      "variable": []
+                    }
+                  }
+                }
+              ],
+              "name": "indicative"
             }
           ],
           "name": "fiat-to-fiat"
@@ -611,8 +860,8 @@
                             "type": "text/plain"
                           },
                           "disabled": false,
-                          "key": "from_currency",
-                          "value": "{{fromCurrency}}"
+                          "key": "sourceCurrency",
+                          "value": "{{sourcecurrency}}"
                         },
                         {
                           "description": {
@@ -620,8 +869,8 @@
                             "type": "text/plain"
                           },
                           "disabled": false,
-                          "key": "to_currency",
-                          "value": "{{toCurrency}}"
+                          "key": "targetCurrency",
+                          "value": "{{targetcurrency}}"
                         },
                         {
                           "description": {
@@ -638,8 +887,8 @@
                             "type": "text/plain"
                           },
                           "disabled": false,
-                          "key": "user_payment_method_id",
-                          "value": "{{userPaymentMethodId}}"
+                          "key": "userPaymentMethodId",
+                          "value": "{{userpaymentmethodid}}"
                         },
                         {
                           "description": {
@@ -657,9 +906,240 @@
                 }
               ],
               "name": "best"
+            },
+            {
+              "description": "",
+              "item": [
+                {
+                  "event": [],
+                  "name": "All fiat-to-stablecoin quotes (provider breakdown)",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "auth": null,
+                    "body": {},
+                    "description": {},
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "{{accept}}"
+                      }
+                    ],
+                    "method": "GET",
+                    "name": "All fiat-to-stablecoin quotes (provider breakdown)",
+                    "url": {
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "quotes",
+                        "fiat-to-stablecoin",
+                        "all"
+                      ],
+                      "query": [
+                        {
+                          "description": {
+                            "content": "(Required) ",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "sourceCurrency",
+                          "value": "{{sourcecurrency}}"
+                        },
+                        {
+                          "description": {
+                            "content": "(Required) ",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "targetCurrency",
+                          "value": "{{targetcurrency}}"
+                        },
+                        {
+                          "description": {
+                            "content": "(Required) Amount in the FROM currency (or TO currency on exact-output paths).",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "amount",
+                          "value": "{{amount}}"
+                        },
+                        {
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "userPaymentMethodId",
+                          "value": "{{userpaymentmethodid}}"
+                        },
+                        {
+                          "description": {
+                            "content": "When true, skip indicative fallbacks; return only quotes the provider will honour at execute time.",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "firm",
+                          "value": "{{firm}}"
+                        }
+                      ],
+                      "variable": []
+                    }
+                  }
+                }
+              ],
+              "name": "all"
+            },
+            {
+              "description": "",
+              "item": [
+                {
+                  "event": [],
+                  "name": "Exact-output fiat-to-stablecoin quote \u2014 recipient receives exactly `amount` stablecoin",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "auth": null,
+                    "body": {},
+                    "description": {
+                      "content": "Exact-output variant of `/quotes/fiat-to-stablecoin/best`. Pass the\ntarget stablecoin amount; the engine sizes the source fiat spend so the\npost-fee delivered stablecoin lands exactly on the target.\n",
+                      "type": "text/plain"
+                    },
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "{{accept}}"
+                      }
+                    ],
+                    "method": "GET",
+                    "name": "Exact-output fiat-to-stablecoin quote \u2014 recipient receives exactly `amount` stablecoin",
+                    "url": {
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "quotes",
+                        "fiat-to-stablecoin",
+                        "exact-output"
+                      ],
+                      "query": [
+                        {
+                          "description": {
+                            "content": "(Required) ",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "sourceCurrency",
+                          "value": "{{sourcecurrency}}"
+                        },
+                        {
+                          "description": {
+                            "content": "(Required) ",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "targetCurrency",
+                          "value": "{{targetcurrency}}"
+                        },
+                        {
+                          "description": {
+                            "content": "(Required) Amount in the FROM currency (or TO currency on exact-output paths).",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "amount",
+                          "value": "{{amount}}"
+                        },
+                        {
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "userPaymentMethodId",
+                          "value": "{{userpaymentmethodid}}"
+                        },
+                        {
+                          "description": {
+                            "content": "When true, skip indicative fallbacks; return only quotes the provider will honour at execute time.",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "firm",
+                          "value": "{{firm}}"
+                        }
+                      ],
+                      "variable": []
+                    }
+                  }
+                }
+              ],
+              "name": "exact-output"
             }
           ],
           "name": "fiat-to-stablecoin"
+        },
+        {
+          "description": "",
+          "item": [
+            {
+              "description": "",
+              "item": [
+                {
+                  "event": [],
+                  "name": "Lock quotes for a batch payout",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "auth": null,
+                    "body": {
+                      "mode": "raw",
+                      "options": {
+                        "raw": {
+                          "headerFamily": "json",
+                          "language": "json"
+                        }
+                      },
+                      "raw": "{}"
+                    },
+                    "description": {
+                      "content": "Locks rates for each row of a batch payout. Scope `quotes:read`.\nReturns a per-row envelope keyed by `idx` so partial failures degrade\ngracefully \u2014 retry the `retryable:true` rows individually before\nfiring `POST /rfq/execute-batch`.\n\nThe body is forwarded verbatim to the quote-engine; the proxy only\nresolves any opaque `route_protocol` tokens partners send back from a\nprior `/quotes/*` response. Authorization of nested IDs (recipient,\npayment-method) happens on quote-engine's side.\n",
+                      "type": "text/plain"
+                    },
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "{{contentType}}"
+                      },
+                      {
+                        "key": "Accept",
+                        "value": "{{accept}}"
+                      }
+                    ],
+                    "method": "POST",
+                    "name": "Lock quotes for a batch payout",
+                    "url": {
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "quotes",
+                        "batch",
+                        "lock"
+                      ],
+                      "query": [],
+                      "variable": []
+                    }
+                  }
+                }
+              ],
+              "name": "lock"
+            }
+          ],
+          "name": "batch"
         }
       ],
       "name": "quotes"
@@ -982,7 +1462,7 @@
                   "language": "json"
                 }
               },
-              "raw": "{\n  \"email\": \"<email>\",\n  \"country\": \"<string>\",\n  \"currency\": \"<string>\",\n  \"is_business\": \"<boolean>\",\n  \"business_name\": \"<string>\",\n  \"transfer_type\": \"<enum>\",\n  \"address\": {},\n  \"payment_methods\": [\n    {\n      \"currency\": \"<string>\",\n      \"type\": \"<enum>\",\n      \"rail\": \"<string>\",\n      \"bank_name\": \"<string>\",\n      \"account_number\": \"<string>\",\n      \"wallet_address\": \"<string>\",\n      \"wallet_network\": \"<string>\"\n    },\n    {\n      \"currency\": \"<string>\",\n      \"type\": \"<enum>\",\n      \"rail\": \"<string>\",\n      \"bank_name\": \"<string>\",\n      \"account_number\": \"<string>\",\n      \"wallet_address\": \"<string>\",\n      \"wallet_network\": \"<string>\"\n    }\n  ]\n}"
+              "raw": "{\n  \"email\": \"<email>\",\n  \"country\": \"<string>\",\n  \"currency\": \"<string>\",\n  \"isBusiness\": \"<boolean>\",\n  \"businessName\": \"<string>\",\n  \"transferType\": \"<enum>\",\n  \"address\": {},\n  \"paymentMethods\": [\n    {\n      \"currency\": \"<string>\",\n      \"type\": \"<enum>\",\n      \"rail\": \"<string>\",\n      \"bankName\": \"<string>\",\n      \"accountNumber\": \"<string>\",\n      \"walletAddress\": \"<string>\",\n      \"walletNetwork\": \"<string>\"\n    },\n    {\n      \"currency\": \"<string>\",\n      \"type\": \"<enum>\",\n      \"rail\": \"<string>\",\n      \"bankName\": \"<string>\",\n      \"accountNumber\": \"<string>\",\n      \"walletAddress\": \"<string>\",\n      \"walletNetwork\": \"<string>\"\n    }\n  ]\n}"
             },
             "description": {
               "content": "Scope `recipients:write`. Idempotent via `Idempotency-Key`.",
@@ -1040,7 +1520,7 @@
                       "language": "json"
                     }
                   },
-                  "raw": "{\n  \"recipients\": [\n    {\n      \"email\": \"<email>\",\n      \"country\": \"<string>\",\n      \"currency\": \"<string>\",\n      \"is_business\": \"<boolean>\",\n      \"business_name\": \"<string>\",\n      \"transfer_type\": \"<enum>\",\n      \"address\": {},\n      \"payment_methods\": [\n        {\n          \"currency\": \"<string>\",\n          \"type\": \"<enum>\",\n          \"rail\": \"<string>\",\n          \"bank_name\": \"<string>\",\n          \"account_number\": \"<string>\",\n          \"wallet_address\": \"<string>\",\n          \"wallet_network\": \"<string>\"\n        },\n        {\n          \"currency\": \"<string>\",\n          \"type\": \"<enum>\",\n          \"rail\": \"<string>\",\n          \"bank_name\": \"<string>\",\n          \"account_number\": \"<string>\",\n          \"wallet_address\": \"<string>\",\n          \"wallet_network\": \"<string>\"\n        }\n      ]\n    },\n    {\n      \"email\": \"<email>\",\n      \"country\": \"<string>\",\n      \"currency\": \"<string>\",\n      \"is_business\": \"<boolean>\",\n      \"business_name\": \"<string>\",\n      \"transfer_type\": \"<enum>\",\n      \"address\": {},\n      \"payment_methods\": [\n        {\n          \"currency\": \"<string>\",\n          \"type\": \"<enum>\",\n          \"rail\": \"<string>\",\n          \"bank_name\": \"<string>\",\n          \"account_number\": \"<string>\",\n          \"wallet_address\": \"<string>\",\n          \"wallet_network\": \"<string>\"\n        },\n        {\n          \"currency\": \"<string>\",\n          \"type\": \"<enum>\",\n          \"rail\": \"<string>\",\n          \"bank_name\": \"<string>\",\n          \"account_number\": \"<string>\",\n          \"wallet_address\": \"<string>\",\n          \"wallet_network\": \"<string>\"\n        }\n      ]\n    }\n  ]\n}"
+                  "raw": "{\n  \"recipients\": [\n    {\n      \"email\": \"<email>\",\n      \"country\": \"<string>\",\n      \"currency\": \"<string>\",\n      \"isBusiness\": \"<boolean>\",\n      \"businessName\": \"<string>\",\n      \"transferType\": \"<enum>\",\n      \"address\": {},\n      \"paymentMethods\": [\n        {\n          \"currency\": \"<string>\",\n          \"type\": \"<enum>\",\n          \"rail\": \"<string>\",\n          \"bankName\": \"<string>\",\n          \"accountNumber\": \"<string>\",\n          \"walletAddress\": \"<string>\",\n          \"walletNetwork\": \"<string>\"\n        },\n        {\n          \"currency\": \"<string>\",\n          \"type\": \"<enum>\",\n          \"rail\": \"<string>\",\n          \"bankName\": \"<string>\",\n          \"accountNumber\": \"<string>\",\n          \"walletAddress\": \"<string>\",\n          \"walletNetwork\": \"<string>\"\n        }\n      ]\n    },\n    {\n      \"email\": \"<email>\",\n      \"country\": \"<string>\",\n      \"currency\": \"<string>\",\n      \"isBusiness\": \"<boolean>\",\n      \"businessName\": \"<string>\",\n      \"transferType\": \"<enum>\",\n      \"address\": {},\n      \"paymentMethods\": [\n        {\n          \"currency\": \"<string>\",\n          \"type\": \"<enum>\",\n          \"rail\": \"<string>\",\n          \"bankName\": \"<string>\",\n          \"accountNumber\": \"<string>\",\n          \"walletAddress\": \"<string>\",\n          \"walletNetwork\": \"<string>\"\n        },\n        {\n          \"currency\": \"<string>\",\n          \"type\": \"<enum>\",\n          \"rail\": \"<string>\",\n          \"bankName\": \"<string>\",\n          \"accountNumber\": \"<string>\",\n          \"walletAddress\": \"<string>\",\n          \"walletNetwork\": \"<string>\"\n        }\n      ]\n    }\n  ]\n}"
                 },
                 "description": {
                   "content": "Scope `recipients:write`. Idempotent via `Idempotency-Key`.",
@@ -1144,7 +1624,7 @@
                       "language": "json"
                     }
                   },
-                  "raw": "{\n  \"email\": \"<email>\",\n  \"business_name\": \"<string>\",\n  \"currency\": \"<string>\",\n  \"transfer_type\": \"<enum>\",\n  \"address\": {}\n}"
+                  "raw": "{\n  \"email\": \"<email>\",\n  \"businessName\": \"<string>\",\n  \"currency\": \"<string>\",\n  \"transferType\": \"<enum>\",\n  \"address\": {}\n}"
                 },
                 "description": {
                   "content": "Scope `recipients:write`.",
@@ -1247,7 +1727,7 @@
                           "language": "json"
                         }
                       },
-                      "raw": "{\n  \"currency\": \"<string>\",\n  \"type\": \"<enum>\",\n  \"rail\": \"<string>\",\n  \"bank_name\": \"<string>\",\n  \"account_number\": \"<string>\",\n  \"wallet_address\": \"<string>\",\n  \"wallet_network\": \"<string>\"\n}"
+                      "raw": "{\n  \"currency\": \"<string>\",\n  \"type\": \"<enum>\",\n  \"rail\": \"<string>\",\n  \"bankName\": \"<string>\",\n  \"accountNumber\": \"<string>\",\n  \"walletAddress\": \"<string>\",\n  \"walletNetwork\": \"<string>\"\n}"
                     },
                     "description": {
                       "content": "Scope `recipients:write`. Idempotent via `Idempotency-Key`.",
@@ -1453,6 +1933,60 @@
                   "variable": []
                 }
               }
+            },
+            {
+              "description": "",
+              "item": [
+                {
+                  "event": [],
+                  "name": "Lookup multiple recipients by account numbers",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "auth": null,
+                    "body": {
+                      "mode": "raw",
+                      "options": {
+                        "raw": {
+                          "headerFamily": "json",
+                          "language": "json"
+                        }
+                      },
+                      "raw": "{\n  \"account_numbers\": [\n    \"<string>\"\n  ]\n}"
+                    },
+                    "description": {
+                      "content": "Batch counterpart of `GET /recipients/lookup`. Scope\n`recipients:read`. The response is a map keyed by the input\naccount number; the value is the array of matching recipients\n(same row shape as the singular lookup). Account numbers with\nno match are omitted from the response.\n",
+                      "type": "text/plain"
+                    },
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "{{contentType}}"
+                      },
+                      {
+                        "key": "Accept",
+                        "value": "{{accept}}"
+                      }
+                    ],
+                    "method": "POST",
+                    "name": "Lookup multiple recipients by account numbers",
+                    "url": {
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "recipients",
+                        "lookup",
+                        "batch"
+                      ],
+                      "query": [],
+                      "variable": []
+                    }
+                  }
+                }
+              ],
+              "name": "batch"
             }
           ],
           "name": "lookup"
@@ -1518,6 +2052,699 @@
         }
       ],
       "name": "recipients"
+    },
+    {
+      "description": "",
+      "item": [
+        {
+          "description": "",
+          "item": [
+            {
+              "event": [],
+              "name": "Earnings and subsidy totals",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "auth": null,
+                "body": {},
+                "description": {
+                  "content": "Realized Teel fees earned and subsidy cost absorbed for the\nauthenticated caller, computed from settled payouts only\n(`status = completed`, dated on settlement). Scope `payouts:read`;\nalways scoped to the caller's own account. Amounts are exact decimal\nstrings of USDC. Optionally `group_by` for a per-key breakdown\nalongside the grand totals.\n",
+                  "type": "text/plain"
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "{{accept}}"
+                  }
+                ],
+                "method": "GET",
+                "name": "Earnings and subsidy totals",
+                "url": {
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "metrics",
+                    "earnings"
+                  ],
+                  "query": [
+                    {
+                      "description": {
+                        "content": "Inclusive lower bound on settlement date.",
+                        "type": "text/plain"
+                      },
+                      "disabled": false,
+                      "key": "from",
+                      "value": "{{from}}"
+                    },
+                    {
+                      "description": {
+                        "content": "Inclusive upper bound on settlement date.",
+                        "type": "text/plain"
+                      },
+                      "disabled": false,
+                      "key": "to",
+                      "value": "{{to}}"
+                    },
+                    {
+                      "description": {
+                        "content": "Filter to one EVM chain id (e.g. 137 = Polygon).",
+                        "type": "text/plain"
+                      },
+                      "disabled": false,
+                      "key": "chain",
+                      "value": "{{chain}}"
+                    },
+                    {
+                      "description": {
+                        "content": "Add a per-key breakdown in `rows`. (This can only be one of day,provider,chain)",
+                        "type": "text/plain"
+                      },
+                      "disabled": false,
+                      "key": "group_by",
+                      "value": "{{groupBy}}"
+                    }
+                  ],
+                  "variable": []
+                }
+              }
+            }
+          ],
+          "name": "earnings"
+        }
+      ],
+      "name": "metrics"
+    },
+    {
+      "description": "",
+      "item": [
+        {
+          "event": [],
+          "name": "List payouts (paginated)",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": null,
+            "body": {},
+            "description": {
+              "content": "Read side of the payouts API. Scope `payouts:read`. Filters compose\nwith `AND`; an empty filter set returns the most recent payouts for\nthe authenticated business.\n",
+              "type": "text/plain"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "{{accept}}"
+              }
+            ],
+            "method": "GET",
+            "name": "List payouts (paginated)",
+            "url": {
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payouts"
+              ],
+              "query": [
+                {
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "disabled": false,
+                  "key": "limit",
+                  "value": "{{limit}}"
+                },
+                {
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "disabled": false,
+                  "key": "offset",
+                  "value": "{{offset}}"
+                },
+                {
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "disabled": false,
+                  "key": "recipient_id",
+                  "value": "{{recipientId}}"
+                },
+                {
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "disabled": false,
+                  "key": "status",
+                  "value": "{{status}}"
+                },
+                {
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "disabled": false,
+                  "key": "transaction_type",
+                  "value": "{{transactionType}}"
+                },
+                {
+                  "description": {
+                    "content": "",
+                    "type": "text/plain"
+                  },
+                  "disabled": false,
+                  "key": "batch_id",
+                  "value": "{{batchId}}"
+                }
+              ],
+              "variable": []
+            }
+          }
+        },
+        {
+          "description": "",
+          "item": [
+            {
+              "event": [],
+              "name": "Export payouts as CSV",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "auth": null,
+                "body": {},
+                "description": {
+                  "content": "Streams a CSV of the authenticated business's payouts within a\nrequired date range. Scope `payouts:read`. Dates are inclusive\n`YYYY-MM-DD` values; `date_to` must be on or after `date_from`.\n",
+                  "type": "text/plain"
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "{{accept}}"
+                  }
+                ],
+                "method": "GET",
+                "name": "Export payouts as CSV",
+                "url": {
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "payouts",
+                    "export"
+                  ],
+                  "query": [
+                    {
+                      "description": {
+                        "content": "(Required) ",
+                        "type": "text/plain"
+                      },
+                      "disabled": false,
+                      "key": "date_from",
+                      "value": "{{dateFrom}}"
+                    },
+                    {
+                      "description": {
+                        "content": "(Required) ",
+                        "type": "text/plain"
+                      },
+                      "disabled": false,
+                      "key": "date_to",
+                      "value": "{{dateTo}}"
+                    }
+                  ],
+                  "variable": []
+                }
+              }
+            }
+          ],
+          "name": "export"
+        },
+        {
+          "description": "",
+          "item": [
+            {
+              "event": [],
+              "name": "Get one payout",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "auth": null,
+                "body": {},
+                "description": {
+                  "content": "Scope `payouts:read`. Pass `?detailed=true` to receive the joined\n`TransactionWithRecipient` shape \u2014 same `Payout` fields plus\n`recipientEmail`, `recipientBusinessName`, `recipientCountry`.\n",
+                  "type": "text/plain"
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "{{accept}}"
+                  }
+                ],
+                "method": "GET",
+                "name": "Get one payout",
+                "url": {
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "payouts",
+                    ":id"
+                  ],
+                  "query": [
+                    {
+                      "description": {
+                        "content": "",
+                        "type": "text/plain"
+                      },
+                      "disabled": false,
+                      "key": "detailed",
+                      "value": "{{detailed}}"
+                    }
+                  ],
+                  "variable": [
+                    {
+                      "description": {
+                        "content": "(Required) ",
+                        "type": "text/plain"
+                      },
+                      "disabled": false,
+                      "key": "id",
+                      "type": "any",
+                      "value": "<uuid>"
+                    }
+                  ]
+                }
+              }
+            },
+            {
+              "description": "",
+              "item": [
+                {
+                  "description": "",
+                  "item": [
+                    {
+                      "event": [],
+                      "name": "Get a 15-minute presigned URL for the payout's supporting document",
+                      "protocolProfileBehavior": {
+                        "disableBodyPruning": true
+                      },
+                      "request": {
+                        "auth": null,
+                        "body": {},
+                        "description": {
+                          "content": "Scope `payouts:read`. The URL expires in 15 minutes \u2014 re-fetch on demand rather than caching. 404 fires both when the payout doesn't exist and when no supporting document is attached.",
+                          "type": "text/plain"
+                        },
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "{{accept}}"
+                          }
+                        ],
+                        "method": "GET",
+                        "name": "Get a 15-minute presigned URL for the payout's supporting document",
+                        "url": {
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "payouts",
+                            ":id",
+                            "document",
+                            "url"
+                          ],
+                          "query": [],
+                          "variable": [
+                            {
+                              "description": {
+                                "content": "(Required) ",
+                                "type": "text/plain"
+                              },
+                              "disabled": false,
+                              "key": "id",
+                              "type": "any",
+                              "value": "<uuid>"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ],
+                  "name": "url"
+                }
+              ],
+              "name": "document"
+            },
+            {
+              "description": "",
+              "item": [
+                {
+                  "event": [],
+                  "name": "List a payout's lifecycle events",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "auth": null,
+                    "body": {},
+                    "description": {
+                      "content": "Scope `payouts:read`. Returns the ordered event log written as the payout progresses through onramp/compliance/offramp.",
+                      "type": "text/plain"
+                    },
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "{{accept}}"
+                      }
+                    ],
+                    "method": "GET",
+                    "name": "List a payout's lifecycle events",
+                    "url": {
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "payouts",
+                        ":id",
+                        "events"
+                      ],
+                      "query": [],
+                      "variable": [
+                        {
+                          "description": {
+                            "content": "(Required) ",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "id",
+                          "type": "any",
+                          "value": "<uuid>"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ],
+              "name": "events"
+            },
+            {
+              "description": "",
+              "item": [
+                {
+                  "event": [],
+                  "name": "Get the delivered-payout receipt",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "auth": null,
+                    "body": {},
+                    "description": {
+                      "content": "Scope `payouts:read`. Returns the 7-field receipt data that drives the receipt modal/email template.",
+                      "type": "text/plain"
+                    },
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "{{accept}}"
+                      }
+                    ],
+                    "method": "GET",
+                    "name": "Get the delivered-payout receipt",
+                    "url": {
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "payouts",
+                        ":id",
+                        "receipt"
+                      ],
+                      "query": [],
+                      "variable": [
+                        {
+                          "description": {
+                            "content": "(Required) ",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "id",
+                          "type": "any",
+                          "value": "<uuid>"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ],
+              "name": "receipt"
+            },
+            {
+              "description": "",
+              "item": [
+                {
+                  "event": [],
+                  "name": "Check whether a payout can be retried",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "auth": null,
+                    "body": {},
+                    "description": {
+                      "content": "Scope `payouts:read`. Returns the eligibility verdict for a retry \u2014\nwhat the engine would do, what (if anything) is blocking the retry,\nand which detector emitted the verdict.\n",
+                      "type": "text/plain"
+                    },
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "{{accept}}"
+                      }
+                    ],
+                    "method": "GET",
+                    "name": "Check whether a payout can be retried",
+                    "url": {
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "payouts",
+                        ":id",
+                        "retryable"
+                      ],
+                      "query": [],
+                      "variable": [
+                        {
+                          "description": {
+                            "content": "(Required) ",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "id",
+                          "type": "any",
+                          "value": "<uuid>"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ],
+              "name": "retryable"
+            }
+          ],
+          "name": "{id}"
+        },
+        {
+          "description": "",
+          "item": [
+            {
+              "description": "",
+              "item": [
+                {
+                  "description": "",
+                  "item": [
+                    {
+                      "event": [],
+                      "name": "Get the shared collection (onramp) row for a batch payout",
+                      "protocolProfileBehavior": {
+                        "disableBodyPruning": true
+                      },
+                      "request": {
+                        "auth": null,
+                        "body": {},
+                        "description": {
+                          "content": "Scope `payouts:read`. Batch disbursements share a single onramp\n(\"collection\") that funds all per-recipient payouts; this returns\nthat collection row.\n",
+                          "type": "text/plain"
+                        },
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "{{accept}}"
+                          }
+                        ],
+                        "method": "GET",
+                        "name": "Get the shared collection (onramp) row for a batch payout",
+                        "url": {
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "payouts",
+                            "batch",
+                            ":batchId",
+                            "collection"
+                          ],
+                          "query": [],
+                          "variable": [
+                            {
+                              "description": {
+                                "content": "(Required) ",
+                                "type": "text/plain"
+                              },
+                              "disabled": false,
+                              "key": "batchId",
+                              "type": "any",
+                              "value": "<uuid>"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ],
+                  "name": "collection"
+                }
+              ],
+              "name": "{batchId}"
+            }
+          ],
+          "name": "batch"
+        },
+        {
+          "description": "",
+          "item": [
+            {
+              "description": "",
+              "item": [
+                {
+                  "event": [],
+                  "name": "List supported payment purposes for a protocol",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "auth": null,
+                    "body": {},
+                    "description": {
+                      "content": "Scope `payouts:read`. The valid `paymentPurpose` enum varies by provider/protocol.",
+                      "type": "text/plain"
+                    },
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "{{accept}}"
+                      }
+                    ],
+                    "method": "GET",
+                    "name": "List supported payment purposes for a protocol",
+                    "url": {
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "payouts",
+                        "payment-purpose",
+                        ":protocol"
+                      ],
+                      "query": [],
+                      "variable": [
+                        {
+                          "description": {
+                            "content": "(Required) ",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "protocol",
+                          "type": "any",
+                          "value": "<string>"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ],
+              "name": "{protocol}"
+            }
+          ],
+          "name": "payment-purpose"
+        },
+        {
+          "description": "",
+          "item": [
+            {
+              "description": "",
+              "item": [
+                {
+                  "event": [],
+                  "name": "Describe the offramp document/field requirements for a protocol",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "auth": null,
+                    "body": {},
+                    "description": {
+                      "content": "Scope `payouts:read`. Returns the merged field+document schema the offramp leg needs (e.g. invoice upload, payment-purpose enum). Schema is provider-driven and free-form.",
+                      "type": "text/plain"
+                    },
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "{{accept}}"
+                      }
+                    ],
+                    "method": "GET",
+                    "name": "Describe the offramp document/field requirements for a protocol",
+                    "url": {
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "payouts",
+                        "offramp-requirements",
+                        ":protocol"
+                      ],
+                      "query": [],
+                      "variable": [
+                        {
+                          "description": {
+                            "content": "(Required) ",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "protocol",
+                          "type": "any",
+                          "value": "<string>"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ],
+              "name": "{protocol}"
+            }
+          ],
+          "name": "offramp-requirements"
+        }
+      ],
+      "name": "payouts"
     },
     {
       "description": "",
@@ -1908,6 +3135,52 @@
             {
               "description": "",
               "item": [
+                {
+                  "event": [],
+                  "name": "Get one delivery attempt",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "auth": null,
+                    "body": {},
+                    "description": {
+                      "content": "Scope `webhooks:read`. Returns the full attempt record including last response code/body and any retry state.",
+                      "type": "text/plain"
+                    },
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "{{accept}}"
+                      }
+                    ],
+                    "method": "GET",
+                    "name": "Get one delivery attempt",
+                    "url": {
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "webhooks",
+                        "deliveries",
+                        ":id"
+                      ],
+                      "query": [],
+                      "variable": [
+                        {
+                          "description": {
+                            "content": "(Required) ",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "id",
+                          "type": "any",
+                          "value": "<uuid>"
+                        }
+                      ]
+                    }
+                  }
+                },
                 {
                   "description": "",
                   "item": [

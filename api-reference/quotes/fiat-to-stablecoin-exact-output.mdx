@@ -4,14 +4,14 @@ api: GET https://api.teel.finance/api/quotes/fiat-to-stablecoin/exact-output
 description: Quote the fiat input needed to deliver an exact stablecoin amount
 ---
 
-Returns the best fiat-to-stablecoin quote that delivers an **exact** stablecoin amount. Teel solves for the required fiat input so the destination wallet receives exactly `target_amount` of the stablecoin.
+Returns the best fiat-to-stablecoin quote that delivers an **exact** stablecoin amount. Teel solves for the required fiat input so the destination wallet receives exactly `targetAmount` of the stablecoin.
 
 ## Query parameters
-<ParamField query="source_currency" type="string" required>
+<ParamField query="sourceCurrency" type="string" required>
   ISO 4217 code for the source fiat currency (e.g. `USD`, `EUR`).
 </ParamField>
 
-<ParamField query="target_amount" type="number" required>
+<ParamField query="targetAmount" type="number" required>
   The exact stablecoin amount to deliver (e.g. `1000` USDC).
 </ParamField>
 
@@ -19,7 +19,7 @@ Returns the best fiat-to-stablecoin quote that delivers an **exact** stablecoin 
 <ResponseField name="success" type="boolean" />
 
 <ResponseField name="data" type="object">
-  A single quote. `toAmount` equals the requested stablecoin `target_amount`; `fromAmount` is the fiat input required. The `protocol` field is an opaque route token (`rt_...`) — see [Route tokens](/api-reference/quotes/onramp-all#route-tokens).
+  A single quote. `toAmount` equals the requested stablecoin `targetAmount`; `fromAmount` is the fiat input required. The `protocol` field is an opaque route token (`rt_...`) — see [Route tokens](/api-reference/quotes/onramp-all#route-tokens).
 </ResponseField>
 
 <ResponseExample>

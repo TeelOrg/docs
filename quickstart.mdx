@@ -75,7 +75,7 @@ This guide walks you through making your first payout against the Teel **sandbox
     Fetch the best available rate for your corridor. Quotes are short-lived (~minutes) and carry an opaque `protocol` token you'll pass back at execution time to pin the route.
 
     ```bash
-    curl "https://api-sandbox.teel.finance/quotes/fiat-to-fiat/best?from_currency=USD&to_currency=PHP&amount=1000&recipient_id=$RECIPIENT_ID" \
+    curl "https://api-sandbox.teel.finance/quotes/fiat-to-fiat/best?sourceCurrency=USD&targetCurrency=PHP&amount=1000&recipientId=$RECIPIENT_ID" \
       -H "Authorization: Bearer $TEEL_API_KEY"
     ```
 

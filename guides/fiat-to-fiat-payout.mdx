@@ -28,10 +28,10 @@ sequenceDiagram
 
 ## Step 1: Get a quote
 
-Fetch the best available rate for your currency pair. Pass `recipient_id` so the quote accounts for the recipient's payment method:
+Fetch the best available rate for your currency pair. Pass `recipientId` so the quote accounts for the recipient's payment method:
 
 ```bash
-curl "https://api.teel.finance/quotes/fiat-to-fiat/best?from_currency=USD&to_currency=MYR&amount=1000&recipient_id=8f3c2a91-4e5b-4d8c-9a1f-3e2b1c4d5e6f" \
+curl "https://api.teel.finance/quotes/fiat-to-fiat/best?sourceCurrency=USD&targetCurrency=MYR&amount=1000&recipientId=8f3c2a91-4e5b-4d8c-9a1f-3e2b1c4d5e6f" \
   -H "Authorization: Bearer $TEEL_API_KEY"
 ```
 

@@ -7,7 +7,7 @@ description: Get every available onramp quote for fiat to crypto
 Returns **all** available onramp quotes for converting fiat into crypto, one per route. Use this when you want to present the full set of options; use [Get Best Onramp Quote](/api-reference/quotes/onramp-best) for the single best route.
 
 ## Query parameters
-<ParamField query="source_currency" type="string" required>
+<ParamField query="sourceCurrency" type="string" required>
   ISO 4217 currency code for the source fiat currency (e.g. `USD`, `EUR`).
 </ParamField>
 
@@ -15,7 +15,7 @@ Returns **all** available onramp quotes for converting fiat into crypto, one per
   The amount in the source fiat currency to onramp.
 </ParamField>
 
-<ParamField query="payout_currency" type="string">
+<ParamField query="payoutCurrency" type="string">
   Optional. The desired payout token (e.g. `USDC`). If omitted, the default is used.
 </ParamField>
 

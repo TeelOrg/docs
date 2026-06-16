@@ -7,16 +7,16 @@ description: Get every available offramp quote for crypto to fiat
 Returns **all** available offramp quotes for converting crypto into fiat, one per route. Supports both forward mode (you specify the crypto input) and exact-output mode (you specify the fiat the recipient must receive).
 
 ## Query parameters
-<ParamField query="payout_currency" type="string" required>
+<ParamField query="payoutCurrency" type="string" required>
   ISO 4217 currency code for the desired fiat payout currency (e.g. `USD`, `PHP`).
 </ParamField>
 
-<ParamField query="usdc_amount" type="number">
-  Forward mode: the amount of crypto (USDC) to offramp. Provide either this or `target_amount`.
+<ParamField query="usdcAmount" type="number">
+  Forward mode: the amount of crypto (USDC) to offramp. Provide either this or `targetAmount`.
 </ParamField>
 
-<ParamField query="target_amount" type="number">
-  Exact-output mode: the exact fiat amount the recipient must receive. Teel computes the crypto input (fee-on-input). Provide either this or `usdc_amount`.
+<ParamField query="targetAmount" type="number">
+  Exact-output mode: the exact fiat amount the recipient must receive. Teel computes the crypto input (fee-on-input). Provide either this or `usdcAmount`.
 </ParamField>
 
 ## Response

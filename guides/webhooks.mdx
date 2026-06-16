@@ -213,16 +213,16 @@ Fires once when a payout is first created (any flow — a Payout, a Stablecoin p
 ```json
 {
   "type": "payout.created",
-  "created_at": "2026-05-27T09:30:46Z",
+  "createdAt": "2026-05-27T09:30:46Z",
   "data": {
     "payoutId": "3d1f7c20-9b8a-4e6d-bf12-7a4c9e2d1f0b",
-    "transaction_type": "fiat_to_fiat",
-    "payout_amount": 10000.0,
-    "payout_currency": "EUR",
-    "source_currency": "USD",
-    "recipient_id": "8f3c2a91-4e5b-4d8c-9a1f-3e2b1c4d5e6f",
+    "transactionType": "fiat_to_fiat",
+    "payoutAmount": 10000.0,
+    "payoutCurrency": "EUR",
+    "sourceCurrency": "USD",
+    "recipientId": "8f3c2a91-4e5b-4d8c-9a1f-3e2b1c4d5e6f",
     "status": "pending",
-    "created_at": "2026-05-27T09:30:46Z"
+    "createdAt": "2026-05-27T09:30:46Z"
   }
 }
 ```
@@ -234,13 +234,13 @@ Fires every time a payout's status or step changes. Multiple events are emitted 
 ```json
 {
   "type": "payout.status.updated",
-  "created_at": "2026-05-27T09:31:02Z",
+  "createdAt": "2026-05-27T09:31:02Z",
   "data": {
     "payoutId": "3d1f7c20-9b8a-4e6d-bf12-7a4c9e2d1f0b",
     "status": "processing",
     "provider": "provider_b",
     "step": "settling",
-    "step_changed_at": "2026-05-27T09:31:02Z"
+    "stepChangedAt": "2026-05-27T09:31:02Z"
   }
 }
 ```

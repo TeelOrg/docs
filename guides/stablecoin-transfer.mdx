@@ -28,10 +28,10 @@ sequenceDiagram
 
 ## Step 1: Get a quote
 
-`to_currency` is the stablecoin the recipient receives:
+`targetCurrency` is the stablecoin the recipient receives:
 
 ```bash
-curl "https://api.teel.finance/quotes/fiat-to-stablecoin/best?from_currency=USD&to_currency=USDC&amount=1000" \
+curl "https://api.teel.finance/quotes/fiat-to-stablecoin/best?sourceCurrency=USD&targetCurrency=USDC&amount=1000" \
   -H "Authorization: Bearer $TEEL_API_KEY"
 ```
 

@@ -7,7 +7,7 @@ description: Check whether a wallet holds enough stablecoin before executing
 A read-only check for payouts that start from stablecoin (stablecoin-to-fiat, stablecoin-to-stablecoin). Call it **before** executing to confirm the source wallet holds enough of the token on the right chain, so an insufficient balance surfaces up front instead of as a stranded payout. No state is changed.
 
 ## Query parameters
-<ParamField query="crypto_ticker" type="string" required>
+<ParamField query="cryptoTicker" type="string" required>
   Platform crypto ticker including chain suffix, e.g. `USDCPOLYGON`, `USDCBASE`. Determines the chain the balance is read on.
 </ParamField>
 
@@ -50,6 +50,6 @@ A read-only check for payouts that start from stablecoin (stablecoin-to-fiat, st
 
 <Note>
   Returns `503` with `{ "error": { "code": "preflight_unsupported" } }` when the
-  chain implied by `crypto_ticker` has no escrow client registered, and `400`
+  chain implied by `cryptoTicker` has no escrow client registered, and `400`
   (`invalid_request` / `corridor_unsupported`) for bad input.
 </Note>

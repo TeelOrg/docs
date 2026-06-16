@@ -59,14 +59,14 @@ QuoteAudit middleware (JWT + user logging + audit trail).
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/quotes/onramp/all` | Get all available onramp quotes. Query: `source_currency`, `amount` |
-| GET | `/api/quotes/onramp/best` | Get the best onramp quote. Query: `source_currency`, `amount` |
-| GET | `/api/quotes/offramp/all` | Get all available offramp quotes. Query: `payout_currency`, `usdc_amount` |
-| GET | `/api/quotes/offramp/best` | Get the best offramp quote. Query: `payout_currency`, `usdc_amount` |
-| GET | `/api/quotes/fiat-to-fiat/best` | Get best fiat-to-fiat exchange quote. Query: `source_currency`, `target_currency`, `amount` |
-| GET | `/api/quotes/fiat-to-fiat/all` | Get all fiat-to-fiat exchange quotes. Query: `source_currency`, `target_currency`, `amount` |
-| GET | `/api/quotes/fiat-to-stablecoin/best` | Get best fiat-to-stablecoin quote. Query: `source_currency`, `amount`, `crypto_ticker` |
-| GET | `/api/quotes/fiat-to-stablecoin/all` | Get all fiat-to-stablecoin quotes. Query: `source_currency`, `amount`, `crypto_ticker` |
+| GET | `/api/quotes/onramp/all` | Get all available onramp quotes. Query: `sourceCurrency`, `amount` |
+| GET | `/api/quotes/onramp/best` | Get the best onramp quote. Query: `sourceCurrency`, `amount` |
+| GET | `/api/quotes/offramp/all` | Get all available offramp quotes. Query: `payoutCurrency`, `usdcAmount` |
+| GET | `/api/quotes/offramp/best` | Get the best offramp quote. Query: `payoutCurrency`, `usdcAmount` |
+| GET | `/api/quotes/fiat-to-fiat/best` | Get best fiat-to-fiat exchange quote. Query: `sourceCurrency`, `targetCurrency`, `amount` |
+| GET | `/api/quotes/fiat-to-fiat/all` | Get all fiat-to-fiat exchange quotes. Query: `sourceCurrency`, `targetCurrency`, `amount` |
+| GET | `/api/quotes/fiat-to-stablecoin/best` | Get best fiat-to-stablecoin quote. Query: `sourceCurrency`, `amount`, `cryptoTicker` |
+| GET | `/api/quotes/fiat-to-stablecoin/all` | Get all fiat-to-stablecoin quotes. Query: `sourceCurrency`, `amount`, `cryptoTicker` |
 
 ### Crypto Payout
 

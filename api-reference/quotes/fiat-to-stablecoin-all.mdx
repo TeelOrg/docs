@@ -7,11 +7,11 @@ description: Get quotes from all available routes for converting fiat currency t
 Returns an every available quote for converting fiat currency into a stablecoin. Useful for comparing rates and routes.
 
 ## Query parameters
-<ParamField query="source_currency" type="string" required>
+<ParamField query="sourceCurrency" type="string" required>
   ISO 4217 currency code for the source fiat currency (e.g. `USD`, `EUR`).
 </ParamField>
 
-<ParamField query="target_token" type="string" required>
+<ParamField query="cryptoTicker" type="string" required>
   The target stablecoin token symbol (e.g. `USDC`, `USDT`).
 </ParamField>
 
