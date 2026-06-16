@@ -1861,6 +1861,10 @@
                         "disabled": false,
                         "key": "Idempotency-Key",
                         "value": "{{idempotencyKey}}"
+                      },
+                      {
+                        "key": "Accept",
+                        "value": "{{accept}}"
                       }
                     ],
                     "method": "POST",
