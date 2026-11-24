@@ -1,0 +1,107 @@
+---
+title: Get job status
+api: GET /api/jobs/{jobId}
+description: Progress of work that finishes after the request that started it.
+---
+
+Some work is accepted on a request and finished afterwards. Today the only kind is `batch_lock`: [`POST /rfq/execute-batch`](/api-reference/payouts/execute-batch) returns `202` with every row `pending`, and the rows are priced in the background. Poll this endpoint right after you submit a batch.
+
+**Stop polling on `terminal`, not on `phase`.** `phase` depends on `kind` and can gain new values. `terminal` is `true` exactly when no further progress will be made, whether the work succeeded or failed.
+
+Once the batch exists, follow each row's offramp order with [`GET /payouts/batch/{batchId}/rows`](/api-reference/payouts/batch-rows).
+
+<Info>**Scope** `payouts:read` · rate limit `default` (60/min, burst 20)</Info>
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  API key.
+</ParamField>
+
+## Path parameters
+
+<ParamField path="jobId" type="string" required>
+  Job UUID, from the response that accepted the work.
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">Always `true` on `200`.</ResponseField>
+<ResponseField name="data" type="object">
+  <Expandable title="data">
+    <ResponseField name="jobId" type="string">Job UUID.</ResponseField>
+    <ResponseField name="kind" type="string">What the work is. Decides how `phase` and `progress` read. `batch_lock` today.</ResponseField>
+    <ResponseField name="phase" type="string">Stage within `kind`. For `batch_lock`: `locking`, `creating`, `producing`, `complete`, or `failed`.</ResponseField>
+    <ResponseField name="terminal" type="boolean">`true` when no further progress will be made. Stop polling.</ResponseField>
+    <ResponseField name="failureCode" type="string">Present only when the work failed.</ResponseField>
+    <ResponseField name="error" type="string">Human-readable cause. Present only when the work failed.</ResponseField>
+    <ResponseField name="createdAt" type="string">ISO 8601.</ResponseField>
+    <ResponseField name="updatedAt" type="string">ISO 8601.</ResponseField>
+    <ResponseField name="progress" type="object">
+      Payload owned by `kind`. The shape below is `batch_lock`.
+      <Expandable title="progress (batch_lock)">
+        <ResponseField name="collectionId" type="string">Absent until the batch has been created, and absent when every row matched an existing payout.</ResponseField>
+        <ResponseField name="rows" type="object[]">
+          One entry per item of the original request, in that order.
+          <Expandable title="rows[]">
+            <ResponseField name="idx" type="integer">Position in the request's `items[]`.</ResponseField>
+            <ResponseField name="status" type="string">`pending` (not priced yet), `accepted` (priced), or `failed`.</ResponseField>
+            <ResponseField name="quoteId" type="string">Locked quote UUID. Omitted until set.</ResponseField>
+            <ResponseField name="transactionId" type="string">Payout UUID. Omitted until set.</ResponseField>
+            <ResponseField name="toAmount" type="number">Amount the recipient receives. Present when `accepted`.</ResponseField>
+            <ResponseField name="effectiveRate" type="number">Present when `accepted`.</ResponseField>
+            <ResponseField name="errorCode" type="string">Stable code. Present when `failed`. `payment_method_unavailable` means the row's recipient payment method could not be loaded, or the recipient has none; add one and resend the row.</ResponseField>
+            <ResponseField name="retryable" type="boolean">`true` when resending the row can succeed. Omitted when `false`.</ResponseField>
+            <ResponseField name="duplicate" type="boolean">`true` when the row's idempotency key matched a live payout from an earlier batch. `transactionId` names that payout; it is not created or charged again. Omitted when `false`.</ResponseField>
+          </Expandable>
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Errors
+
+| Status | `code` | When |
+|---|---|---|
+| `400` | `INVALID_REQUEST` | `jobId` is not a UUID. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `payouts:read`. |
+| `404` | none | The job does not exist or is not yours. The body is `{"success": false, "error": "job not found"}`. |
+| `429` | `RATE_LIMITED` | Per-key rate limit exhausted. Wait for `Retry-After`. |
+| `502` | `DOWNSTREAM_UNAVAILABLE` | Job status could not be reached. Retry. |
+
+<ResponseExample>
+```json 200
+{
+  "success": true,
+  "data": {
+    "jobId": "6e5d4c3b-2a19-4f08-8e7d-6c5b4a392817",
+    "kind": "batch_lock",
+    "phase": "producing",
+    "terminal": false,
+    "createdAt": "2026-03-01T10:00:00Z",
+    "updatedAt": "2026-03-01T10:00:04Z",
+    "progress": {
+      "collectionId": "e1f2a3b4-c5d6-4e7f-8a9b-0c1d2e3f4a5b",
+      "rows": [
+        {
+          "idx": 0,
+          "status": "accepted",
+          "quoteId": "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+          "transactionId": "3f2a9c1e-5b7d-4e2a-8c1f-0a9b8c7d6e5f",
+          "toAmount": 4425,
+          "effectiveRate": 4.425
+        },
+        {
+          "idx": 1,
+          "status": "failed",
+          "errorCode": "payment_method_unavailable",
+          "retryable": true
+        }
+      ]
+    }
+  }
+}
+```
+</ResponseExample>

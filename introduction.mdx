@@ -26,6 +26,10 @@ Teel provides cross-border payments API. It lets you programmatically send payou
     Compare rates across multiple providers and automatically select the best
     quote.
   </Card>
+  <Card title="Collections" icon="hand-holding-dollar" href="/guides/stablecoin-collections">
+    Invoice payers in stablecoin or by bank transfer, receive into your own
+    accounts, and settle what you collect.
+  </Card>
 </CardGroup>
 
 ## How it works
@@ -38,7 +42,7 @@ Before you can call the API, your organization completes a one-time setup in the
 4. **Track delivery** — Subscribe to webhooks for real-time status updates.
 
 <Note>
-KYB onboarding and funding-source setup happen in the dashboard, not through the API — your API key is scoped to operational endpoints (recipients, quotes, payouts, webhooks). See [KYB onboarding](/guides/kyb-onboarding) and [payment methods](/guides/payment-methods) for those flows.
+KYB onboarding and funding-source setup happen in the dashboard, not through the API — your API key is scoped to operational endpoints (recipients, quotes, payouts, collections, webhooks). See [KYB onboarding](/guides/kyb-onboarding) and [payment methods](/guides/payment-methods) for those flows.
 </Note>
 
 ## Base URLs
@@ -48,12 +52,12 @@ Pick the host that matches your API key prefix:
 | Environment | Base URL | Use with |
 | --- | --- | --- |
 | Production | `https://api.teel.finance` | `sk_live_…` keys |
-| Sandbox | `https://api-sandbox.teel.finance` | `sk_test_…` keys |
+| Sandbox | `https://api.teel.finance/sandbox` | `sk_test_…` keys |
 
 ## Tooling
 
 <CardGroup cols={2}>
-  <Card title="OpenAPI 3.1 spec" icon="file-code" href="https://api-sandbox.teel.finance/openapi.json">
+  <Card title="OpenAPI 3.1 spec" icon="file-code" href="https://api.teel.finance/sandbox/openapi.json">
     Served at `/openapi.json` (or `/openapi.yaml`) on every host. The same spec describes both sandbox and production — pick the `servers[]` entry that matches your key prefix on import. Use it with `openapi-generator-cli` for typed clients in any language.
   </Card>
   <Card title="Postman collection" icon="download" href="/teel-postman-collection.json">

@@ -1,0 +1,59 @@
+---
+title: Upload settlement invoice
+api: POST /api/collections/receiving-accounts/offramp/document
+description: Upload the outgoing invoice a settlement requires
+---
+
+import Headers from '/snippets/collections/headers.mdx';
+
+Every settlement needs an outgoing invoice: the invoice for the payment you are making to the recipient. Upload it here first, then send the returned `fileId` as `outgoingInvoiceDocumentFileId` on [Create settlement](/api-reference/collections/settlements/create).
+
+The file ID works only for the business and API key owner that uploaded it. Uploading is not idempotent: a retried upload returns a new file ID, and an unused one is never consumed.
+
+<Info>**Scope** `settlements:write` · rate limit `settlements_write` (10/min, burst 5)</Info>
+
+## Headers
+
+<Headers />
+
+<ParamField header="Content-Type" type="string" required>
+  `multipart/form-data`.
+</ParamField>
+
+## Request body
+
+<ParamField body="document" type="file" required>
+  The invoice file: PDF, JPG, PNG or WEBP, at most 5 MB. The file's content must match its extension.
+</ParamField>
+
+```bash
+curl -X POST https://api.teel.finance/collections/receiving-accounts/offramp/document \
+  -H "Authorization: Bearer $TEEL_API_KEY" \
+  -F "document=@invoice-1042.pdf"
+```
+
+## Response
+
+<ResponseField name="fileId" type="string" required>
+  UUID of the uploaded invoice. Send it as `outgoingInvoiceDocumentFileId` when you create the settlement.
+</ResponseField>
+
+<ResponseExample>
+```json 200
+{
+  "fileId": "3c2b1a09-8f7e-4d6c-9b5a-4f3e2d1c0b9a"
+}
+```
+</ResponseExample>
+
+## Errors
+
+| Status | Code | When |
+| --- | --- | --- |
+| `400` | `MISSING_PARAMETER` | No `document` file in the form. |
+| `400` | `INVALID_REQUEST` | File type or name not allowed, or the file can't be read. |
+| `400` | `ENTITY_REQUIRED` | The key's owner belongs to more than one business and `X-Teel-Entity-Id` is missing. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `settlements:write`. |
+| `413` | `REQUEST_BODY_TOO_LARGE` | The file is over 5 MB. |
+| `429` | `RATE_LIMITED` | `settlements_write` budget exhausted. Wait for `Retry-After`. |

@@ -1,0 +1,81 @@
+---
+title: List payment links
+api: GET /api/collections/payment-links
+description: List your business's payment links, newest first
+---
+
+import Headers from '/snippets/collections/headers.mdx';
+import PaymentLinkFields from '/snippets/collections/payment-link-fields.mdx';
+
+Returns your business's payment links, newest first. `status` is the effective status: an `open` link past its `expiresAt` reads, and filters, as `expired`.
+
+<Info>**Scope** `collections:read` · rate limit `collections_read` (120/min, burst 40) · needs collections enabled on your business</Info>
+
+## Headers
+
+<Headers />
+
+## Query parameters
+
+<ParamField query="limit" type="integer" default="10">
+  Page size. Values outside 1–100 are clamped to that range.
+</ParamField>
+
+<ParamField query="offset" type="integer" default="0">
+  Number of links to skip.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Only links with this effective status: `open`, `detected`, `paid` or `expired`. Any other value returns `400 INVALID_PARAMETER`.
+</ParamField>
+
+<ParamField query="buyerId" type="string">
+  Only links issued to this buyer (UUID). A buyer of another business returns an empty list.
+</ParamField>
+
+## Response
+
+An array of payment links. Each item has these fields:
+
+<PaymentLinkFields />
+
+<ResponseExample>
+```json 200
+[
+  {
+    "id": "0b6f2c1e-3c1d-4f43-9a55-2a7f3d1e9c10",
+    "reference": "PL-K5XQ2M7RZJ4NVB6TQW3YHPDLCE",
+    "url": "https://pay.teel.finance/PL-K5XQ2M7RZJ4NVB6TQW3YHPDLCE",
+    "status": "paid",
+    "amount": "1250.00",
+    "currency": "USD",
+    "collectionType": "stablecoin",
+    "invoiceNumber": "INV-1042",
+    "customerName": "Acme Imports Ltd",
+    "customerEmail": "ap@acme-imports.example",
+    "buyerId": "5a1f0d3e-8b2c-4e7a-9f61-2c3d4e5f6a7b",
+    "lineItems": [],
+    "depositAddress": "TJ3pXbWq6kq1N9GmV2eYcR8sLhD4uZaF7w",
+    "chain": "tron",
+    "usdtAmount": "1251.876000",
+    "feeBps": 20,
+    "feeAmount": "2.503752",
+    "expiresAt": "2026-10-20T09:00:00Z",
+    "paidAt": "2026-10-14T03:12:44Z",
+    "paymentTxHashes": ["9f2c4b1e7a3d5c6b8e0f1a2b3c4d5e6f7a8b9c0d1e2f3a4b5c6d7e8f9a0b1c2d"],
+    "createdAt": "2026-10-13T09:00:00Z"
+  }
+]
+```
+</ResponseExample>
+
+## Errors
+
+| Status | Code | When |
+| --- | --- | --- |
+| `400` | `INVALID_PARAMETER` | `status` is not a recognised value, or `buyerId` is not a UUID. |
+| `400` | `ENTITY_REQUIRED` | The key's owner belongs to more than one business and `X-Teel-Entity-Id` is missing. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `collections:read`. |
+| `403` | `COLLECTIONS_NOT_ENABLED` | Collections is not enabled for your business. |
+| `429` | `RATE_LIMITED` | `collections_read` budget exhausted. Wait for `Retry-After`. |

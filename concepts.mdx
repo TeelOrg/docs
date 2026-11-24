@@ -1,6 +1,6 @@
 ---
 title: "Core concepts"
-description: "How Teel routes payouts across a network of providers"
+description: "How Teel routes payouts across a network of providers, and how collections move through their statuses"
 ---
 
 You integrate with Teel once. Behind the API, every payout fans out across a network of providers, lands on the cheapest available route, and reports back over the same status stream — regardless of which provider settled it.
@@ -79,3 +79,104 @@ Two channels, same events — pick one and you don't need to poll.
 
 - **WebSocket** — push updates as a payout moves through its lifecycle. Authenticate in-band with your API key on the first frame.
 - **HTTP webhooks** — POST callbacks to a URL you register. HMAC-signed; verify the signature before processing. See the [Webhooks guide](/guides/webhooks).
+
+## Collections
+
+Collections is the receiving side: your payers pay you, and you settle what you hold.
+
+- **Payment links** are invoices. A `stablecoin` link is paid on-chain to the buyer's own receiving address. A `fiat` link is paid by bank transfer into your receiving account. See [Stablecoin collections](/guides/stablecoin-collections).
+- **Receiving accounts** are fiat bank accounts for your business. Money paid into them arrives as **deposits**. See [Fiat collections](/guides/fiat-collections).
+- **Settlements** convert what you hold and pay it out to a recipient, in fiat or USDC. See [Settlements](/guides/settlements).
+
+All three report status changes through [webhooks](/guides/webhooks#collections-events). Collections events are delivered over HTTP webhooks only, not the WebSocket.
+
+## Payment link status
+
+```mermaid
+stateDiagram-v2
+    [*] --> open
+    open --> detected: transfer seen
+    detected --> paid: transfer confirmed
+    open --> paid: fiat link paid
+    open --> expired: expiresAt passed, or voided
+    expired --> detected: transfer already in flight
+    paid --> [*]
+```
+
+| Status | Meaning |
+|---|---|
+| `open` | Accepting payment. |
+| `detected` | A stablecoin transfer was seen and is being confirmed. Not settled yet. |
+| `paid` | Paid in full. Terminal. Fires `collections.payment_link.paid`. A fiat link turns `paid` once the deposits matched to it cover its amount. |
+| `expired` | Past `expiresAt`, or voided. An `open` link reads as `expired` as soon as its clock runs out. A transfer already in flight at that moment is still matched for 60 minutes. |
+
+## Deposit status
+
+```mermaid
+stateDiagram-v2
+    [*] --> detected
+    detected --> verifying
+    verifying --> detected
+    detected --> credited
+    verifying --> credited
+    detected --> failed
+    verifying --> failed
+    credited --> failed: returned by the bank
+    failed --> credited
+```
+
+| Status | Meaning |
+|---|---|
+| `detected` | The bank reported an incoming payment. |
+| `verifying` | The payment is being checked before it is credited. |
+| `credited` | Credited to your business. Fires `collections.deposit.received`. |
+| `failed` | Rejected, or returned after it was credited. |
+
+A deposit can first appear at any of these statuses, depending on what the bank reports first. Once `credited` or `failed`, it never moves back to `detected` or `verifying`.
+
+## Settlement status
+
+```mermaid
+stateDiagram-v2
+    [*] --> pending
+    [*] --> completed: sandbox
+    pending --> transferring
+    transferring --> settling
+    transferring --> completed
+    settling --> completed
+    pending --> failed
+    transferring --> failed
+    settling --> failed
+    completed --> [*]
+    failed --> [*]
+```
+
+| Status | Meaning |
+|---|---|
+| `pending` | Recorded. Nothing has moved yet. |
+| `transferring` | The stablecoin is being sent for conversion. `transferTxHash` appears once it is sent. |
+| `settling` | Sent for conversion and on its way to the recipient. |
+| `completed` | Delivered. Terminal. |
+| `failed` | Did not complete. `failureCode` says why. Terminal. |
+
+Every change fires `collections.offramp.status.updated`; a settlement created as `pending` fires nothing until its first change. A settlement can go from `transferring` straight to `completed`. In sandbox, a settlement is recorded as `completed` from the start and fires one event.
+
+### Settlement reasons
+
+`reason` on a preview, `details.reason` on a refused settlement, and `failureCode` on a failed one all use this stable list. New values may be added, so handle unknown ones.
+
+| Reason | Meaning |
+|---|---|
+| `INSUFFICIENT_BALANCE` | Not enough balance to settle. |
+| `AMOUNT_EXCEEDS_BALANCE` | The amount plus fees is more than your balance. Send less. |
+| `AMOUNT_BELOW_MIN` | Below the route's minimum. Settle a larger amount. |
+| `AMOUNT_VARIANCE_EXCEEDED` | The amount moved by more than the allowed variance while settling. |
+| `INVOICE_DOCUMENT_REQUIRED` | An invoice is required for the money being settled and none is on file. |
+| `DESTINATION_INVALID` | The recipient's payment method or payout address can't receive this settlement. |
+| `ROUTE_UNAVAILABLE` | No route serves this currency or destination. |
+| `RATE_UNAVAILABLE` | No rate is available right now. Try again later. |
+| `FEE_UNVERIFIED` | The fee could not be verified, often because a flat fee is larger than the amount. Settle a larger amount. |
+| `SETTLEMENT_UNAVAILABLE` | An operational cause. Try again later, or contact support. |
+| `SETTLEMENT_FAILED` | An operational failure. Contact support. |
+| `SCREENING_DECLINED` | Compliance screening declined the settlement, and will decline it again. |
+| `SCREENING_UNDER_REVIEW` | The settlement is held for compliance review. Settle again after 24 hours. |

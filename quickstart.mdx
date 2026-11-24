@@ -19,11 +19,11 @@ This guide walks you through making your first payout against the Teel **sandbox
 
     ```bash
     # 1. Health (no auth) — sanity check the host is reachable
-    curl https://api-sandbox.teel.finance/health
+    curl https://api.teel.finance/sandbox/health
     # → {"status":"ok","env":"..."}  (env echoes the deployment environment)
 
     # 2. Auth'd read — list your existing recipients
-    curl https://api-sandbox.teel.finance/recipients \
+    curl https://api.teel.finance/sandbox/recipients \
       -H "Authorization: Bearer $TEEL_API_KEY"
     ```
 
@@ -34,7 +34,7 @@ This guide walks you through making your first payout against the Teel **sandbox
     The public `/config/coverage` endpoint returns the matrix of currencies, rails, directions, and amount bounds Teel can route. No auth required — partners can hit it from their integration server's pre-flight checks before quoting.
 
     ```bash
-    curl https://api-sandbox.teel.finance/config/coverage
+    curl https://api.teel.finance/sandbox/config/coverage
     ```
 
     Confirm your corridor (e.g. USD → PHP) is in the response before proceeding. See the [Coverage page](/coverage) for the full schema.
@@ -44,7 +44,7 @@ This guide walks you through making your first payout against the Teel **sandbox
     Register the counterparty who will receive the payout. Recipients carry one or more payment methods — bank accounts or wallet addresses — that resolve currency-by-currency to the right provider at execution time.
 
     ```bash
-    curl -X POST https://api-sandbox.teel.finance/recipients \
+    curl -X POST https://api.teel.finance/sandbox/recipients \
       -H "Authorization: Bearer $TEEL_API_KEY" \
       -H "Content-Type: application/json" \
       -H "Idempotency-Key: $(uuidgen)" \
@@ -75,7 +75,7 @@ This guide walks you through making your first payout against the Teel **sandbox
     Fetch the best available rate for your corridor. Quotes are short-lived (~minutes) and carry an opaque `protocol` token you'll pass back at execution time to pin the route.
 
     ```bash
-    curl "https://api-sandbox.teel.finance/quotes/fiat-to-fiat/best?sourceCurrency=USD&targetCurrency=PHP&amount=1000&recipientId=$RECIPIENT_ID" \
+    curl "https://api.teel.finance/sandbox/quotes/fiat-to-fiat/best?sourceCurrency=USD&targetCurrency=PHP&amount=1000&recipientId=$RECIPIENT_ID" \
       -H "Authorization: Bearer $TEEL_API_KEY"
     ```
 
@@ -88,7 +88,7 @@ This guide walks you through making your first payout against the Teel **sandbox
     Partners execute payouts through the RFQ (request-for-quote) endpoint. Re-send the corridor and amount from your quote, plus the `routeProtocol` token to pin the exact route you were quoted. Like recipient creation, this is `Idempotency-Key`-safe — Teel deduplicates retry attempts in a 24h window so a network timeout doesn't double-spend.
 
     ```bash
-    curl -X POST https://api-sandbox.teel.finance/rfq/execute \
+    curl -X POST https://api.teel.finance/sandbox/rfq/execute \
       -H "Authorization: Bearer $TEEL_API_KEY" \
       -H "Content-Type: application/json" \
       -H "Idempotency-Key: $(uuidgen)" \
@@ -110,7 +110,7 @@ This guide walks you through making your first payout against the Teel **sandbox
     **Poll:**
 
     ```bash
-    curl https://api-sandbox.teel.finance/rfq/status/<quoteId> \
+    curl https://api.teel.finance/sandbox/rfq/status/<quoteId> \
       -H "Authorization: Bearer $TEEL_API_KEY"
     ```
 
@@ -119,7 +119,7 @@ This guide walks you through making your first payout against the Teel **sandbox
     **Subscribe a webhook** for production payout monitoring instead of polling. Teel POSTs every status change to your URL with an HMAC-SHA256 signature header you verify with the secret returned at subscription creation:
 
     ```bash
-    curl -X POST https://api-sandbox.teel.finance/webhooks/subscriptions \
+    curl -X POST https://api.teel.finance/sandbox/webhooks/subscriptions \
       -H "Authorization: Bearer $TEEL_API_KEY" \
       -H "Content-Type: application/json" \
       -d '{
@@ -135,7 +135,7 @@ This guide walks you through making your first payout against the Teel **sandbox
     For real-time updates without a public URL, a WebSocket endpoint is also available. Auth is in-band — connect, then send `{"type":"auth","apiKey":"sk_test_..."}` as the first frame:
 
     ```bash
-    wscat -c "wss://api-sandbox.teel.finance/ws"
+    wscat -c "wss://api.teel.finance/sandbox/ws"
     > {"type":"auth","apiKey":"sk_test_..."}
     ```
   </Step>
@@ -160,4 +160,4 @@ This guide walks you through making your first payout against the Teel **sandbox
 
 ## OpenAPI spec
 
-Every endpoint above is documented in the machine-readable spec at [`/openapi.json`](https://api-sandbox.teel.finance/openapi.json) (or `/openapi.yaml`). The same spec covers production — pick the matching `servers[]` entry on import. Use it with Postman, Insomnia, or `openapi-generator-cli` for a typed client in any language.
+Every endpoint above is documented in the machine-readable spec at [`/openapi.json`](https://api.teel.finance/sandbox/openapi.json) (or `/openapi.yaml`). The same spec covers production — pick the matching `servers[]` entry on import. Use it with Postman, Insomnia, or `openapi-generator-cli` for a typed client in any language.

@@ -1,0 +1,94 @@
+---
+title: List receiving accounts
+api: GET /api/collections/receiving-accounts/virtual-accounts
+description: Your business's fiat receiving accounts and the details payers send to
+---
+
+import Headers from '/snippets/collections/headers.mdx';
+
+Returns every fiat receiving account (virtual account) your business holds, newest first. Give a payer the `depositInstructions` of an `active` account, and their bank transfer arrives as a [deposit](/api-reference/collections/deposits/list).
+
+Receiving accounts are opened from the Teel dashboard, not the API. See [Fiat collections](/guides/fiat-collections#before-you-start) for who can open which accounts.
+
+<Info>**Scope** `collections:read` · rate limit `collections_read` (120/min, burst 40)</Info>
+
+## Headers
+
+<Headers />
+
+## Response
+
+An array of receiving accounts. Each item has these fields:
+
+<ResponseField name="id" type="string" required>Receiving account UUID. Filter deposits by it with `virtualAccountId`.</ResponseField>
+<ResponseField name="currency" type="string" required>Currency the account receives, ISO 4217.</ResponseField>
+<ResponseField name="status" type="string" required>`pending` while the account is being opened, then `active`, or `rejected` if it could not be opened.</ResponseField>
+<ResponseField name="rails" type="string[]" required>Payment rails the account accepts, for example `ach`, `wire` or `sepa`. Can be empty while `pending`.</ResponseField>
+<ResponseField name="settlementMode" type="string" required>
+  What happens to money that arrives:
+  - `hold`: it stays as fiat in the account and shows in `fiatBalances` on [Get balances](/api-reference/collections/balances).
+  - `auto_onramp`: it is converted to `asset` on `chain` and added to your `held` balance.
+</ResponseField>
+<ResponseField name="asset" type="string">`auto_onramp` accounts only. The stablecoin arriving money is converted into, for example `USDC`. Absent on `hold` accounts.</ResponseField>
+<ResponseField name="chain" type="string">`auto_onramp` accounts only. The chain `asset` is delivered on, for example `polygon` or `ethereum`. Absent on `hold` accounts.</ResponseField>
+<ResponseField name="depositInstructions" type="object">
+  What a payer sends to. Present on `active` accounts only. Each field appears only when the account has one.
+  <Expandable title="depositInstructions">
+    <ResponseField name="accountName" type="string">Account holder or beneficiary name.</ResponseField>
+    <ResponseField name="accountNumber" type="string">Account number.</ResponseField>
+    <ResponseField name="routingCode" type="string">ABA routing number, sort code or equivalent.</ResponseField>
+    <ResponseField name="iban" type="string">IBAN, for accounts that have one (for example EUR and GBP).</ResponseField>
+    <ResponseField name="bic" type="string">BIC / SWIFT code.</ResponseField>
+    <ResponseField name="bankName" type="string">Receiving bank name.</ResponseField>
+    <ResponseField name="bankAddress" type="string">Receiving bank address.</ResponseField>
+    <ResponseField name="reference" type="string">When present, the payer **must** quote this on the payment, or it may not be matched to your account.</ResponseField>
+  </Expandable>
+</ResponseField>
+<ResponseField name="createdAt" type="string" required>ISO 8601.</ResponseField>
+
+<ResponseExample>
+```json 200
+[
+  {
+    "id": "c2d4e6f8-1a3b-4c5d-8e9f-0a1b2c3d4e5f",
+    "currency": "USD",
+    "status": "active",
+    "rails": ["ach", "wire"],
+    "settlementMode": "hold",
+    "depositInstructions": {
+      "accountName": "Northwind Trading LLC",
+      "accountNumber": "900123456789",
+      "routingCode": "026073150",
+      "bankName": "Example Bank, N.A.",
+      "bankAddress": "1 Example Plaza, New York, NY 10004"
+    },
+    "createdAt": "2026-09-30T04:12:00Z"
+  },
+  {
+    "id": "7e8f9a0b-1c2d-4e3f-9a4b-5c6d7e8f9a0b",
+    "currency": "EUR",
+    "status": "active",
+    "rails": ["sepa"],
+    "settlementMode": "auto_onramp",
+    "asset": "USDC",
+    "chain": "polygon",
+    "depositInstructions": {
+      "accountName": "Northwind Trading LLC",
+      "iban": "DE89370400440532013000",
+      "bic": "EXMPDEFFXXX",
+      "bankName": "Example Bank AG"
+    },
+    "createdAt": "2026-09-28T10:40:00Z"
+  }
+]
+```
+</ResponseExample>
+
+## Errors
+
+| Status | Code | When |
+| --- | --- | --- |
+| `400` | `ENTITY_REQUIRED` | The key's owner belongs to more than one business and `X-Teel-Entity-Id` is missing. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `collections:read`. |
+| `429` | `RATE_LIMITED` | `collections_read` budget exhausted. Wait for `Retry-After`. |

@@ -1,0 +1,81 @@
+---
+title: List payout events
+api: GET /api/payouts/{id}/events
+description: The lifecycle events of one payout, oldest first.
+---
+
+<Info>**Scope** `payouts:read` · rate limit `default` (60/min, burst 20)</Info>
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  API key.
+</ParamField>
+
+<ParamField header="X-Teel-Entity-Id" type="string">
+  Only needed when the key's owner belongs to more than one business. The UUID of the business this request acts for. Without it, such a key gets `400 ENTITY_REQUIRED`.
+</ParamField>
+
+## Path parameters
+
+<ParamField path="id" type="string" required>
+  Payout `transactionId` from [`POST /rfq/execute`](/api-reference/payouts/execute).
+</ParamField>
+
+## Response
+
+An array of events, ordered by `createdAt` ascending.
+
+<ResponseField name="id" type="string">Event UUID.</ResponseField>
+<ResponseField name="transactionId" type="string">Payout UUID.</ResponseField>
+<ResponseField name="eventType" type="string">What happened, for example `status_changed`.</ResponseField>
+<ResponseField name="step" type="string">Payout step after this event, for example `compliance_cleared` or `delivered`. Omitted when the event does not move the step.</ResponseField>
+<ResponseField name="status" type="string">Payout status after this event. Omitted when the event does not change it. See [Core Concepts](/concepts#transaction-status).</ResponseField>
+<ResponseField name="leg" type="string">`onramp` or `offramp`. Omitted for events that are not tied to one leg.</ResponseField>
+<ResponseField name="label" type="string">Human-readable label, for example `Compliance Cleared`.</ResponseField>
+<ResponseField name="details" type="object">
+  Optional. Omitted when there is nothing to show.
+  <Expandable title="details">
+    <ResponseField name="webhook_status" type="string">The route's own status word for this transition. Use the top-level `status` and `step` for canonical state.</ResponseField>
+    <ResponseField name="is_offramp" type="boolean">Deprecated. Only on older events. Use `leg`.</ResponseField>
+  </Expandable>
+</ResponseField>
+<ResponseField name="createdAt" type="string">ISO 8601.</ResponseField>
+
+### Errors
+
+| Status | `code` | When |
+|---|---|---|
+| `400` | `INVALID_PARAMETER` | `id` is not a UUID. |
+| `400` | `ENTITY_REQUIRED` | The key's owner belongs to more than one business and `X-Teel-Entity-Id` is missing. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `payouts:read`. |
+| `404` | `NOT_FOUND` | The payout does not exist, is not yours, or has not been released yet. All three answer the same. |
+| `429` | `RATE_LIMITED` | Per-key rate limit exhausted. Wait for `Retry-After`. |
+
+<ResponseExample>
+```json 200
+[
+  {
+    "id": "a1f0c2d3-4b5e-4f60-8a7b-9c0d1e2f3a4b",
+    "transactionId": "3f2a9c1e-5b7d-4e2a-8c1f-0a9b8c7d6e5f",
+    "eventType": "status_changed",
+    "step": "compliance_cleared",
+    "status": "processing",
+    "leg": "onramp",
+    "label": "Compliance Cleared",
+    "createdAt": "2026-03-01T10:01:00Z"
+  },
+  {
+    "id": "b2e1d3c4-5a6f-4071-9b8c-0d1e2f3a4b5c",
+    "transactionId": "3f2a9c1e-5b7d-4e2a-8c1f-0a9b8c7d6e5f",
+    "eventType": "status_changed",
+    "step": "delivered",
+    "status": "completed",
+    "leg": "offramp",
+    "label": "Delivered",
+    "createdAt": "2026-03-01T10:05:00Z"
+  }
+]
+```
+</ResponseExample>

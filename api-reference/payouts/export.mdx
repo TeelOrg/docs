@@ -1,0 +1,76 @@
+---
+title: Export payouts as CSV
+api: GET /api/payouts/export
+description: Download your payouts for a date range as a CSV file.
+---
+
+Streams a CSV file named `teel-transactions-<date_from>-to-<date_to>.csv`. Payouts are selected by creation date and listed newest first. Payouts that have not been released are left out.
+
+<Warning>
+  The export stops at 10,000 rows and does not say when it has stopped. If a file has 10,000 rows, export a shorter date range.
+</Warning>
+
+<Info>**Scope** `payouts:read` · rate limit `default` (60/min, burst 20)</Info>
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  API key.
+</ParamField>
+
+<ParamField header="X-Teel-Entity-Id" type="string">
+  Only needed when the key's owner belongs to more than one business. The UUID of the business this request acts for. Without it, such a key gets `400 ENTITY_REQUIRED`.
+</ParamField>
+
+## Query parameters
+
+<ParamField query="date_from" type="string" required>
+  First day to include, `YYYY-MM-DD`.
+</ParamField>
+
+<ParamField query="date_to" type="string" required>
+  Last day to include, `YYYY-MM-DD`. Must not be before `date_from`.
+</ParamField>
+
+## Response
+
+`200` with `Content-Type: text/csv`. The first row is the header. Each later row is one payout, with these columns in this order:
+
+<ResponseField name="Transaction ID" type="string">Payout UUID.</ResponseField>
+<ResponseField name="Type" type="string">`payout` or `swap`.</ResponseField>
+<ResponseField name="Status" type="string">See [Core Concepts](/concepts#transaction-status).</ResponseField>
+<ResponseField name="Payout Amount" type="string">Amount credited to the recipient, 2 decimal places.</ResponseField>
+<ResponseField name="Source Amount" type="string">Amount debited, 2 decimal places. Empty when unknown.</ResponseField>
+<ResponseField name="Source Currency" type="string">ISO 4217 code or token symbol.</ResponseField>
+<ResponseField name="Payout Currency" type="string">ISO 4217 code or token symbol.</ResponseField>
+<ResponseField name="Effective Rate" type="string">6 decimal places.</ResponseField>
+<ResponseField name="Payment Method" type="string">Funding method.</ResponseField>
+<ResponseField name="Payment Purpose" type="string">Empty when not set.</ResponseField>
+<ResponseField name="Reference" type="string">Your reference. Empty when not set.</ResponseField>
+<ResponseField name="Recipient Email" type="string" />
+<ResponseField name="Recipient Business Name" type="string" />
+<ResponseField name="Recipient Country" type="string">ISO 3166-1 alpha-2.</ResponseField>
+<ResponseField name="Failure Code" type="string">Stable failure code. Empty unless the payout failed.</ResponseField>
+<ResponseField name="Created At" type="string">RFC 3339.</ResponseField>
+<ResponseField name="Updated At" type="string">RFC 3339.</ResponseField>
+<ResponseField name="Completed At" type="string">RFC 3339. Empty until the payout completes.</ResponseField>
+
+A text cell that starts with `=`, `+`, or `@` is prefixed with a tab so spreadsheet apps do not run it as a formula.
+
+### Errors
+
+| Status | `code` | When |
+|---|---|---|
+| `400` | `MISSING_PARAMETER` | `date_from` or `date_to` is missing. |
+| `400` | `INVALID_PARAMETER` | `date_from` or `date_to` is not `YYYY-MM-DD`, or `date_to` is before `date_from`. |
+| `400` | `ENTITY_REQUIRED` | The key's owner belongs to more than one business and `X-Teel-Entity-Id` is missing. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `payouts:read`. |
+| `429` | `RATE_LIMITED` | Per-key rate limit exhausted. Wait for `Retry-After`. |
+
+<ResponseExample>
+```csv 200
+Transaction ID,Type,Status,Payout Amount,Source Amount,Source Currency,Payout Currency,Effective Rate,Payment Method,Payment Purpose,Reference,Recipient Email,Recipient Business Name,Recipient Country,Failure Code,Created At,Updated At,Completed At
+3f2a9c1e-5b7d-4e2a-8c1f-0a9b8c7d6e5f,payout,completed,4425.00,1000.00,USD,MYR,4.425000,fiat_bank_transfer,goods_or_services,INV-1042,payments@acme-my.com,Acme Corp Malaysia,MY,,2026-03-01T10:00:00Z,2026-03-01T10:05:00Z,2026-03-01T10:05:00Z
+```
+</ResponseExample>

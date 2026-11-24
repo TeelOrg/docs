@@ -1,0 +1,61 @@
+---
+title: Delete a recipient payment method
+api: DELETE /api/recipients/{id}/payment-methods/{pmId}
+description: Remove a bank account or wallet from a recipient.
+---
+
+You cannot delete a payment method that a payout pays to. The `409` response lists those payouts. A payout that was never sent can be deleted first. A payout that was sent is kept as a payment record, so its payment method stays; add a new payment method instead.
+
+<Info>**Scope** `recipients:write` · rate limit `default` (60/min, burst 20)</Info>
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  API key.
+</ParamField>
+
+<ParamField header="X-Teel-Entity-Id" type="string">
+  Only needed when the key's owner belongs to more than one business. The UUID of the business this request acts for. Without it, such a key gets `400 ENTITY_REQUIRED`.
+</ParamField>
+
+## Path parameters
+
+<ParamField path="id" type="string" required>
+  Recipient UUID.
+</ParamField>
+
+<ParamField path="pmId" type="string" required>
+  Payment method UUID.
+</ParamField>
+
+## Response
+
+`204 No Content` with an empty body.
+
+### Errors
+
+| Status | `code` | When |
+|---|---|---|
+| `400` | `INVALID_PARAMETER` | `id` or `pmId` is not a UUID. |
+| `400` | `ENTITY_REQUIRED` | The key's owner belongs to more than one business and `X-Teel-Entity-Id` is missing. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `recipients:write`. |
+| `404` | `RECIPIENT_NOT_FOUND` | The recipient does not exist or is not yours. Both answer the same. |
+| `404` | `PAYMENT_METHOD_NOT_FOUND` | The payment method does not exist, or belongs to a different recipient. |
+| `409` | `CONFLICT` | The recipient is your own Teel-held account (`isSelf`), which Teel manages. |
+| `409` | `REFERENCED_BY_OTHERS` | Payouts pay to this payment method. `details.payouts` lists each as `{id, deletable}`. |
+| `429` | `RATE_LIMITED` | Per-key rate limit exhausted. Wait for `Retry-After`. |
+
+<ResponseExample>
+```json 409
+{
+  "code": "REFERENCED_BY_OTHERS",
+  "error": "Payout 3f2a9c1e uses this payment method and was never sent. Delete that payout first, then delete this payment method.",
+  "details": {
+    "payouts": [
+      { "id": "3f2a9c1e-5b7d-4e2a-8c1f-0a9b8c7d6e5f", "deletable": true }
+    ]
+  }
+}
+```
+</ResponseExample>

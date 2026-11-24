@@ -1,0 +1,169 @@
+---
+title: Create payment link
+api: POST /api/collections/payment-links
+description: Issue an invoice your payer settles in stablecoin or by bank transfer
+---
+
+import Headers from '/snippets/collections/headers.mdx';
+import PaymentLinkFields from '/snippets/collections/payment-link-fields.mdx';
+
+Creates a payment link (an invoice) and returns it with `201`. Share `url` with your payer, or email it by setting `customerEmail` (or by issuing it to a buyer that has an email).
+
+- **`stablecoin`** links must name a `buyerId`. The payer sends to that buyer's own receiving address, and Teel locks the rate when the link is created, so `usdtAmount` is fixed for the life of the link.
+- **`fiat`** links are paid by bank transfer into your business's receiving account in the invoice currency. The payer page shows the bank details and, where the bank rail carries one, the reference to quote. A credited deposit is matched to its fiat link (by the reference the payer quoted, or by an exact amount when only one open link is for that amount). Deposits that cover part of a link add up, and the link turns `paid` once they cover its amount, firing `collections.payment_link.paid`. A deposit that can't be matched is matched by hand in the Teel dashboard.
+
+A link accepts payments until `expiresAt`, which is set from your business's default link lifetime (7 days unless your account is configured otherwise).
+
+<Info>**Scope** `collections:write` · rate limit `collections_write` (30/min, burst 10) · needs the collections type you request enabled on your business</Info>
+
+## Headers
+
+<Headers />
+
+<ParamField header="Idempotency-Key" type="string">
+  Optional. 8–255 characters of `[A-Za-z0-9_-]`. The same key and body within 24 hours replays the original response with `Idempotency-Replayed: true`. The same key with a different body returns `409 IDEMPOTENCY_KEY_REUSED`. A retry while the first request is still running returns `409 IDEMPOTENCY_REQUEST_IN_FLIGHT` with `Retry-After`.
+</ParamField>
+
+## Request body
+
+<ParamField body="currency" type="string" required>
+  Invoice currency: `USD`, `EUR`, `GBP`, `AED`, `MXN`, `BRL` or `COP`.
+</ParamField>
+
+<ParamField body="amount" type="string">
+  Invoice total as a decimal string, at most 13 digits before the point and no more decimals than the currency carries. Required unless you send `lineItems`, in which case the total is their sum.
+</ParamField>
+
+<ParamField body="collectionType" type="string" default="fiat">
+  `fiat` (bank transfer) or `stablecoin`.
+</ParamField>
+
+<ParamField body="settlementMode" type="string">
+  `fiat` links only. Which of your receiving accounts in `currency` the payer pays into: `hold` keeps the money as fiat, `auto_onramp` converts it to stablecoin on arrival. **Required** when your business has an active account of both modes in `currency` (`422 SETTLEMENT_MODE_REQUIRED`); optional otherwise. A mode with no active account in `currency` returns `422 SETTLEMENT_MODE_UNAVAILABLE`. Sending it on a `stablecoin` link returns `400 INVALID_REQUEST`.
+</ParamField>
+
+<ParamField body="buyerId" type="string">
+  UUID of the [buyer](/api-reference/collections/buyers/create) to issue the invoice to. **Required for `stablecoin`**, and the buyer must already have a `receivingAddress`. Optional on `fiat`, where it fills the customer name and email.
+</ParamField>
+
+<ParamField body="invoiceNumber" type="string">
+  Your invoice number. Ignored when you send `lineItems`; put one on each line instead.
+</ParamField>
+
+<ParamField body="customerName" type="string">
+  Who the invoice is for. Defaults to the buyer's name.
+</ParamField>
+
+<ParamField body="customerEmail" type="string">
+  Where to email the invoice. Defaults to the buyer's email. With neither, no email is sent.
+</ParamField>
+
+<ParamField body="lineItems" type="object[]">
+  Bundles several invoices into one link. Every line is in `currency`.
+  <Expandable title="lineItems[]">
+    <ParamField body="amount" type="string" required>What this line owes, as a decimal string.</ParamField>
+    <ParamField body="invoiceNumber" type="string">Invoice number for this line.</ParamField>
+    <ParamField body="description" type="string">Free-text description.</ParamField>
+    <ParamField body="quantity" type="number">Display only. Never used to compute `amount`.</ParamField>
+    <ParamField body="unitPrice" type="string">Display only.</ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="usdtRate" type="string">
+  Stablecoin links only. The rate you negotiated with your payer: the USD price of one unit of the settlement asset, for example `"0.9985"`. Must be between 0.5 and 2.0 with at most 8 decimal places. The payer owes `amount / usdtRate`. Required when your account is set up to require a negotiated rate. Can't be combined with `clientFeeRate`.
+</ParamField>
+
+<ParamField body="clientFeeRate" type="string">
+  Stablecoin links only. Your margin for this invoice, as a rate between 0.9 and 1.0 with at most 6 decimal places. `"0.999"` keeps 10 bps. Omit it to use your business default. Can't be combined with `usdtRate`.
+</ParamField>
+
+<ParamField body="feeBorneBy" type="string" default="seller">
+  Stablecoin links only. Who pays Teel's settlement fee: `buyer` (added on top of what the payer sends) or `seller` (taken out of the invoice).
+</ParamField>
+
+<ParamField body="paymentPurpose" type="string">
+  Optional payment purpose, from the same list payouts use. An unrecognised value returns `400`.
+</ParamField>
+
+<ParamField body="paymentReference" type="string">
+  Optional free-text reference.
+</ParamField>
+
+<ParamField body="issueDate" type="string">
+  Invoice issue date, `YYYY-MM-DD`.
+</ParamField>
+
+<ParamField body="dueDate" type="string">
+  Invoice due date, `YYYY-MM-DD`. Can't be before `issueDate`. Shown to the payer; it does not expire the link.
+</ParamField>
+
+<ParamField body="sellerName" type="string">
+  Seller name printed on the invoice.
+</ParamField>
+
+<ParamField body="sellerAddress" type="string">
+  Seller address printed on the invoice.
+</ParamField>
+
+<ParamField body="settlementCurrency" type="string">
+  Not used on `fiat` or `stablecoin` links. Sending it with either returns `400 INVALID_REQUEST`.
+</ParamField>
+
+## Response
+
+Returns `201 Created` with the new link.
+
+<PaymentLinkFields />
+
+<ResponseExample>
+```json 201
+{
+  "id": "0b6f2c1e-3c1d-4f43-9a55-2a7f3d1e9c10",
+  "reference": "PL-K5XQ2M7RZJ4NVB6TQW3YHPDLCE",
+  "url": "https://pay.teel.finance/PL-K5XQ2M7RZJ4NVB6TQW3YHPDLCE",
+  "status": "open",
+  "amount": "1250.00",
+  "currency": "USD",
+  "collectionType": "stablecoin",
+  "invoiceNumber": "INV-1042",
+  "customerName": "Acme Imports Ltd",
+  "customerEmail": "ap@acme-imports.example",
+  "buyerId": "5a1f0d3e-8b2c-4e7a-9f61-2c3d4e5f6a7b",
+  "lineItems": [],
+  "dueDate": "2026-10-31T00:00:00Z",
+  "depositAddress": "TJ3pXbWq6kq1N9GmV2eYcR8sLhD4uZaF7w",
+  "chain": "tron",
+  "usdtAmount": "1251.876000",
+  "feeBps": 20,
+  "feeAmount": "2.503752",
+  "expiresAt": "2026-10-20T09:00:00Z",
+  "paymentTxHashes": [],
+  "createdAt": "2026-10-13T09:00:00Z"
+}
+```
+</ResponseExample>
+
+## Errors
+
+| Status | Code | When |
+| --- | --- | --- |
+| `400` | `INVALID_REQUEST` | Body malformed or a field fails validation: unsupported currency, bad amount, `stablecoin` without `buyerId`, both `usdtRate` and `clientFeeRate`, a rate out of range, a missing required `usdtRate`, a bad date, `settlementMode` not `hold` or `auto_onramp` or sent on a `stablecoin` link, or `settlementCurrency` on a `fiat` or `stablecoin` link. |
+| `400` | `INVALID_PARAMETER` | `buyerId` is not a UUID. |
+| `400` | `IDEMPOTENCY_KEY_INVALID` | `Idempotency-Key` is malformed. |
+| `400` | `ENTITY_REQUIRED` | The key's owner belongs to more than one business and `X-Teel-Entity-Id` is missing. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `collections:write`. |
+| `403` | `COLLECTIONS_NOT_ENABLED` | Collections, or the requested `collectionType`, is not enabled for your business. |
+| `403` | `COLLECTIONS_FROZEN` | Collections was switched off for your business. Reads still work; every write is refused until it is switched back on. |
+| `404` | `NOT_FOUND` | `buyerId` is not one of your buyers. |
+| `409` | `CONFLICT` | The stablecoin amount collides with another of your open invoices. Change the amount. |
+| `409` | `IDEMPOTENCY_KEY_REUSED` / `IDEMPOTENCY_REQUEST_IN_FLIGHT` | Idempotency conflict. For in-flight, wait for `Retry-After`. |
+| `422` | `SETTLEMENT_MODE_REQUIRED` | A `fiat` link in a currency where you hold both a `hold` and an `auto_onramp` account, without `settlementMode`. |
+| `422` | `SETTLEMENT_MODE_UNAVAILABLE` | `settlementMode` names a mode with no active account in `currency`. |
+| `422` | `INVALID_REQUEST` | Sandbox only: your business holds no receiving account in the invoice currency. |
+| `429` | `RATE_LIMITED` | `collections_write` budget exhausted. Wait for `Retry-After`. |
+| `503` | `DOWNSTREAM_UNAVAILABLE` | No rate could be locked, or the buyer has no receiving address yet. Retry. |
+
+## Next steps
+
+Share `url` with your payer. For a `stablecoin` link, subscribe to `collections.payment_link.paid` to hear when it is paid. For a `fiat` link, subscribe to `collections.deposit.received`. See the [Webhooks guide](/guides/webhooks#collections-events) and the [Stablecoin collections guide](/guides/stablecoin-collections).

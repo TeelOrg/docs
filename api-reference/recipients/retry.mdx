@@ -1,0 +1,135 @@
+---
+title: Retry recipient provisioning
+api: POST /api/recipients/{id}/retry
+description: Register an existing recipient with its payout routes again.
+---
+
+Use this when [`POST /recipients`](/api-reference/recipients/create) returned `207` with `retryable: true`. Send the recipient's full details again. Teel validates them the same way as a create, then registers the recipient with each payout route. The stored recipient is not changed by this call.
+
+<Info>**Scope** `recipients:write` · rate limit `default` (60/min, burst 20)</Info>
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  API key.
+</ParamField>
+
+<ParamField header="X-Teel-Entity-Id" type="string">
+  Only needed when the key's owner belongs to more than one business. The UUID of the business this request acts for. Without it, such a key gets `400 ENTITY_REQUIRED`.
+</ParamField>
+
+<ParamField header="Idempotency-Key" type="string">
+  Optional. 8–255 characters of `[A-Za-z0-9_-]`. The same key and body within 24 hours replays the original response. The same key with a different body returns `409 IDEMPOTENCY_KEY_REUSED`. A retry while the first request is still running returns `409 IDEMPOTENCY_REQUEST_IN_FLIGHT` with `Retry-After`.
+</ParamField>
+
+## Path parameters
+
+<ParamField path="id" type="string" required>
+  Recipient UUID.
+</ParamField>
+
+## Request body
+
+Required. The same body as [`POST /recipients`](/api-reference/recipients/create): `email` and `country` are required, and each entry in `paymentMethods` needs a `currency`.
+
+## Response
+
+`200` with the recipient when setup completed for every payout route. `207` when the recipient's setup still did not complete. A `207` body wraps the recipient and never says which route failed or why:
+
+<ResponseField name="recipient" type="object">
+  `207` only. The recipient, with the fields below. On `200` the recipient is the whole body.
+</ResponseField>
+<ResponseField name="provisioningError" type="string">`207` only. Present when setup failed. Display text that may change; branch on `retryable`, never on this text.</ResponseField>
+<ResponseField name="retryable" type="boolean">`207` only. Set with `provisioningError`. `true` when every failure was temporary, so calling this endpoint again may complete setup. `false` means retrying will not help; contact support.</ResponseField>
+<ResponseField name="provisioningWarning" type="string">`207` only. Present without `provisioningError` when the recipient was registered but some payment details could not be registered yet. Display text; try again shortly.</ResponseField>
+
+### Recipient
+
+<ResponseField name="id" type="string">UUID.</ResponseField>
+<ResponseField name="businessId" type="string">Owning business UUID.</ResponseField>
+<ResponseField name="email" type="string" />
+<ResponseField name="isBusiness" type="boolean" />
+<ResponseField name="businessName" type="string" />
+<ResponseField name="firstName" type="string">Omitted when empty.</ResponseField>
+<ResponseField name="lastName" type="string">Omitted when empty.</ResponseField>
+<ResponseField name="country" type="string">ISO 3166-1 alpha-2.</ResponseField>
+<ResponseField name="phone" type="string">Omitted when empty.</ResponseField>
+<ResponseField name="address" type="object">
+  <Expandable title="address">
+    <ResponseField name="streetLine1" type="string" />
+    <ResponseField name="streetLine2" type="string" />
+    <ResponseField name="city" type="string" />
+    <ResponseField name="state" type="string" />
+    <ResponseField name="postalCode" type="string" />
+    <ResponseField name="country" type="string" />
+  </Expandable>
+</ResponseField>
+<ResponseField name="dateOfBirth" type="string">Omitted when empty.</ResponseField>
+<ResponseField name="identificationNumber" type="string">Omitted when empty.</ResponseField>
+<ResponseField name="currency" type="string">Currency of the recipient's bank payment method, or inferred from `country`.</ResponseField>
+<ResponseField name="recipientType" type="string">`normal`, `subsidiary`, or `counterparty`. Omitted when empty.</ResponseField>
+<ResponseField name="transferType" type="string">`"fiat"` or `"stablecoin"`.</ResponseField>
+<ResponseField name="relationship" type="string">`self` or `third_party`.</ResponseField>
+<ResponseField name="walletAddresses" type="object">Chain ID → address. Omitted when empty.</ResponseField>
+<ResponseField name="externalReference" type="object">Map of `string` → `string`. Omitted when empty.</ResponseField>
+<ResponseField name="bankPaymentMethod" type="string">Internal reference. Do not rely on it.</ResponseField>
+<ResponseField name="walletPaymentMethod" type="string">Internal reference. Do not rely on it.</ResponseField>
+<ResponseField name="status" type="string">`"pending"`, `"accepted"`, or `"rejected"`.</ResponseField>
+<ResponseField name="isSelf" type="boolean">Always `false` here. Your own Teel-held account cannot be retried.</ResponseField>
+<ResponseField name="createdAt" type="string">ISO 8601.</ResponseField>
+<ResponseField name="updatedAt" type="string">ISO 8601.</ResponseField>
+
+### Errors
+
+| Status | `code` | When |
+|---|---|---|
+| `400` | `INVALID_PARAMETER` | `id` is not a UUID. |
+| `400` | `INVALID_REQUEST` | The body is missing or malformed, a payment method has no `currency`, or a payment method is invalid for its rail. |
+| `400` | `VALIDATION_FAILED` | The body fails the recipient schema. `details.violations` lists each field. |
+| `400` | `IDEMPOTENCY_KEY_INVALID` | `Idempotency-Key` is malformed. |
+| `400` | `ENTITY_REQUIRED` | The key's owner belongs to more than one business and `X-Teel-Entity-Id` is missing. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `recipients:write`. |
+| `404` | `RECIPIENT_NOT_FOUND` | The recipient does not exist or is not yours. Both answer the same. |
+| `409` | `CONFLICT` | The recipient is your own Teel-held account (`isSelf`), which Teel manages. |
+| `409` | `IDEMPOTENCY_KEY_REUSED` / `IDEMPOTENCY_REQUEST_IN_FLIGHT` | Idempotency conflict. For in-flight, wait for `Retry-After`. |
+| `429` | `RATE_LIMITED` | Per-key rate limit exhausted. Wait for `Retry-After`. |
+
+<ResponseExample>
+```json 200
+{
+  "id": "8b1a4c1d-7a3c-4a08-94ad-9f1ef1e0c3a2",
+  "businessId": "0d6c5f0e-3f43-4a0e-8d8f-2b7f0f1c9a11",
+  "email": "payments@acme-ph.com",
+  "isBusiness": true,
+  "businessName": "Acme Corp Philippines",
+  "country": "PH",
+  "currency": "PHP",
+  "transferType": "fiat",
+  "relationship": "third_party",
+  "status": "pending",
+  "isSelf": false,
+  "createdAt": "2026-06-09T10:00:00Z",
+  "updatedAt": "2026-06-09T10:00:00Z"
+}
+```
+```json 207
+{
+  "recipient": {
+    "id": "8b1a4c1d-7a3c-4a08-94ad-9f1ef1e0c3a2",
+    "email": "payments@acme-ph.com",
+    "isBusiness": true,
+    "businessName": "Acme Corp Philippines",
+    "country": "PH",
+    "transferType": "fiat",
+    "relationship": "third_party",
+    "status": "pending",
+    "isSelf": false,
+    "createdAt": "2026-06-09T10:00:00Z",
+    "updatedAt": "2026-06-09T10:00:00Z"
+  },
+  "provisioningError": "Setup did not complete because of a temporary error. Try again shortly.",
+  "retryable": true
+}
+```
+</ResponseExample>

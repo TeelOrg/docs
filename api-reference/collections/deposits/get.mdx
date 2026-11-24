@@ -1,0 +1,54 @@
+---
+title: Get deposit
+api: GET /api/collections/receiving-accounts/deposits/{id}
+description: Fetch one fiat deposit by ID
+---
+
+import Headers from '/snippets/collections/headers.mdx';
+import DepositFields from '/snippets/collections/deposit-fields.mdx';
+
+Returns `404` if the ID isn't yours. A deposit of another business looks the same as one that doesn't exist. This is the same shape as the `data` of a `collections.deposit.received` webhook.
+
+<Info>**Scope** `collections:read` · rate limit `collections_read` (120/min, burst 40)</Info>
+
+## Headers
+
+<Headers />
+
+## Path parameters
+
+<ParamField path="id" type="string" required>
+  Deposit UUID.
+</ParamField>
+
+## Response
+
+<DepositFields />
+
+<ResponseExample>
+```json 200
+{
+  "id": "4b5c6d7e-8f9a-4b0c-9d1e-2f3a4b5c6d7e",
+  "virtualAccountId": "7e8f9a0b-1c2d-4e3f-9a4b-5c6d7e8f9a0b",
+  "amount": "2000.00",
+  "currency": "EUR",
+  "creditedAmount": "2161.420000",
+  "creditedAsset": "USDC_POLYGON",
+  "status": "credited",
+  "senderName": "Beispiel GmbH",
+  "createdAt": "2026-10-12T09:15:30Z",
+  "updatedAt": "2026-10-12T09:41:02Z"
+}
+```
+</ResponseExample>
+
+## Errors
+
+| Status | Code | When |
+| --- | --- | --- |
+| `400` | `INVALID_PARAMETER` | `id` is not a UUID. |
+| `400` | `ENTITY_REQUIRED` | The key's owner belongs to more than one business and `X-Teel-Entity-Id` is missing. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `collections:read`. |
+| `404` | `NOT_FOUND` | No such deposit for your business. |
+| `429` | `RATE_LIMITED` | `collections_read` budget exhausted. Wait for `Retry-After`. |

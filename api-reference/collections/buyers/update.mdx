@@ -1,0 +1,91 @@
+---
+title: Update buyer
+api: PUT /api/collections/buyers/{id}
+description: Update a buyer. Any field you omit stays unchanged.
+---
+
+import Headers from '/snippets/collections/headers.mdx';
+import BuyerFields from '/snippets/collections/buyer-fields.mdx';
+
+A partial update: only the fields you send are written. Links already issued keep the name, email and address they were issued with.
+
+<Info>**Scope** `collections:write` · rate limit `collections_write` (30/min, burst 10)</Info>
+
+## Headers
+
+<Headers />
+
+## Path parameters
+
+<ParamField path="id" type="string" required>
+  Buyer UUID.
+</ParamField>
+
+## Request body
+
+<ParamField body="name" type="string">
+  New name. Can't be blank.
+</ParamField>
+
+<ParamField body="email" type="string">
+  New email.
+</ParamField>
+
+<ParamField body="entityType" type="string">
+  `individual` or `business`.
+</ParamField>
+
+<ParamField body="country" type="string">
+  ISO 3166-1 alpha-2.
+</ParamField>
+
+<ParamField body="screeningStatus" type="string">
+  `unscreened`, `pending`, `cleared` or `blocked`. Stored but not returned on reads.
+</ParamField>
+
+<ParamField body="tier" type="string">
+  Up to 20 characters. Stored but not returned on reads.
+</ParamField>
+
+<ParamField body="perPaymentCap" type="string">
+  Decimal string. Stored but not enforced or returned on reads.
+</ParamField>
+
+<ParamField body="notes" type="string">
+  Stored but not returned on reads.
+</ParamField>
+
+## Response
+
+The updated buyer.
+
+<BuyerFields />
+
+<ResponseExample>
+```json 200
+{
+  "id": "5a1f0d3e-8b2c-4e7a-9f61-2c3d4e5f6a7b",
+  "name": "Acme Imports Pte Ltd",
+  "email": "payables@acme-imports.example",
+  "entityType": "business",
+  "country": "SG",
+  "receivingAddress": "TJ3pXbWq6kq1N9GmV2eYcR8sLhD4uZaF7w",
+  "receivingChain": "tron",
+  "credit": [],
+  "createdAt": "2026-10-13T08:55:00Z",
+  "updatedAt": "2026-10-13T11:02:19Z"
+}
+```
+</ResponseExample>
+
+## Errors
+
+| Status | Code | When |
+| --- | --- | --- |
+| `400` | `INVALID_PARAMETER` | `id` is not a UUID. |
+| `400` | `INVALID_REQUEST` | Body malformed, `name` blank, or a field fails validation. |
+| `400` | `ENTITY_REQUIRED` | The key's owner belongs to more than one business and `X-Teel-Entity-Id` is missing. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `collections:write`. |
+| `404` | `NOT_FOUND` | No such buyer for your business. |
+| `429` | `RATE_LIMITED` | `collections_write` budget exhausted. Wait for `Retry-After`. |

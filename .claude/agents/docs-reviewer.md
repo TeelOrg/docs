@@ -24,11 +24,14 @@ Every factual claim in a docs page is a hypothesis until you check it against th
 
 The sources of truth, in order of authority:
 
-1. `teel-backend/go-server/main.go` — route registration + middleware stack (`denyPartner`, `payoutsRead`, `recipientsWrite`, etc.).
-2. `teel-backend/go-server/models/*.go` — struct JSON tags = the actual response shape.
-3. `teel-backend/go-server/rest/openapi/openapi.yaml` — the served spec; canonical when not stale.
-4. `teel-backend/go-server/providers/rail.go` — payment status / transfer-type / destination-type enums.
-5. Handler files under `teel-backend/go-server/rest/` — exact response envelope, error codes, status numbers.
+Paths are in `TeelOrg/teel-backend`. `PO` = `go-apps/backend/payments-orchestrator`.
+
+1. `PO/cmd/main.go` — route registration + middleware stack (`denyPartner`, scope factories such as `payoutsRead` / `collectionsRead`, partner rate limiters, `idempotency`).
+2. Response DTOs — partner allowlist structs in `PO/internal/rest/` (e.g. `partner_collections_dto.go`) and models in `go-apps/backend/shared/models/*.go`. Struct JSON tags = the actual response shape.
+3. `PO/internal/rest/openapi/openapi.yaml` — the served spec; canonical when not stale.
+4. `PO/internal/providers/rail.go` — payment status / transfer-type / destination-type enums.
+5. Handler files under `PO/internal/rest/` — exact response envelope, error codes (`api_errors.go`), status numbers.
+6. `PO/internal/middleware/partner_auth.go` and `partner_rate_limit.go` — scope errors and rate-limit families.
 
 When the docs say a thing, `grep` for it. If you can't ground it in source, flag as Important regardless of how plausible it sounds.
 
@@ -104,7 +107,7 @@ The exception: if a touched page links to an untouched page, follow the link. Br
 
 ### 6. Cross-reference the openapi.yaml
 
-The served spec at `teel-backend/go-server/rest/openapi/openapi.yaml` is a second source of truth — embedded in the binary and served at `/openapi.{json,yaml}`. When docs disagree with the served spec:
+The served spec at `teel-backend/go-apps/backend/payments-orchestrator/internal/rest/openapi/openapi.yaml` is a second source of truth — embedded in the binary and served at `/openapi.{json,yaml}`. When docs disagree with the served spec:
 
 - If the spec is current (recent edit, matches the handler), the docs are wrong.
 - If the spec is stale (a handler shipped without a spec update), flag BOTH the docs and the spec as Important — the spec drives partner SDK codegen so the drift compounds.

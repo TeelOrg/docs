@@ -21,7 +21,7 @@
       "tabs": [
         {
           "tab": "Documentation",
-          "href": "/",
+          "href": "/introduction",
           "icon": "book"
         },
         {
@@ -57,6 +57,9 @@
               "guides/fiat-to-fiat-payout",
               "guides/stablecoin-transfer",
               "guides/crypto-payout",
+              "guides/stablecoin-collections",
+              "guides/fiat-collections",
+              "guides/settlements",
               "guides/webhooks"
             ]
           }
@@ -76,9 +79,16 @@
               "api-reference/recipients/requirements",
               "api-reference/recipients/list",
               "api-reference/recipients/get",
+              "api-reference/recipients/list-payment-methods",
               "api-reference/recipients/create",
               "api-reference/recipients/update",
-              "api-reference/recipients/delete"
+              "api-reference/recipients/delete",
+              "api-reference/recipients/bulk-create",
+              "api-reference/recipients/retry",
+              "api-reference/recipients/lookup",
+              "api-reference/recipients/lookup-batch",
+              "api-reference/recipients/add-payment-method",
+              "api-reference/recipients/delete-payment-method"
             ]
           },
           {
@@ -94,8 +104,7 @@
               "api-reference/quotes/onramp-all",
               "api-reference/quotes/offramp-best",
               "api-reference/quotes/offramp-all",
-              "api-reference/quotes/offramp-exact-output",
-              "api-reference/quotes/preflight"
+              "api-reference/quotes/offramp-exact-output"
             ]
           },
           {
@@ -106,7 +115,73 @@
               "api-reference/payouts/status",
               "api-reference/payouts/confirm-escrow-deposit",
               "api-reference/payouts/list",
-              "api-reference/payouts/get"
+              "api-reference/payouts/get",
+              "api-reference/payouts/events",
+              "api-reference/payouts/receipt",
+              "api-reference/payouts/retryable",
+              "api-reference/payouts/upload-document",
+              "api-reference/payouts/document-url",
+              "api-reference/payouts/export",
+              "api-reference/payouts/batch-rows",
+              "api-reference/payouts/batch-collection",
+              "api-reference/payouts/payment-purposes",
+              "api-reference/payouts/payment-purpose",
+              "api-reference/payouts/offramp-requirements"
+            ]
+          },
+          {
+            "group": "Jobs",
+            "pages": [
+              "api-reference/jobs/get"
+            ]
+          },
+          {
+            "group": "Metrics",
+            "pages": [
+              "api-reference/metrics/earnings"
+            ]
+          },
+          {
+            "group": "Collections",
+            "pages": [
+              {
+                "group": "Payment links",
+                "pages": [
+                  "api-reference/collections/payment-links/list",
+                  "api-reference/collections/payment-links/get",
+                  "api-reference/collections/payment-links/create",
+                  "api-reference/collections/payment-links/void"
+                ]
+              },
+              {
+                "group": "Buyers",
+                "pages": [
+                  "api-reference/collections/buyers/list",
+                  "api-reference/collections/buyers/get",
+                  "api-reference/collections/buyers/create",
+                  "api-reference/collections/buyers/update",
+                  "api-reference/collections/buyers/delete"
+                ]
+              },
+              "api-reference/collections/balances",
+              {
+                "group": "Receiving accounts",
+                "pages": [
+                  "api-reference/collections/virtual-accounts/list",
+                  "api-reference/collections/deposits/list",
+                  "api-reference/collections/deposits/get"
+                ]
+              },
+              {
+                "group": "Settlements",
+                "pages": [
+                  "api-reference/collections/settlements/preview",
+                  "api-reference/collections/settlements/upload-document",
+                  "api-reference/collections/settlements/create",
+                  "api-reference/collections/settlements/list",
+                  "api-reference/collections/settlements/get"
+                ]
+              }
             ]
           },
           {

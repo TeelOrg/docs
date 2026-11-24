@@ -1,0 +1,46 @@
+---
+title: List payment purposes (deprecated)
+api: GET /api/payouts/payment-purpose/{protocol}
+description: Deprecated alias of GET /payouts/payment-purposes.
+deprecated: true
+---
+
+<Warning>
+  Deprecated. Use [`GET /payouts/payment-purposes`](/api-reference/payouts/payment-purposes). This alias returns the same response and will be removed.
+</Warning>
+
+<Info>**Scope** `payouts:read` · rate limit `default` (60/min, burst 20)</Info>
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  API key.
+</ParamField>
+
+## Path parameters
+
+<ParamField path="protocol" type="string" required>
+  Ignored. Any non-empty value is accepted; the response does not depend on it.
+</ParamField>
+
+## Response
+
+<ResponseField name="purposes" type="object[]">
+  In display order. `other` is always last.
+  <Expandable title="purposes[]">
+    <ResponseField name="value" type="string">Value to send as `paymentPurpose`.</ResponseField>
+    <ResponseField name="label" type="string">Display label.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json 200
+{
+  "purposes": [
+    { "value": "payroll", "label": "Payroll / Employee Payouts" },
+    { "value": "goods_or_services", "label": "Payments for Goods or Services" },
+    { "value": "other", "label": "Other" }
+  ]
+}
+```
+</ResponseExample>

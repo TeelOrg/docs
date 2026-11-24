@@ -1,0 +1,51 @@
+---
+title: List payment purposes
+api: GET /api/payouts/payment-purposes
+description: The values you can send as a payout's paymentPurpose.
+---
+
+The list is the same for every route. It is static: fetch it once per session and cache it. Responses carry `Cache-Control: public, max-age=3600`.
+
+Send one `value` as `paymentPurpose` when you execute a payout. An unrecognised value is passed through but will not match any route's purpose mapping, so the payout is filed under that route's default purpose. Always send a value from this list. `other` also requires a `purposeDescription` of 10–255 characters.
+
+<Info>**Scope** `payouts:read` · rate limit `default` (60/min, burst 20)</Info>
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  API key.
+</ParamField>
+
+## Response
+
+<ResponseField name="purposes" type="object[]">
+  In display order. `other` is always last.
+  <Expandable title="purposes[]">
+    <ResponseField name="value" type="string">Value to send as `paymentPurpose`.</ResponseField>
+    <ResponseField name="label" type="string">Display label.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseExample>
+```json 200
+{
+  "purposes": [
+    { "value": "payroll", "label": "Payroll / Employee Payouts" },
+    { "value": "goods_or_services", "label": "Payments for Goods or Services" },
+    { "value": "marketplace", "label": "Marketplace / Gig Worker Payouts" },
+    { "value": "treasury_management", "label": "Internal Treasury or FX Management" },
+    { "value": "disbursement", "label": "Disbursement of Customer Funds" },
+    { "value": "charitable_donations", "label": "Charitable Donations" },
+    { "value": "ecommerce_retail", "label": "E-Commerce / Retail Payments" },
+    { "value": "investment", "label": "Investment Purposes" },
+    { "value": "payments_abroad", "label": "Payments to Friends or Family Abroad" },
+    { "value": "personal_expenses", "label": "Personal or Living Expenses" },
+    { "value": "protect_wealth", "label": "Protect Wealth" },
+    { "value": "receive_payments", "label": "Receive Payments for Goods & Services" },
+    { "value": "tax_optimization", "label": "Tax Optimization" },
+    { "value": "third_party_transmission", "label": "Third-Party Money Transmission" },
+    { "value": "other", "label": "Other" }
+  ]
+}
+```
+</ResponseExample>

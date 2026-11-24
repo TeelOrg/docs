@@ -1,0 +1,138 @@
+---
+title: Get batch collection
+api: GET /api/payouts/batch/{batchId}/collection
+description: The single pay-in that funds every payout in a batch.
+---
+
+A batch payout is funded by one collection (onramp). This returns it, including the deposit instructions you pay against.
+
+<Note>
+  The top-level keys of this response are snake_case. The keys inside `metadata` are camelCase.
+</Note>
+
+<Info>**Scope** `payouts:read` · rate limit `default` (60/min, burst 20)</Info>
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  API key.
+</ParamField>
+
+<ParamField header="X-Teel-Entity-Id" type="string">
+  Only needed when the key's owner belongs to more than one business. The UUID of the business this request acts for. Without it, such a key gets `400 ENTITY_REQUIRED`.
+</ParamField>
+
+## Path parameters
+
+<ParamField path="batchId" type="string" required>
+  Batch UUID.
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="string">Collection UUID.</ResponseField>
+<ResponseField name="batch_id" type="string">Batch UUID.</ResponseField>
+<ResponseField name="business_id" type="string">Your business UUID.</ResponseField>
+<ResponseField name="user_payment_method_id" type="string">Funding payment method UUID. Omitted when not set.</ResponseField>
+<ResponseField name="total_source_amount" type="number">Total amount to pay in, across every payout in the batch.</ResponseField>
+<ResponseField name="source_currency" type="string">ISO 4217 code.</ResponseField>
+<ResponseField name="status" type="string">`pending`, `processing`, `completed`, or `failed`.</ResponseField>
+<ResponseField name="failure_code" type="string">Stable failure code. Omitted unless the collection failed.</ResponseField>
+<ResponseField name="orphan_check_attempted_at" type="string">ISO 8601. When Teel last checked a failed collection for a deposit that still arrived. Omitted until checked.</ResponseField>
+<ResponseField name="orphan_check_outcome" type="string">
+  Result of that check: `no_deposit_found`, `deposit_found_refunded`, `deposit_found_refund_failed`, or `deposit_found_no_refund_capability`. Omitted until checked.
+</ResponseField>
+<ResponseField name="metadata" type="object">
+  Deposit instructions and onramp state. Omitted until the collection has been created.
+  <Expandable title="metadata">
+    <ResponseField name="amount" type="string">Amount to pay in.</ResponseField>
+    <ResponseField name="payerAmount" type="string">Amount the payer sends, when it differs from `amount`. Omitted otherwise.</ResponseField>
+    <ResponseField name="depositAmount" type="string">Amount expected to arrive, when it differs from `amount`. Omitted otherwise.</ResponseField>
+    <ResponseField name="currency" type="string">Currency to pay in.</ResponseField>
+    <ResponseField name="expiresAt" type="string">When the deposit instructions expire. Omitted when they do not.</ResponseField>
+    <ResponseField name="deliveryAddress" type="string">Wallet address the converted funds are delivered to. Omitted when not applicable.</ResponseField>
+    <ResponseField name="deliveryAmountAtomic" type="string">Delivered amount, as an integer string of the token's smallest unit. Omitted when not applicable.</ResponseField>
+    <ResponseField name="paymentUrl" type="string">Hosted payment page. Omitted when the route uses bank details instead.</ResponseField>
+    <ResponseField name="bankName" type="string">Bank to pay into.</ResponseField>
+    <ResponseField name="accountNumber" type="string">Account to pay into.</ResponseField>
+    <ResponseField name="routingNumber" type="string">Omitted when not applicable.</ResponseField>
+    <ResponseField name="iban" type="string">Omitted when not applicable.</ResponseField>
+    <ResponseField name="accountName" type="string">Omitted when not applicable.</ResponseField>
+    <ResponseField name="swiftCode" type="string">Omitted when not applicable.</ResponseField>
+    <ResponseField name="pixKey" type="string">Brazil. Omitted when not applicable.</ResponseField>
+    <ResponseField name="ispb" type="string">Brazil. Omitted when not applicable.</ResponseField>
+    <ResponseField name="beneficiaryName" type="string">Omitted when not applicable.</ResponseField>
+    <ResponseField name="beneficiaryAddress" type="string">Omitted when not applicable.</ResponseField>
+    <ResponseField name="bankAddress" type="string">Omitted when not applicable.</ResponseField>
+    <ResponseField name="depositMessage" type="string">Reference to include with the transfer. Omitted when not required.</ResponseField>
+    <ResponseField name="onrampInstructions" type="object[]">
+      Per-rail deposit instructions. Omitted when not provided.
+      <Expandable title="onrampInstructions[]">
+        <ResponseField name="rail" type="string">Rail to send on, for example `sepa`.</ResponseField>
+        <ResponseField name="railLabel" type="string">Display name of the rail. Omitted when unknown.</ResponseField>
+        <ResponseField name="doNotUse" type="string[]">Rails that will not reach this account. Omitted when empty.</ResponseField>
+        <ResponseField name="asset" type="string">Currency to send.</ResponseField>
+        <ResponseField name="bank" type="object">
+          `bankName`, `accountNumber`, and when applicable `iban`, `routingCode`, `bic`, `bankAddress`, `beneficiaryName`, `beneficiaryAddress`, `depositMessage`.
+        </ResponseField>
+        <ResponseField name="accountOwner" type="object">
+          `name`, and `address` with `city`, `postalCode`, `country`, and when set `state`, `streetLine1`, `streetLine2`.
+        </ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="requiresManualContinuation" type="boolean">`true` when the payer must complete a step on the route's own page. Omitted otherwise.</ResponseField>
+    <ResponseField name="paymentsData" type="object">
+      Alternative payment instructions. Omitted when not provided.
+      <Expandable title="paymentsData">
+        <ResponseField name="type" type="string">Instruction type.</ResponseField>
+        <ResponseField name="qrCode" type="string">QR payload. Omitted when not applicable.</ResponseField>
+        <ResponseField name="vaCode" type="string">Virtual account number. Omitted when not applicable.</ResponseField>
+        <ResponseField name="form" type="string">Omitted when not applicable.</ResponseField>
+        <ResponseField name="accountDetails" type="object">
+          Bank account to pay: `name`, `iban`, `accountNumber`, `reference`, `bankName`, `beneficiaryType`, `country`, each when set. Include `reference` with the transfer.
+        </ResponseField>
+        <ResponseField name="extra" type="object">`vaBank` and `vaType`, when set.</ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="cryptoTicker" type="string">Token the collection converts into. Omitted when not applicable.</ResponseField>
+    <ResponseField name="status" type="string">Onramp leg status. Omitted until known.</ResponseField>
+    <ResponseField name="settledAt" type="string">ISO 8601. When the pay-in settled. Omitted until then.</ResponseField>
+  </Expandable>
+</ResponseField>
+<ResponseField name="created_at" type="string">ISO 8601.</ResponseField>
+<ResponseField name="updated_at" type="string">ISO 8601.</ResponseField>
+
+### Errors
+
+| Status | `code` | When |
+|---|---|---|
+| `400` | `INVALID_PARAMETER` | `batchId` is not a UUID. |
+| `400` | `ENTITY_REQUIRED` | The key's owner belongs to more than one business and `X-Teel-Entity-Id` is missing. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `payouts:read`. |
+| `404` | `NOT_FOUND` | No collection exists for this batch yet, or the batch is not yours. Both answer the same. |
+| `429` | `RATE_LIMITED` | Per-key rate limit exhausted. Wait for `Retry-After`. |
+
+<ResponseExample>
+```json 200
+{
+  "id": "e1f2a3b4-c5d6-4e7f-8a9b-0c1d2e3f4a5b",
+  "batch_id": "c4d5e6f7-0a1b-4c2d-8e3f-4a5b6c7d8e9f",
+  "business_id": "0d6c5f0e-3f43-4a0e-8d8f-2b7f0f1c9a11",
+  "total_source_amount": 25000,
+  "source_currency": "EUR",
+  "status": "pending",
+  "metadata": {
+    "amount": "25000.00",
+    "currency": "EUR",
+    "bankName": "Example Bank",
+    "accountNumber": "",
+    "iban": "DE89370400440532013000",
+    "accountName": "Teel Collections",
+    "depositMessage": "TEEL-8F3K2Q"
+  },
+  "created_at": "2026-03-01T10:00:00Z",
+  "updated_at": "2026-03-01T10:00:00Z"
+}
+```
+</ResponseExample>

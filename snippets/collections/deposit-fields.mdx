@@ -1,0 +1,11 @@
+<ResponseField name="id" type="string" required>Deposit UUID.</ResponseField>
+<ResponseField name="virtualAccountId" type="string" required>UUID of the [receiving account](/api-reference/collections/virtual-accounts/list) the money arrived in.</ResponseField>
+<ResponseField name="amount" type="string" required>What arrived, in `currency`, as a decimal string.</ResponseField>
+<ResponseField name="currency" type="string" required>ISO 4217, for example `USD`.</ResponseField>
+<ResponseField name="creditedAmount" type="string">On an `auto_onramp` account, the stablecoin the deposit was converted into, as a decimal string. Present once the deposit is credited.</ResponseField>
+<ResponseField name="creditedAsset" type="string">The asset `creditedAmount` is in, for example `USDC_POLYGON`.</ResponseField>
+<ResponseField name="status" type="string" required>`detected`, `verifying`, `credited` or `failed`. See [Deposit status](/concepts#deposit-status).</ResponseField>
+<ResponseField name="senderName" type="string">The payer, as their bank named them.</ResponseField>
+<ResponseField name="senderReference" type="string">The payment's own trace reference (IMAD, UETR or trace number), when the bank sent one.</ResponseField>
+<ResponseField name="createdAt" type="string" required>ISO 8601.</ResponseField>
+<ResponseField name="updatedAt" type="string" required>ISO 8601.</ResponseField>

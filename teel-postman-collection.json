@@ -128,6 +128,52 @@
           "description": "",
           "item": [
             {
+              "event": [],
+              "name": "Currency and rail coverage",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "auth": null,
+                "body": {},
+                "description": {
+                  "content": "Unauthenticated. The fiat currencies Teel supports, with the direction\neach is available in, its amount bounds and its payout rails, plus the\nstablecoin tokens and the networks they settle on. Derived from live\nplatform configuration, so a new corridor appears here without an API\nchange.\n",
+                  "type": "text/plain"
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "{{accept}}"
+                  }
+                ],
+                "method": "GET",
+                "name": "Currency and rail coverage",
+                "url": {
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "config",
+                    "coverage"
+                  ],
+                  "query": [],
+                  "variable": []
+                }
+              }
+            }
+          ],
+          "name": "coverage"
+        }
+      ],
+      "name": "config"
+    },
+    {
+      "description": "",
+      "item": [
+        {
+          "description": "",
+          "item": [
+            {
               "description": "",
               "item": [
                 {
@@ -370,6 +416,15 @@
                         },
                         {
                           "description": {
+                            "content": "A rail of the payout currency, as a route's `payoutRail` or a\n`payoutRailOptions` entry's `rail` (PHP: `instapay`, `pesonet`; USD:\n`ach`, `wire`, `fednow`). Only routes that pay this rail are returned;\nsend none to get every rail. Direct bank quotes accept `ach`,\n`fedwire` and `fednow`. Any other value is `400 INVALID_PAYOUT_RAIL`.\nWhen no route pays it, an exact-output read answers `422\nPAYOUT_RAIL_UNAVAILABLE` and a fiat-to-fiat browse an empty `data`\nwith `noRouteReason` `payout_rail_unavailable`.\n",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "payoutRail",
+                          "value": "{{payoutrail}}"
+                        },
+                        {
+                          "description": {
                             "content": "When true, skip indicative fallbacks; return only quotes the provider will honour at execute time.",
                             "type": "text/plain"
                           },
@@ -397,7 +452,10 @@
                   "request": {
                     "auth": null,
                     "body": {},
-                    "description": {},
+                    "description": {
+                      "content": "With `targetAmount` (exact output) it returns every quote, one per\nprovider and payout rail (each naming its `payoutRail`), cheapest\nfirst by `fromAmount`, each delivering exactly `targetAmount`.\n",
+                      "type": "text/plain"
+                    },
                     "header": [
                       {
                         "key": "Accept",
@@ -454,12 +512,39 @@
                         },
                         {
                           "description": {
+                            "content": "A rail of the payout currency, as a route's `payoutRail` or a\n`payoutRailOptions` entry's `rail` (PHP: `instapay`, `pesonet`; USD:\n`ach`, `wire`, `fednow`). Only routes that pay this rail are returned;\nsend none to get every rail. Direct bank quotes accept `ach`,\n`fedwire` and `fednow`. Any other value is `400 INVALID_PAYOUT_RAIL`.\nWhen no route pays it, an exact-output read answers `422\nPAYOUT_RAIL_UNAVAILABLE` and a fiat-to-fiat browse an empty `data`\nwith `noRouteReason` `payout_rail_unavailable`.\n",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "payoutRail",
+                          "value": "{{payoutrail}}"
+                        },
+                        {
+                          "description": {
                             "content": "When true, skip indicative fallbacks; return only quotes the provider will honour at execute time.",
                             "type": "text/plain"
                           },
                           "disabled": false,
                           "key": "firm",
                           "value": "{{firm}}"
+                        },
+                        {
+                          "description": {
+                            "content": "The amount the recipient receives; makes the read exact output.",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "targetAmount",
+                          "value": "{{targetamount}}"
+                        },
+                        {
+                          "description": {
+                            "content": "With `targetAmount`, the stablecoin the quotes are priced on for a\nsource that is not a wallet; a wallet source is always priced on\nits own asset. An unknown ticker is `400`.\n",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "cryptoTicker",
+                          "value": "{{cryptoticker}}"
                         }
                       ],
                       "variable": []
@@ -538,6 +623,15 @@
                           "disabled": false,
                           "key": "recipientId",
                           "value": "{{recipientid}}"
+                        },
+                        {
+                          "description": {
+                            "content": "A rail of the payout currency, as a route's `payoutRail` or a\n`payoutRailOptions` entry's `rail` (PHP: `instapay`, `pesonet`; USD:\n`ach`, `wire`, `fednow`). Only routes that pay this rail are returned;\nsend none to get every rail. Direct bank quotes accept `ach`,\n`fedwire` and `fednow`. Any other value is `400 INVALID_PAYOUT_RAIL`.\nWhen no route pays it, an exact-output read answers `422\nPAYOUT_RAIL_UNAVAILABLE` and a fiat-to-fiat browse an empty `data`\nwith `noRouteReason` `payout_rail_unavailable`.\n",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "payoutRail",
+                          "value": "{{payoutrail}}"
                         },
                         {
                           "description": {
@@ -646,6 +740,24 @@
                           "disabled": false,
                           "key": "firm",
                           "value": "{{firm}}"
+                        },
+                        {
+                          "description": {
+                            "content": "Held-balance sources only (a `userPaymentMethodId` backed by a\nreceiving account). Keeps only candidates funded on this rail\n(`internal` when the executing provider hosts the balance). Absent,\nevery funding rail competes. A rail the source cannot fund on is\nrefused with 422 `FUNDING_RAIL_UNSUPPORTED`, never widened.\n",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "fundingRail",
+                          "value": "{{fundingrail}}"
+                        },
+                        {
+                          "description": {
+                            "content": "A rail of the payout currency, as a route's `payoutRail` or a\n`payoutRailOptions` entry's `rail` (PHP: `instapay`, `pesonet`; USD:\n`ach`, `wire`, `fednow`). Only routes that pay this rail are returned;\nsend none to get every rail. Direct bank quotes accept `ach`,\n`fedwire` and `fednow`. Any other value is `400 INVALID_PAYOUT_RAIL`.\nWhen no route pays it, an exact-output read answers `422\nPAYOUT_RAIL_UNAVAILABLE` and a fiat-to-fiat browse an empty `data`\nwith `noRouteReason` `payout_rail_unavailable`.\n",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "payoutRail",
+                          "value": "{{payoutrail}}"
                         }
                       ],
                       "variable": []
@@ -739,6 +851,33 @@
                           "disabled": false,
                           "key": "firm",
                           "value": "{{firm}}"
+                        },
+                        {
+                          "description": {
+                            "content": "Held-balance sources only (a `userPaymentMethodId` backed by a\nreceiving account). Keeps only candidates funded on this rail\n(`internal` when the executing provider hosts the balance). Absent,\nevery funding rail competes. A rail the source cannot fund on is\nrefused with 422 `FUNDING_RAIL_UNSUPPORTED`, never widened.\n",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "fundingRail",
+                          "value": "{{fundingrail}}"
+                        },
+                        {
+                          "description": {
+                            "content": "A rail of the payout currency, as a route's `payoutRail` or a\n`payoutRailOptions` entry's `rail` (PHP: `instapay`, `pesonet`; USD:\n`ach`, `wire`, `fednow`). Only routes that pay this rail are returned;\nsend none to get every rail. Direct bank quotes accept `ach`,\n`fedwire` and `fednow`. Any other value is `400 INVALID_PAYOUT_RAIL`.\nWhen no route pays it, an exact-output read answers `422\nPAYOUT_RAIL_UNAVAILABLE` and a fiat-to-fiat browse an empty `data`\nwith `noRouteReason` `payout_rail_unavailable`.\n",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "payoutRail",
+                          "value": "{{payoutrail}}"
+                        },
+                        {
+                          "description": {
+                            "content": "Absent, `amount` is the deposit and a held balance's `fundingFee`\nis charged on top of it. `spend`: `amount` is the whole cost\nleaving the source \u2014 the deposit plus `fundingFee` \u2014 a decimal\nwithin the source currency's precision, and every enabled route\ncarries `spendAmount`, equal to `amount`. A route whose funding fee\nthe spend does not cover is returned with `enabled: false` and\n`disabledReason` `spend_below_funding_fee`; one whose funding fee\ncould not be priced, with `funding_fee_unavailable`; one that\ncannot be quoted at the deposit, with that reason (e.g.\n`amount_below_min`). `delivery`, an unknown\nvalue, or `spend` together with `targetAmount` is refused 400\n`AMOUNT_IS_INVALID`; a spend `amount` that is not such a decimal is\nrefused 400 `INVALID_PARAMETER`.\n (This can only be one of spend)",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "amountIs",
+                          "value": "{{amountis}}"
                         }
                       ],
                       "variable": []
@@ -898,6 +1037,15 @@
                           "disabled": false,
                           "key": "firm",
                           "value": "{{firm}}"
+                        },
+                        {
+                          "description": {
+                            "content": "Held-balance sources only (a `userPaymentMethodId` backed by a\nreceiving account). Keeps only candidates funded on this rail\n(`internal` when the executing provider hosts the balance). Absent,\nevery funding rail competes. A rail the source cannot fund on is\nrefused with 422 `FUNDING_RAIL_UNSUPPORTED`, never widened.\n",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "fundingRail",
+                          "value": "{{fundingrail}}"
                         }
                       ],
                       "variable": []
@@ -982,6 +1130,15 @@
                           "disabled": false,
                           "key": "firm",
                           "value": "{{firm}}"
+                        },
+                        {
+                          "description": {
+                            "content": "Held-balance sources only (a `userPaymentMethodId` backed by a\nreceiving account). Keeps only candidates funded on this rail\n(`internal` when the executing provider hosts the balance). Absent,\nevery funding rail competes. A rail the source cannot fund on is\nrefused with 422 `FUNDING_RAIL_UNSUPPORTED`, never widened.\n",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "fundingRail",
+                          "value": "{{fundingrail}}"
                         }
                       ],
                       "variable": []
@@ -1080,66 +1237,6 @@
             }
           ],
           "name": "fiat-to-stablecoin"
-        },
-        {
-          "description": "",
-          "item": [
-            {
-              "description": "",
-              "item": [
-                {
-                  "event": [],
-                  "name": "Lock quotes for a batch payout",
-                  "protocolProfileBehavior": {
-                    "disableBodyPruning": true
-                  },
-                  "request": {
-                    "auth": null,
-                    "body": {
-                      "mode": "raw",
-                      "options": {
-                        "raw": {
-                          "headerFamily": "json",
-                          "language": "json"
-                        }
-                      },
-                      "raw": "{}"
-                    },
-                    "description": {
-                      "content": "Locks rates for each row of a batch payout. Scope `quotes:read`.\nReturns a per-row envelope keyed by `idx` so partial failures degrade\ngracefully \u2014 retry the `retryable:true` rows individually before\nfiring `POST /rfq/execute-batch`.\n\nThe body is forwarded verbatim to the quote-engine; the proxy only\nresolves any opaque `route_protocol` tokens partners send back from a\nprior `/quotes/*` response. Authorization of nested IDs (recipient,\npayment-method) happens on quote-engine's side.\n",
-                      "type": "text/plain"
-                    },
-                    "header": [
-                      {
-                        "key": "Content-Type",
-                        "value": "{{contentType}}"
-                      },
-                      {
-                        "key": "Accept",
-                        "value": "{{accept}}"
-                      }
-                    ],
-                    "method": "POST",
-                    "name": "Lock quotes for a batch payout",
-                    "url": {
-                      "host": [
-                        "{{baseUrl}}"
-                      ],
-                      "path": [
-                        "quotes",
-                        "batch",
-                        "lock"
-                      ],
-                      "query": [],
-                      "variable": []
-                    }
-                  }
-                }
-              ],
-              "name": "lock"
-            }
-          ],
-          "name": "batch"
         }
       ],
       "name": "quotes"
@@ -1166,10 +1263,10 @@
                       "language": "json"
                     }
                   },
-                  "raw": "{\n  \"fromCurrency\": \"<string>\",\n  \"toCurrency\": \"<string>\",\n  \"amount\": \"<number>\",\n  \"recipientId\": \"<uuid>\",\n  \"targetAmount\": \"<number>\",\n  \"recipientPaymentMethodId\": \"<uuid>\",\n  \"userPaymentMethodId\": \"<uuid>\",\n  \"walletAddress\": \"<string>\",\n  \"paymentPurpose\": \"<string>\",\n  \"reference\": \"<string>\",\n  \"routeProtocol\": \"<string>\",\n  \"supportingDocumentKey\": \"<string>\",\n  \"flowType\": \"<string>\"\n}"
+                  "raw": "{\n  \"fromCurrency\": \"<string>\",\n  \"toCurrency\": \"<string>\",\n  \"amount\": \"<number>\",\n  \"recipientId\": \"<uuid>\",\n  \"targetAmount\": \"<number>\",\n  \"destinationOwnership\": \"<enum>\",\n  \"recipientPaymentMethodId\": \"<uuid>\",\n  \"userPaymentMethodId\": \"<uuid>\",\n  \"walletAddress\": \"<string>\",\n  \"paymentPurpose\": \"<string>\",\n  \"reference\": \"<string>\",\n  \"routeProtocol\": \"<string>\",\n  \"bridgingAsset\": \"<string>\",\n  \"supportingDocumentFileId\": \"<uuid>\",\n  \"fundingRail\": \"<string>\",\n  \"executionKind\": \"<enum>\",\n  \"payoutRail\": \"<string>\",\n  \"amountMode\": \"<enum>\",\n  \"flowType\": \"<string>\"\n}"
                 },
                 "description": {
-                  "content": "Lock-and-execute: this single call generates a quote from\n`(fromCurrency, toCurrency, amount, recipientId)`, locks it, and\nstarts the payout. There is no separate `/quotes/*` \u2192 `/rfq/execute`\ntwo-step. Pass `routeProtocol` from a `/quotes/*` response if you\nwant to pin a specific route token; otherwise the engine selects\nthe best route at lock time.\n\nScope: `payouts:write`. Idempotent via `Idempotency-Key`. The\nresponse is wrapped in `{success, data}` \u2014 the partner-visible\npayload sits on `data`.\n",
+                  "content": "Lock-and-execute: this single call generates a quote from\n`(fromCurrency, toCurrency, amount, recipientId)`, locks it, and\nstarts the payout. There is no separate `/quotes/*` \u2192 `/rfq/execute`\ntwo-step. Pass `routeProtocol` from a `/quotes/*` response if you\nwant to pin a specific route token; otherwise the engine selects\nthe best route at lock time.\n\nScope: `payouts:write`. Idempotent via `Idempotency-Key`. The\nresponse is wrapped in `{success, data}` \u2014 the partner-visible\npayload sits on `data`.\n\nA business whose payouts need approval is refused with 403\n`APPROVAL_REQUIRED`: its payouts are created as drafts and approved\nin the dashboard.\n",
                   "type": "text/plain"
                 },
                 "header": [
@@ -1228,10 +1325,10 @@
                       "language": "json"
                     }
                   },
-                  "raw": "{\n  \"fromCurrency\": \"<string>\",\n  \"onrampProtocol\": \"<string>\",\n  \"userPaymentMethodId\": \"<uuid>\",\n  \"items\": [\n    {\n      \"toCurrency\": \"<string>\",\n      \"targetAmount\": \"<number>\",\n      \"recipientId\": \"<uuid>\",\n      \"amount\": \"<number>\",\n      \"recipientPaymentMethodId\": \"<uuid>\",\n      \"offrampProvider\": \"<string>\",\n      \"paymentPurpose\": \"<string>\",\n      \"reference\": \"<string>\",\n      \"routeProtocol\": \"<string>\",\n      \"idempotency_key\": \"<string>\"\n    }\n  ],\n  \"walletAddresses\": {}\n}"
+                  "raw": "{\n  \"fromCurrency\": \"<string>\",\n  \"onrampProtocol\": \"<string>\",\n  \"userPaymentMethodId\": \"<uuid>\",\n  \"items\": [\n    {\n      \"toCurrency\": \"<string>\",\n      \"targetAmount\": \"<number>\",\n      \"recipientId\": \"<uuid>\",\n      \"amount\": \"<number>\",\n      \"recipientPaymentMethodId\": \"<uuid>\",\n      \"offrampProvider\": \"<string>\",\n      \"paymentPurpose\": \"<string>\",\n      \"reference\": \"<string>\",\n      \"routeProtocol\": \"<string>\",\n      \"idempotency_key\": \"<string>\",\n      \"supportingDocumentFileId\": \"<uuid>\"\n    }\n  ],\n  \"railPreference\": \"<enum>\",\n  \"walletAddresses\": {}\n}"
                 },
                 "description": {
-                  "content": "Same lock-and-execute model as `POST /rfq/execute`, but for N\npayouts that share a source `fromCurrency` and (optionally) a\nsingle funding `userPaymentMethodId`. The per-row envelope is\nkeyed by `idx` so partial failure is graceful \u2014 walk\n`data.rows[]`, retry the `retryable:true` failures with the\nsame row-level `idempotency_key`.\n\nScope: `payouts:write`. Idempotent via `Idempotency-Key` for the\nenvelope; per-row dedup uses `items[].idempotency_key`.\n",
+                  "content": "Accepts a batch of payouts and answers **`202`** immediately. Nothing is\npriced yet: locking each row's quote is provider I/O bounded by\nper-provider rate limits, so it cannot fit inside a request and runs\nafter the response.\n\n**Every row in this response is `pending` and carries no rate.** Poll\n`GET /jobs/{jobId}` with the returned `batchId` for the locked rates and\neach row's verdict, then `GET /payouts/batch/{batchId}/rows` for each\nrecipient's offramp-order result.\n\n`batchId` doubles as the job id. `collectionId` is empty here \u2014 the server\ncreates the collection after this response \u2014 and arrives on the job poll.\n\nA business whose payouts need approval is refused with 403\n`APPROVAL_REQUIRED`, as on `/rfq/execute`.\n\nA batch with a recipient the route's payout partner has not cleared\nfails as a whole: `GET /jobs/{jobId}` answers `failureCode`\n`RECIPIENT_VERIFICATION_PENDING` or `RECIPIENT_VERIFICATION_FAILED`,\nand `error` names the recipient.\n\n**From the collections wallet** (`userPaymentMethodId` is the\nbusiness's collections wallet): each row is sent as its own\nstablecoin-to-fiat payout from the wallet, one row at a time, and\ncarries the batch's `batchId`. There is no collection and no\n`GET /payouts/batch/{batchId}/rows` result: `GET /jobs/{jobId}` is the\nwhole answer, each row `accepted` with its `transactionId` or `failed`\nwith its `errorCode`. Every row needs `supportingDocumentFileId` (else\n`422 SUPPORTING_DOCUMENT_REQUIRED`) and `amount`, the source its own\nquote showed (else `400 INVALID_PARAMETER`); a row that now costs more\nis sent at the price now when that is within the business's rate-move\ntolerance, and otherwise fails `rate_moved`. A row the wallet cannot cover stops the batch:\nit and every later row fail `collections_wallet_insufficient_balance`.\n`onrampProtocol` is required but unused. A collections wallet held by\nthe business's owners is refused with `422\nOWNER_HELD_WALLET_BATCH_UNSUPPORTED` before anything is created: a\nteammate signs each send from it, so send that batch from the dashboard.\n\nScope: `payouts:write`. Send `Idempotency-Key` to make retries safe; a\nreplay returns this same `202`.\n",
                   "type": "text/plain"
                 },
                 "header": [
@@ -1276,7 +1373,7 @@
           "item": [
             {
               "event": [],
-              "name": "Confirm a stablecoin-to-fiat deposit (manual fallback)",
+              "name": "Start a stablecoin-to-fiat payout from a specific transfer (optional)",
               "protocolProfileBehavior": {
                 "disableBodyPruning": true
               },
@@ -1293,7 +1390,7 @@
                   "raw": "{\n  \"quoteId\": \"<uuid>\",\n  \"txHash\": \"<string>\"\n}"
                 },
                 "description": {
-                  "content": "For stablecoin-to-fiat payouts, your wallet sends the source\nstablecoin to the `escrowAddress` returned by `/rfq/execute`.\nThe engine auto-detects the deposit via on-chain log polling.\nIf detection misses your transfer \u2014 slow chain, late tx, dropped\nlog \u2014 call this endpoint with the tx hash to register the\ndeposit manually. The offramp leg proceeds as soon as the on-chain\namount and destination are verified.\n\nScope: `payouts:write`. Idempotent: re-submitting the same\n`quoteId` + `txHash` after the deposit is already confirmed\nreturns `{success: true}` again.\n",
+                  "content": "For stablecoin-to-fiat payouts, `escrowAddress` from\n`/rfq/execute` is your business's payout wallet; no escrow\ncontract is involved. Teel pays the payout out of that wallet\nonce it holds `depositAmountAtomic` of the token beyond what\nother in-flight payouts need, and checks again until it does.\nYou don't need to call this endpoint.\n\nTo start the payout on one transfer instead, call it with the\nhash of a transfer into that wallet. The offramp leg proceeds\nonce the on-chain amount, token, chain and destination are\nverified.\n\nScope: `payouts:write`. Idempotent: re-submitting the same\n`quoteId` + `txHash` after the deposit is already confirmed\nreturns `{success: true}` again.\n",
                   "type": "text/plain"
                 },
                 "header": [
@@ -1316,7 +1413,7 @@
                   }
                 ],
                 "method": "POST",
-                "name": "Confirm a stablecoin-to-fiat deposit (manual fallback)",
+                "name": "Start a stablecoin-to-fiat payout from a specific transfer (optional)",
                 "url": {
                   "host": [
                     "{{baseUrl}}"
@@ -1349,7 +1446,7 @@
                     "auth": null,
                     "body": {},
                     "description": {
-                      "content": "Lookup by the `quoteId` returned from `/rfq/execute` (or any\nsuccessful row of `/rfq/execute-batch`). Response is wrapped in\n`{success, data}`.\n\nScope: `payouts:read`. For push-based updates use the webhook\nevents `payout.status.updated` / `payout.delivered` instead of\npolling.\n",
+                      "content": "Lookup by the `quoteId` returned from `/rfq/execute` (or any\nsuccessful row of `/rfq/execute-batch`). Response is wrapped in\n`{success, data}`.\n\nScope: `payouts:read`. For push-based updates subscribe to the\n`payout.status.updated` webhook instead of polling; a delivered\npayout arrives as `status: completed`, `step: delivered`.\n",
                       "type": "text/plain"
                     },
                     "header": [
@@ -1393,6 +1490,63 @@
         }
       ],
       "name": "rfq"
+    },
+    {
+      "description": "",
+      "item": [
+        {
+          "description": "",
+          "item": [
+            {
+              "event": [],
+              "name": "Get the progress of work accepted on an earlier request",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "auth": null,
+                "body": {},
+                "description": {
+                  "content": "Some work is accepted on a request and finished after it, because it\ncannot fit inside a request at all. This reports where it got to.\n\nToday the only `kind` is `batch_lock`: `POST /rfq/execute-batch` answers\n`202` with every row `pending` and no rates, because locking each row's\nquote is provider I/O that does not fit a request. Poll this immediately\nafter submitting a batch.\n\n**Poll on `terminal`, not on `phase`.** `phase` is specific to the\n`kind` and its vocabulary may grow; `terminal` is true exactly when no\nfurther progress will be made, whether the work succeeded or failed. A\nclient that reads `terminal` keeps working when new kinds are added.\n\n`progress` is the kind's own payload. For `batch_lock` it is\n`{rows: [...], collectionId?}` \u2014 one entry per item of the original\nrequest, in that order, carrying `idx` so it aligns with your `items[]`\neven when some rows fail. A row is `pending` (not yet priced), `accepted`\n(priced, with `toAmount` and `effectiveRate`) or `failed` (with a stable\n`errorCode`). `pending` is a real state, not a missing value \u2014 it is what\ndistinguishes a row still being worked from one that was refused.\n\nFor a batch's offramp-order outcome once the batch exists, use\n`GET /payouts/batch/{batchId}/rows`. That endpoint covers the next half\nof a batch's life and answers `404` while this one still reports\n`batch_lock`.\n\nScope: `payouts:read`.\n",
+                  "type": "text/plain"
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "{{accept}}"
+                  }
+                ],
+                "method": "GET",
+                "name": "Get the progress of work accepted on an earlier request",
+                "url": {
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "jobs",
+                    ":jobId"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "description": {
+                        "content": "(Required) ",
+                        "type": "text/plain"
+                      },
+                      "disabled": false,
+                      "key": "jobId",
+                      "type": "any",
+                      "value": "<uuid>"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "name": "{jobId}"
+        }
+      ],
+      "name": "jobs"
     },
     {
       "description": "",
@@ -1462,7 +1616,7 @@
                   "language": "json"
                 }
               },
-              "raw": "{\n  \"email\": \"<email>\",\n  \"country\": \"<string>\",\n  \"currency\": \"<string>\",\n  \"isBusiness\": \"<boolean>\",\n  \"businessName\": \"<string>\",\n  \"transferType\": \"<enum>\",\n  \"address\": {},\n  \"paymentMethods\": [\n    {\n      \"currency\": \"<string>\",\n      \"type\": \"<enum>\",\n      \"rail\": \"<string>\",\n      \"bankName\": \"<string>\",\n      \"accountNumber\": \"<string>\",\n      \"walletAddress\": \"<string>\",\n      \"walletNetwork\": \"<string>\"\n    },\n    {\n      \"currency\": \"<string>\",\n      \"type\": \"<enum>\",\n      \"rail\": \"<string>\",\n      \"bankName\": \"<string>\",\n      \"accountNumber\": \"<string>\",\n      \"walletAddress\": \"<string>\",\n      \"walletNetwork\": \"<string>\"\n    }\n  ]\n}"
+              "raw": "{\n  \"email\": \"<email>\",\n  \"country\": \"<string>\",\n  \"isBusiness\": \"<boolean>\",\n  \"businessName\": \"<string>\",\n  \"currency\": \"<string>\",\n  \"transferType\": \"<enum>\",\n  \"address\": {},\n  \"identificationNumber\": \"<string>\",\n  \"paymentMethods\": [\n    {\n      \"currency\": \"<string>\",\n      \"type\": \"<enum>\",\n      \"rail\": \"<string>\",\n      \"bankName\": \"<string>\",\n      \"accountNumber\": \"<string>\",\n      \"walletAddress\": \"<string>\",\n      \"accountHolderName\": \"<string>\",\n      \"accountHolderFirstName\": \"<string>\",\n      \"accountHolderLastName\": \"<string>\",\n      \"accountHolderPhone\": \"<string>\",\n      \"accountHolderCountry\": \"<string>\"\n    },\n    {\n      \"currency\": \"<string>\",\n      \"type\": \"<enum>\",\n      \"rail\": \"<string>\",\n      \"bankName\": \"<string>\",\n      \"accountNumber\": \"<string>\",\n      \"walletAddress\": \"<string>\",\n      \"accountHolderName\": \"<string>\",\n      \"accountHolderFirstName\": \"<string>\",\n      \"accountHolderLastName\": \"<string>\",\n      \"accountHolderPhone\": \"<string>\",\n      \"accountHolderCountry\": \"<string>\"\n    }\n  ]\n}"
             },
             "description": {
               "content": "Scope `recipients:write`. Idempotent via `Idempotency-Key`.",
@@ -1520,7 +1674,7 @@
                       "language": "json"
                     }
                   },
-                  "raw": "{\n  \"recipients\": [\n    {\n      \"email\": \"<email>\",\n      \"country\": \"<string>\",\n      \"currency\": \"<string>\",\n      \"isBusiness\": \"<boolean>\",\n      \"businessName\": \"<string>\",\n      \"transferType\": \"<enum>\",\n      \"address\": {},\n      \"paymentMethods\": [\n        {\n          \"currency\": \"<string>\",\n          \"type\": \"<enum>\",\n          \"rail\": \"<string>\",\n          \"bankName\": \"<string>\",\n          \"accountNumber\": \"<string>\",\n          \"walletAddress\": \"<string>\",\n          \"walletNetwork\": \"<string>\"\n        },\n        {\n          \"currency\": \"<string>\",\n          \"type\": \"<enum>\",\n          \"rail\": \"<string>\",\n          \"bankName\": \"<string>\",\n          \"accountNumber\": \"<string>\",\n          \"walletAddress\": \"<string>\",\n          \"walletNetwork\": \"<string>\"\n        }\n      ]\n    },\n    {\n      \"email\": \"<email>\",\n      \"country\": \"<string>\",\n      \"currency\": \"<string>\",\n      \"isBusiness\": \"<boolean>\",\n      \"businessName\": \"<string>\",\n      \"transferType\": \"<enum>\",\n      \"address\": {},\n      \"paymentMethods\": [\n        {\n          \"currency\": \"<string>\",\n          \"type\": \"<enum>\",\n          \"rail\": \"<string>\",\n          \"bankName\": \"<string>\",\n          \"accountNumber\": \"<string>\",\n          \"walletAddress\": \"<string>\",\n          \"walletNetwork\": \"<string>\"\n        },\n        {\n          \"currency\": \"<string>\",\n          \"type\": \"<enum>\",\n          \"rail\": \"<string>\",\n          \"bankName\": \"<string>\",\n          \"accountNumber\": \"<string>\",\n          \"walletAddress\": \"<string>\",\n          \"walletNetwork\": \"<string>\"\n        }\n      ]\n    }\n  ]\n}"
+                  "raw": "{\n  \"recipients\": [\n    {\n      \"email\": \"<email>\",\n      \"country\": \"<string>\",\n      \"isBusiness\": \"<boolean>\",\n      \"businessName\": \"<string>\",\n      \"currency\": \"<string>\",\n      \"transferType\": \"<enum>\",\n      \"address\": {},\n      \"identificationNumber\": \"<string>\",\n      \"paymentMethods\": [\n        {\n          \"currency\": \"<string>\",\n          \"type\": \"<enum>\",\n          \"rail\": \"<string>\",\n          \"bankName\": \"<string>\",\n          \"accountNumber\": \"<string>\",\n          \"walletAddress\": \"<string>\",\n          \"accountHolderName\": \"<string>\",\n          \"accountHolderFirstName\": \"<string>\",\n          \"accountHolderLastName\": \"<string>\",\n          \"accountHolderPhone\": \"<string>\",\n          \"accountHolderCountry\": \"<string>\"\n        },\n        {\n          \"currency\": \"<string>\",\n          \"type\": \"<enum>\",\n          \"rail\": \"<string>\",\n          \"bankName\": \"<string>\",\n          \"accountNumber\": \"<string>\",\n          \"walletAddress\": \"<string>\",\n          \"accountHolderName\": \"<string>\",\n          \"accountHolderFirstName\": \"<string>\",\n          \"accountHolderLastName\": \"<string>\",\n          \"accountHolderPhone\": \"<string>\",\n          \"accountHolderCountry\": \"<string>\"\n        }\n      ]\n    },\n    {\n      \"email\": \"<email>\",\n      \"country\": \"<string>\",\n      \"isBusiness\": \"<boolean>\",\n      \"businessName\": \"<string>\",\n      \"currency\": \"<string>\",\n      \"transferType\": \"<enum>\",\n      \"address\": {},\n      \"identificationNumber\": \"<string>\",\n      \"paymentMethods\": [\n        {\n          \"currency\": \"<string>\",\n          \"type\": \"<enum>\",\n          \"rail\": \"<string>\",\n          \"bankName\": \"<string>\",\n          \"accountNumber\": \"<string>\",\n          \"walletAddress\": \"<string>\",\n          \"accountHolderName\": \"<string>\",\n          \"accountHolderFirstName\": \"<string>\",\n          \"accountHolderLastName\": \"<string>\",\n          \"accountHolderPhone\": \"<string>\",\n          \"accountHolderCountry\": \"<string>\"\n        },\n        {\n          \"currency\": \"<string>\",\n          \"type\": \"<enum>\",\n          \"rail\": \"<string>\",\n          \"bankName\": \"<string>\",\n          \"accountNumber\": \"<string>\",\n          \"walletAddress\": \"<string>\",\n          \"accountHolderName\": \"<string>\",\n          \"accountHolderFirstName\": \"<string>\",\n          \"accountHolderLastName\": \"<string>\",\n          \"accountHolderPhone\": \"<string>\",\n          \"accountHolderCountry\": \"<string>\"\n        }\n      ]\n    }\n  ]\n}"
                 },
                 "description": {
                   "content": "Scope `recipients:write`. Idempotent via `Idempotency-Key`.",
@@ -1624,10 +1778,10 @@
                       "language": "json"
                     }
                   },
-                  "raw": "{\n  \"email\": \"<email>\",\n  \"businessName\": \"<string>\",\n  \"currency\": \"<string>\",\n  \"transferType\": \"<enum>\",\n  \"address\": {}\n}"
+                  "raw": "{\n  \"email\": \"<email>\",\n  \"isBusiness\": \"<enum>\",\n  \"businessName\": \"<string>\",\n  \"firstName\": \"<string>\",\n  \"lastName\": \"<string>\",\n  \"country\": \"<string>\",\n  \"transferType\": \"<enum>\",\n  \"relationship\": \"<string>\",\n  \"phone\": \"<string>\",\n  \"dateOfBirth\": \"<date>\",\n  \"walletAddresses\": {},\n  \"externalReference\": {},\n  \"address\": {},\n  \"identificationNumber\": \"<string>\"\n}"
                 },
                 "description": {
-                  "content": "Scope `recipients:write`.",
+                  "content": "Scope `recipients:write`. Fields you omit are left as they are.\n\nThis updates Teel's record only. Providers the recipient is already\nregistered with keep the details they hold, except for\n`walletAddresses`, which also updates the recipient's wallet payment\nmethods and the providers that hold them. Payment methods cannot be\nsent here: add one with `POST /recipients/{id}/payment-methods`.\n",
                   "type": "text/plain"
                 },
                 "header": [
@@ -1713,6 +1867,52 @@
               "item": [
                 {
                   "event": [],
+                  "name": "List a recipient's payment methods",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "auth": null,
+                    "body": {},
+                    "description": {
+                      "content": "Scope `recipients:read`. The recipient's active payment methods,\nnewest first. Pass a payment method's `id` as the payout's recipient\npayment method.\n",
+                      "type": "text/plain"
+                    },
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "{{accept}}"
+                      }
+                    ],
+                    "method": "GET",
+                    "name": "List a recipient's payment methods",
+                    "url": {
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "recipients",
+                        ":id",
+                        "payment-methods"
+                      ],
+                      "query": [],
+                      "variable": [
+                        {
+                          "description": {
+                            "content": "(Required) ",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "id",
+                          "type": "any",
+                          "value": "<uuid>"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "event": [],
                   "name": "Add a payment method to a recipient",
                   "protocolProfileBehavior": {
                     "disableBodyPruning": true
@@ -1727,7 +1927,7 @@
                           "language": "json"
                         }
                       },
-                      "raw": "{\n  \"currency\": \"<string>\",\n  \"type\": \"<enum>\",\n  \"rail\": \"<string>\",\n  \"bankName\": \"<string>\",\n  \"accountNumber\": \"<string>\",\n  \"walletAddress\": \"<string>\",\n  \"walletNetwork\": \"<string>\"\n}"
+                      "raw": "{\n  \"currency\": \"<string>\",\n  \"type\": \"<enum>\",\n  \"rail\": \"<string>\",\n  \"bankName\": \"<string>\",\n  \"accountNumber\": \"<string>\",\n  \"walletAddress\": \"<string>\",\n  \"accountHolderName\": \"<string>\",\n  \"accountHolderFirstName\": \"<string>\",\n  \"accountHolderLastName\": \"<string>\",\n  \"accountHolderPhone\": \"<string>\",\n  \"accountHolderCountry\": \"<string>\"\n}"
                     },
                     "description": {
                       "content": "Scope `recipients:write`. Idempotent via `Idempotency-Key`.",
@@ -1792,6 +1992,12 @@
                         "auth": null,
                         "body": {},
                         "description": {},
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "{{accept}}"
+                          }
+                        ],
                         "method": "DELETE",
                         "name": "Remove a payment method from a recipient",
                         "url": {
@@ -1847,9 +2053,18 @@
                   },
                   "request": {
                     "auth": null,
-                    "body": {},
+                    "body": {
+                      "mode": "raw",
+                      "options": {
+                        "raw": {
+                          "headerFamily": "json",
+                          "language": "json"
+                        }
+                      },
+                      "raw": "{\n  \"email\": \"<email>\",\n  \"country\": \"<string>\",\n  \"isBusiness\": \"<boolean>\",\n  \"businessName\": \"<string>\",\n  \"currency\": \"<string>\",\n  \"transferType\": \"<enum>\",\n  \"address\": {},\n  \"identificationNumber\": \"<string>\",\n  \"paymentMethods\": [\n    {\n      \"currency\": \"<string>\",\n      \"type\": \"<enum>\",\n      \"rail\": \"<string>\",\n      \"bankName\": \"<string>\",\n      \"accountNumber\": \"<string>\",\n      \"walletAddress\": \"<string>\",\n      \"accountHolderName\": \"<string>\",\n      \"accountHolderFirstName\": \"<string>\",\n      \"accountHolderLastName\": \"<string>\",\n      \"accountHolderPhone\": \"<string>\",\n      \"accountHolderCountry\": \"<string>\"\n    },\n    {\n      \"currency\": \"<string>\",\n      \"type\": \"<enum>\",\n      \"rail\": \"<string>\",\n      \"bankName\": \"<string>\",\n      \"accountNumber\": \"<string>\",\n      \"walletAddress\": \"<string>\",\n      \"accountHolderName\": \"<string>\",\n      \"accountHolderFirstName\": \"<string>\",\n      \"accountHolderLastName\": \"<string>\",\n      \"accountHolderPhone\": \"<string>\",\n      \"accountHolderCountry\": \"<string>\"\n    }\n  ]\n}"
+                    },
                     "description": {
-                      "content": "Scope `recipients:write`. Idempotent via `Idempotency-Key`.",
+                      "content": "Scope `recipients:write`. Idempotent via `Idempotency-Key`.\n\nSend the recipient's full create payload again: it is validated as on\n`POST /recipients` and then provisioned for the recipient in the path.\n",
                       "type": "text/plain"
                     },
                     "header": [
@@ -1861,6 +2076,10 @@
                         "disabled": false,
                         "key": "Idempotency-Key",
                         "value": "{{idempotencyKey}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "{{contentType}}"
                       },
                       {
                         "key": "Accept",
@@ -1905,16 +2124,25 @@
           "item": [
             {
               "event": [],
-              "name": "Lookup recipient by external identifier",
+              "name": "Lookup recipients by account number",
               "protocolProfileBehavior": {
                 "disableBodyPruning": true
               },
               "request": {
                 "auth": null,
                 "body": {},
-                "description": {},
+                "description": {
+                  "content": "Scope `recipients:read`. Finds your recipients with an active payment\nmethod whose account number matches exactly, one row per matching\npayment method, newest recipient first. An empty array when nothing\nmatches. Your own business (`isSelf`) is never a match.\n",
+                  "type": "text/plain"
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "{{accept}}"
+                  }
+                ],
                 "method": "GET",
-                "name": "Lookup recipient by external identifier",
+                "name": "Lookup recipients by account number",
                 "url": {
                   "host": [
                     "{{baseUrl}}"
@@ -1926,12 +2154,12 @@
                   "query": [
                     {
                       "description": {
-                        "content": "",
+                        "content": "(Required) ",
                         "type": "text/plain"
                       },
                       "disabled": false,
-                      "key": "email",
-                      "value": "{{email}}"
+                      "key": "account_number",
+                      "value": "{{accountNumber}}"
                     }
                   ],
                   "variable": []
@@ -2030,16 +2258,7 @@
                   "query": [
                     {
                       "description": {
-                        "content": "Recipient relationship \u2014 `self` or `third_party`. (This can only be one of self,third_party)",
-                        "type": "text/plain"
-                      },
-                      "disabled": false,
-                      "key": "relationship",
-                      "value": "{{relationship}}"
-                    },
-                    {
-                      "description": {
-                        "content": "Optional ISO 3166-1 alpha-2 country code. When set, rails not valid for that country are filtered out.",
+                        "content": "**Ignored.** It used to prune the `rail` enum, keyed on the\nrecipient's country of residence \u2014 which dropped rails the\nrecipient's BANK genuinely supports, so the enum contradicted\n`bank.currencyCountryRailMap` in the same response. Sending it is\nharmless; the response is unchanged. Narrow by bank country with\n`bank.currencyCountryRailMap[currency][bankCountry]` instead.\n",
                         "type": "text/plain"
                       },
                       "disabled": false,
@@ -2122,7 +2341,7 @@
                     },
                     {
                       "description": {
-                        "content": "Add a per-key breakdown in `rows`. (This can only be one of day,provider,chain)",
+                        "content": "Add a per-key breakdown in `rows`. Any other value is refused with 400 `INVALID_PARAMETER`. (This can only be one of day,chain)",
                         "type": "text/plain"
                       },
                       "disabled": false,
@@ -2570,6 +2789,62 @@
           "description": "",
           "item": [
             {
+              "event": [],
+              "name": "Upload a supporting document for a payout",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "auth": null,
+                "body": {
+                  "formdata": [
+                    {
+                      "description": {
+                        "content": "(Required) ",
+                        "type": "text/plain"
+                      },
+                      "key": "document",
+                      "type": "file"
+                    }
+                  ],
+                  "mode": "formdata"
+                },
+                "description": {
+                  "content": "Scope `payouts:write`. Multipart, file field `document` (PDF, JPG, PNG or\nWEBP, at most 5 MB). Returns the `fileId` that `POST /rfq/execute` and\neach `POST /rfq/execute-batch` item take as `supportingDocumentFileId`,\nfor a route whose `offrampRequirements` asks for a document. The file is\nusable only by the account that uploaded it. Not idempotent: a retried\nupload returns a new file and the unused one is never consumed.\n",
+                  "type": "text/plain"
+                },
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "{{contentType}}"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "{{accept}}"
+                  }
+                ],
+                "method": "POST",
+                "name": "Upload a supporting document for a payout",
+                "url": {
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "payouts",
+                    "document"
+                  ],
+                  "query": [],
+                  "variable": []
+                }
+              }
+            }
+          ],
+          "name": "document"
+        },
+        {
+          "description": "",
+          "item": [
+            {
               "description": "",
               "item": [
                 {
@@ -2624,6 +2899,59 @@
                     }
                   ],
                   "name": "collection"
+                },
+                {
+                  "description": "",
+                  "item": [
+                    {
+                      "event": [],
+                      "name": "Get the offramp-creation outcome for each row of a batch",
+                      "protocolProfileBehavior": {
+                        "disableBodyPruning": true
+                      },
+                      "request": {
+                        "auth": null,
+                        "body": {},
+                        "description": {
+                          "content": "`POST /rfq/execute-batch` answers `202` before each recipient's offramp\norder has been created \u2014 that work is provider I/O and does not fit\ninside a request. This reports where it got to.\n\n`producer` is the batch-level state:\n\n- `running` \u2014 not finished. Keep polling.\n- `succeeded` \u2014 the surviving rows have offramp orders and the\n  collection has been charged. Individual rows may still be `failed`;\n  that is normal partial success, and the other recipients are paid.\n- `failed` \u2014 the batch will not proceed. If it failed before the\n  charge, nothing was taken.\n\n`rows[]` is the per-recipient outcome, keyed by `transactionId` so it\njoins against the `rows[]` returned by `/rfq/execute-batch`.\n`hasOfframpOrder` is the evidence the order exists \u2014 status alone\ncannot carry it, because a child sits at the same status before the\nproducer reaches it and after the order is made.\n\nScope: `payouts:read`.\n",
+                          "type": "text/plain"
+                        },
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "{{accept}}"
+                          }
+                        ],
+                        "method": "GET",
+                        "name": "Get the offramp-creation outcome for each row of a batch",
+                        "url": {
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "payouts",
+                            "batch",
+                            ":batchId",
+                            "rows"
+                          ],
+                          "query": [],
+                          "variable": [
+                            {
+                              "description": {
+                                "content": "(Required) ",
+                                "type": "text/plain"
+                              },
+                              "disabled": false,
+                              "key": "batchId",
+                              "type": "any",
+                              "value": "<uuid>"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ],
+                  "name": "rows"
                 }
               ],
               "name": "{batchId}"
@@ -2635,11 +2963,51 @@
           "description": "",
           "item": [
             {
+              "event": [],
+              "name": "List supported payment purposes",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "auth": null,
+                "body": {},
+                "description": {
+                  "content": "Scope `payouts:read`. Returns the canonical, platform-level `paymentPurpose`\nvalue set. The list is the SAME for every provider and route \u2014 each provider\nmaps a canonical value to its own API enum server-side \u2014 so this endpoint takes\nno parameters and the response never reveals which provider will be used.\n\nThe list is static; fetch it once per session and cache it. Do NOT re-request it\nper quote. Responses carry `Cache-Control: public, max-age=3600`.\n\nSend one of these `value` strings as `paymentPurpose` on payout create/execute.\nAn unrecognised value is currently accepted and passed through to the provider\nunchanged, but it will NOT match the provider's own purpose mapping and the\npayment will be filed under that provider's default purpose \u2014 always send a\nvalue from this list. `other` additionally requires `purposeDescription`\n(10-255 characters).\n",
+                  "type": "text/plain"
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "{{accept}}"
+                  }
+                ],
+                "method": "GET",
+                "name": "List supported payment purposes",
+                "url": {
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "payouts",
+                    "payment-purposes"
+                  ],
+                  "query": [],
+                  "variable": []
+                }
+              }
+            }
+          ],
+          "name": "payment-purposes"
+        },
+        {
+          "description": "",
+          "item": [
+            {
               "description": "",
               "item": [
                 {
                   "event": [],
-                  "name": "List supported payment purposes for a protocol",
+                  "name": "List supported payment purposes (deprecated)",
                   "protocolProfileBehavior": {
                     "disableBodyPruning": true
                   },
@@ -2647,7 +3015,7 @@
                     "auth": null,
                     "body": {},
                     "description": {
-                      "content": "Scope `payouts:read`. The valid `paymentPurpose` enum varies by provider/protocol.",
+                      "content": "**Deprecated.** Use\n`GET /payouts/payment-purposes` instead.\n\nScope `payouts:read`. Identical response to `/payouts/payment-purposes`. The\n`{protocol}` path segment is ignored: payment purposes have never varied by\nprovider or route, so passing a route token here buys nothing. This alias\nremains only for backward compatibility.\n",
                       "type": "text/plain"
                     },
                     "header": [
@@ -2657,7 +3025,7 @@
                       }
                     ],
                     "method": "GET",
-                    "name": "List supported payment purposes for a protocol",
+                    "name": "List supported payment purposes (deprecated)",
                     "url": {
                       "host": [
                         "{{baseUrl}}"
@@ -2705,7 +3073,7 @@
                     "auth": null,
                     "body": {},
                     "description": {
-                      "content": "Scope `payouts:read`. Returns the merged field+document schema the offramp leg needs (e.g. invoice upload, payment-purpose enum). Schema is provider-driven and free-form.",
+                      "content": "**Deprecated.** Read\n`offrampRequirements` off each route in the `/quotes/*` response instead: it\ncarries the same `document` requirement, is scoped to the route you are\nactually quoting, and costs no extra request. This endpoint additionally\nrequires you to name a provider/route token in the URL, which the quote\nresponse does not.\n\nScope `payouts:read`. Returns the merged field+document schema the offramp leg\nneeds (e.g. invoice upload, payment-purpose enum). Schema is provider-driven and\nfree-form.\n",
                       "type": "text/plain"
                     },
                     "header": [
@@ -2825,7 +3193,7 @@
                   "raw": "{\n  \"url\": \"<uri>\",\n  \"events\": [\n    \"<enum>\",\n    \"<enum>\"\n  ],\n  \"label\": \"<string>\"\n}"
                 },
                 "description": {
-                  "content": "Scope `webhooks:write`. Idempotent via `Idempotency-Key`.",
+                  "content": "Scope `webhooks:write`. Idempotent via `Idempotency-Key`.\nSubscribing to a `collections.*` event also needs `collections:read`\non the key; without it the request is refused `403 INSUFFICIENT_SCOPE`\nwith `details.requiredScopes` mapping each refused event to its scope.\nEvent payloads are documented under `webhooks`.\n",
                   "type": "text/plain"
                 },
                 "header": [
@@ -2927,7 +3295,7 @@
                       "raw": "{\n  \"url\": \"<uri>\",\n  \"events\": [\n    \"<string>\",\n    \"<string>\"\n  ],\n  \"status\": \"<enum>\",\n  \"label\": \"<string>\"\n}"
                     },
                     "description": {
-                      "content": "Scope `webhooks:write`. Idempotent via `Idempotency-Key`.",
+                      "content": "Scope `webhooks:write`. Idempotent via `Idempotency-Key`.\nSetting `events` to include a `collections.*` event needs\n`collections:read` on the key, as on create (`403 INSUFFICIENT_SCOPE`).\n",
                       "type": "text/plain"
                     },
                     "header": [
@@ -2943,6 +3311,10 @@
                       {
                         "key": "Content-Type",
                         "value": "{{contentType}}"
+                      },
+                      {
+                        "key": "Accept",
+                        "value": "{{accept}}"
                       }
                     ],
                     "method": "PATCH",
@@ -3240,12 +3612,1090 @@
         }
       ],
       "name": "webhooks"
+    },
+    {
+      "description": "",
+      "item": [
+        {
+          "description": "",
+          "item": [
+            {
+              "event": [],
+              "name": "List payment links (paginated)",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "auth": null,
+                "body": {},
+                "description": {
+                  "content": "Scope `collections:read`. Newest first. `status` is the effective\nstatus: an `open` link past its `expiresAt` reads, and filters, as\n`expired`. Requires a collections entitlement on the business.\n",
+                  "type": "text/plain"
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "{{accept}}"
+                  }
+                ],
+                "method": "GET",
+                "name": "List payment links (paginated)",
+                "url": {
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "collections",
+                    "payment-links"
+                  ],
+                  "query": [
+                    {
+                      "description": {
+                        "content": "Clamped to [1, 100]. Values outside this range are silently clamped.",
+                        "type": "text/plain"
+                      },
+                      "disabled": false,
+                      "key": "limit",
+                      "value": "{{limit}}"
+                    },
+                    {
+                      "description": {
+                        "content": "",
+                        "type": "text/plain"
+                      },
+                      "disabled": false,
+                      "key": "offset",
+                      "value": "{{offset}}"
+                    },
+                    {
+                      "description": {
+                        "content": "Any other value is `400 INVALID_PARAMETER`. (This can only be one of open,detected,paid,expired)",
+                        "type": "text/plain"
+                      },
+                      "disabled": false,
+                      "key": "status",
+                      "value": "{{status}}"
+                    },
+                    {
+                      "description": {
+                        "content": "Only links issued to this buyer. Another business's buyer id returns an empty list.",
+                        "type": "text/plain"
+                      },
+                      "disabled": false,
+                      "key": "buyerId",
+                      "value": "{{buyerid}}"
+                    }
+                  ],
+                  "variable": []
+                }
+              }
+            },
+            {
+              "event": [],
+              "name": "Create a payment link",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "auth": null,
+                "body": {
+                  "mode": "raw",
+                  "options": {
+                    "raw": {
+                      "headerFamily": "json",
+                      "language": "json"
+                    }
+                  },
+                  "raw": "{\n  \"currency\": \"<string>\",\n  \"amount\": \"<string>\",\n  \"collectionType\": \"<enum>\",\n  \"settlementMode\": \"<enum>\",\n  \"buyerId\": \"<uuid>\",\n  \"invoiceNumber\": \"<string>\",\n  \"customerName\": \"<string>\",\n  \"customerEmail\": \"<email>\",\n  \"paymentPurpose\": \"<string>\",\n  \"paymentReference\": \"<string>\",\n  \"usdtRate\": \"<string>\",\n  \"clientFeeRate\": \"<string>\",\n  \"feeBorneBy\": \"<enum>\",\n  \"lineItems\": [\n    {\n      \"invoiceNumber\": \"<string>\",\n      \"amount\": \"<string>\",\n      \"description\": \"<string>\",\n      \"quantity\": \"<number>\",\n      \"unitPrice\": \"<string>\"\n    },\n    {\n      \"invoiceNumber\": \"<string>\",\n      \"amount\": \"<string>\",\n      \"description\": \"<string>\",\n      \"quantity\": \"<number>\",\n      \"unitPrice\": \"<string>\"\n    }\n  ],\n  \"issueDate\": \"<date>\",\n  \"dueDate\": \"<date>\",\n  \"sellerName\": \"<string>\",\n  \"sellerAddress\": \"<string>\"\n}"
+                },
+                "description": {
+                  "content": "Scope `collections:write`. Idempotent via `Idempotency-Key`.\nA `stablecoin` link must name a `buyerId` (payment is received on that\nbuyer's own address) and, where the business requires it, a\nnegotiated `usdtRate`. `clientFeeRate` and `usdtRate` are mutually\nexclusive. Requires the entitlement for the requested\n`collectionType` (`403 COLLECTIONS_NOT_ENABLED` otherwise).\nA business whose Collections was switched off keeps read access\nto its payment links and balances, and every write is refused with\n`403 COLLECTIONS_FROZEN` until it is switched back on.\nA `fiat` link in a currency where the business holds both a holding\nand an auto-convert receiving account must name `settlementMode`\n(`422 SETTLEMENT_MODE_REQUIRED`); a mode with no active account in the\ncurrency is `422 SETTLEMENT_MODE_UNAVAILABLE`.\n",
+                  "type": "text/plain"
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Optional. Stripe-style idempotency: same key + same body \u2192 cached\nresponse replayed within 24h with `Idempotency-Replayed: true`.\nSame key + different body \u2192 409 IDEMPOTENCY_KEY_REUSED. Concurrent\nin-flight \u2192 409 IDEMPOTENCY_REQUEST_IN_FLIGHT + Retry-After.\n",
+                      "type": "text/plain"
+                    },
+                    "disabled": false,
+                    "key": "Idempotency-Key",
+                    "value": "{{idempotencyKey}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "{{contentType}}"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "{{accept}}"
+                  }
+                ],
+                "method": "POST",
+                "name": "Create a payment link",
+                "url": {
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "collections",
+                    "payment-links"
+                  ],
+                  "query": [],
+                  "variable": []
+                }
+              }
+            },
+            {
+              "description": "",
+              "item": [
+                {
+                  "event": [],
+                  "name": "Get one payment link",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "auth": null,
+                    "body": {},
+                    "description": {
+                      "content": "Scope `collections:read`. Another business's link is `404`, the same as a nonexistent one.",
+                      "type": "text/plain"
+                    },
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "{{accept}}"
+                      }
+                    ],
+                    "method": "GET",
+                    "name": "Get one payment link",
+                    "url": {
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "collections",
+                        "payment-links",
+                        ":id"
+                      ],
+                      "query": [],
+                      "variable": [
+                        {
+                          "description": {
+                            "content": "(Required) ",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "id",
+                          "type": "any",
+                          "value": "<uuid>"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "description": "",
+                  "item": [
+                    {
+                      "event": [],
+                      "name": "Void an unpaid payment link",
+                      "protocolProfileBehavior": {
+                        "disableBodyPruning": true
+                      },
+                      "request": {
+                        "auth": null,
+                        "body": {},
+                        "description": {
+                          "content": "Scope `collections:write`. Only an `open` link with nothing received can\nbe voided; it then reads as `expired` everywhere. A link that is\n`detected`, `paid`, already `expired`, or open with part of its amount\nreceived returns `409 PAYMENT_LINK_NOT_VOIDABLE`.\n",
+                          "type": "text/plain"
+                        },
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "{{accept}}"
+                          }
+                        ],
+                        "method": "POST",
+                        "name": "Void an unpaid payment link",
+                        "url": {
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "collections",
+                            "payment-links",
+                            ":id",
+                            "void"
+                          ],
+                          "query": [],
+                          "variable": [
+                            {
+                              "description": {
+                                "content": "(Required) ",
+                                "type": "text/plain"
+                              },
+                              "disabled": false,
+                              "key": "id",
+                              "type": "any",
+                              "value": "<uuid>"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ],
+                  "name": "void"
+                }
+              ],
+              "name": "{id}"
+            }
+          ],
+          "name": "payment-links"
+        },
+        {
+          "description": "",
+          "item": [
+            {
+              "event": [],
+              "name": "List buyers (paginated)",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "auth": null,
+                "body": {},
+                "description": {
+                  "content": "Scope `collections:read`. Newest first.",
+                  "type": "text/plain"
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "{{accept}}"
+                  }
+                ],
+                "method": "GET",
+                "name": "List buyers (paginated)",
+                "url": {
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "collections",
+                    "buyers"
+                  ],
+                  "query": [
+                    {
+                      "description": {
+                        "content": "Clamped to [1, 100]. Values outside this range are silently clamped.",
+                        "type": "text/plain"
+                      },
+                      "disabled": false,
+                      "key": "limit",
+                      "value": "{{limit}}"
+                    },
+                    {
+                      "description": {
+                        "content": "",
+                        "type": "text/plain"
+                      },
+                      "disabled": false,
+                      "key": "offset",
+                      "value": "{{offset}}"
+                    }
+                  ],
+                  "variable": []
+                }
+              }
+            },
+            {
+              "event": [],
+              "name": "Create a buyer",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "auth": null,
+                "body": {
+                  "mode": "raw",
+                  "options": {
+                    "raw": {
+                      "headerFamily": "json",
+                      "language": "json"
+                    }
+                  },
+                  "raw": "{\n  \"name\": \"<string>\",\n  \"email\": \"<email>\",\n  \"entityType\": \"<enum>\",\n  \"country\": \"<string>\",\n  \"screeningStatus\": \"<enum>\",\n  \"tier\": \"<string>\",\n  \"perPaymentCap\": \"<string>\",\n  \"notes\": \"<string>\",\n  \"wallets\": [\n    {\n      \"address\": \"<string>\",\n      \"chain\": \"<string>\",\n      \"hostedType\": \"<enum>\",\n      \"screeningStatus\": \"<enum>\"\n    },\n    {\n      \"address\": \"<string>\",\n      \"chain\": \"<string>\",\n      \"hostedType\": \"<enum>\",\n      \"screeningStatus\": \"<enum>\"\n    }\n  ],\n  \"depositAddress\": false\n}"
+                },
+                "description": {
+                  "content": "Scope `collections:write`. Idempotent via `Idempotency-Key`. Set\n`depositAddress: true` to mint the buyer's on-chain receiving address\nnow (needed before a stablecoin link can be issued to them).\nA sender wallet already recorded on another buyer is `409 ALREADY_EXISTS`.\n",
+                  "type": "text/plain"
+                },
+                "header": [
+                  {
+                    "description": {
+                      "content": "Optional. Stripe-style idempotency: same key + same body \u2192 cached\nresponse replayed within 24h with `Idempotency-Replayed: true`.\nSame key + different body \u2192 409 IDEMPOTENCY_KEY_REUSED. Concurrent\nin-flight \u2192 409 IDEMPOTENCY_REQUEST_IN_FLIGHT + Retry-After.\n",
+                      "type": "text/plain"
+                    },
+                    "disabled": false,
+                    "key": "Idempotency-Key",
+                    "value": "{{idempotencyKey}}"
+                  },
+                  {
+                    "key": "Content-Type",
+                    "value": "{{contentType}}"
+                  },
+                  {
+                    "key": "Accept",
+                    "value": "{{accept}}"
+                  }
+                ],
+                "method": "POST",
+                "name": "Create a buyer",
+                "url": {
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "collections",
+                    "buyers"
+                  ],
+                  "query": [],
+                  "variable": []
+                }
+              }
+            },
+            {
+              "description": "",
+              "item": [
+                {
+                  "event": [],
+                  "name": "Get one buyer",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "auth": null,
+                    "body": {},
+                    "description": {
+                      "content": "Scope `collections:read`. Another business's buyer is `404`, the same as a nonexistent one.",
+                      "type": "text/plain"
+                    },
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "{{accept}}"
+                      }
+                    ],
+                    "method": "GET",
+                    "name": "Get one buyer",
+                    "url": {
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "collections",
+                        "buyers",
+                        ":id"
+                      ],
+                      "query": [],
+                      "variable": [
+                        {
+                          "description": {
+                            "content": "(Required) ",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "id",
+                          "type": "any",
+                          "value": "<uuid>"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "event": [],
+                  "name": "Update a buyer",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "auth": null,
+                    "body": {
+                      "mode": "raw",
+                      "options": {
+                        "raw": {
+                          "headerFamily": "json",
+                          "language": "json"
+                        }
+                      },
+                      "raw": "{\n  \"name\": \"<string>\",\n  \"email\": \"<email>\",\n  \"entityType\": \"<enum>\",\n  \"country\": \"<string>\",\n  \"screeningStatus\": \"<enum>\",\n  \"tier\": \"<string>\",\n  \"perPaymentCap\": \"<string>\",\n  \"notes\": \"<string>\"\n}"
+                    },
+                    "description": {
+                      "content": "Scope `collections:write`. Partial update \u2014 only the fields sent are written.",
+                      "type": "text/plain"
+                    },
+                    "header": [
+                      {
+                        "key": "Content-Type",
+                        "value": "{{contentType}}"
+                      },
+                      {
+                        "key": "Accept",
+                        "value": "{{accept}}"
+                      }
+                    ],
+                    "method": "PUT",
+                    "name": "Update a buyer",
+                    "url": {
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "collections",
+                        "buyers",
+                        ":id"
+                      ],
+                      "query": [],
+                      "variable": [
+                        {
+                          "description": {
+                            "content": "(Required) ",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "id",
+                          "type": "any",
+                          "value": "<uuid>"
+                        }
+                      ]
+                    }
+                  }
+                },
+                {
+                  "event": [],
+                  "name": "Delete a buyer",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "auth": null,
+                    "body": {},
+                    "description": {
+                      "content": "Scope `collections:write`. A buyer holding a receiving wallet,\nreceipts or prepaid credit cannot be deleted: `409\nREFERENCED_BY_OTHERS`, with `details.blockedBy` naming the reference.\n",
+                      "type": "text/plain"
+                    },
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "{{accept}}"
+                      }
+                    ],
+                    "method": "DELETE",
+                    "name": "Delete a buyer",
+                    "url": {
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "collections",
+                        "buyers",
+                        ":id"
+                      ],
+                      "query": [],
+                      "variable": [
+                        {
+                          "description": {
+                            "content": "(Required) ",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "id",
+                          "type": "any",
+                          "value": "<uuid>"
+                        }
+                      ]
+                    }
+                  }
+                }
+              ],
+              "name": "{id}"
+            }
+          ],
+          "name": "buyers"
+        },
+        {
+          "description": "",
+          "item": [
+            {
+              "event": [],
+              "name": "Collections balances",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "auth": null,
+                "body": {},
+                "description": {
+                  "content": "Scope `collections:read`. The same figures as the dashboard Home.\n`held` is settleable stablecoin per asset; `fiatBalances` is fiat\nsitting in receiving accounts, one entry per account, served from a\ncache up to 60 seconds old. `available: false` means a figure could not\nbe read or is short \u2014 a missing entry is never a zero balance.\n",
+                  "type": "text/plain"
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "{{accept}}"
+                  }
+                ],
+                "method": "GET",
+                "name": "Collections balances",
+                "url": {
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "collections",
+                    "balances"
+                  ],
+                  "query": [],
+                  "variable": []
+                }
+              }
+            }
+          ],
+          "name": "balances"
+        },
+        {
+          "description": "",
+          "item": [
+            {
+              "description": "",
+              "item": [
+                {
+                  "event": [],
+                  "name": "List fiat receiving accounts",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "auth": null,
+                    "body": {},
+                    "description": {
+                      "content": "Scope `collections:read`. Every receiving account of the business,\nnewest first, as stored \u2014 this read makes no call to a bank partner.\n`depositInstructions` is present on an `active` account only.\n",
+                      "type": "text/plain"
+                    },
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "{{accept}}"
+                      }
+                    ],
+                    "method": "GET",
+                    "name": "List fiat receiving accounts",
+                    "url": {
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "collections",
+                        "receiving-accounts",
+                        "virtual-accounts"
+                      ],
+                      "query": [],
+                      "variable": []
+                    }
+                  }
+                }
+              ],
+              "name": "virtual-accounts"
+            },
+            {
+              "description": "",
+              "item": [
+                {
+                  "event": [],
+                  "name": "List fiat deposits (paginated)",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "auth": null,
+                    "body": {},
+                    "description": {
+                      "content": "Scope `collections:read`. Newest first.",
+                      "type": "text/plain"
+                    },
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "{{accept}}"
+                      }
+                    ],
+                    "method": "GET",
+                    "name": "List fiat deposits (paginated)",
+                    "url": {
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "collections",
+                        "receiving-accounts",
+                        "deposits"
+                      ],
+                      "query": [
+                        {
+                          "description": {
+                            "content": "Clamped to [1, 100]. Values outside this range are silently clamped.",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "limit",
+                          "value": "{{limit}}"
+                        },
+                        {
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "offset",
+                          "value": "{{offset}}"
+                        },
+                        {
+                          "description": {
+                            "content": "Only deposits into this receiving account. Another business's account id returns an empty list.",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "virtualAccountId",
+                          "value": "{{virtualaccountid}}"
+                        }
+                      ],
+                      "variable": []
+                    }
+                  }
+                },
+                {
+                  "description": "",
+                  "item": [
+                    {
+                      "event": [],
+                      "name": "Get one fiat deposit",
+                      "protocolProfileBehavior": {
+                        "disableBodyPruning": true
+                      },
+                      "request": {
+                        "auth": null,
+                        "body": {},
+                        "description": {
+                          "content": "Scope `collections:read`. Another business's deposit is `404`, the same as a nonexistent one.",
+                          "type": "text/plain"
+                        },
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "{{accept}}"
+                          }
+                        ],
+                        "method": "GET",
+                        "name": "Get one fiat deposit",
+                        "url": {
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "collections",
+                            "receiving-accounts",
+                            "deposits",
+                            ":id"
+                          ],
+                          "query": [],
+                          "variable": [
+                            {
+                              "description": {
+                                "content": "(Required) ",
+                                "type": "text/plain"
+                              },
+                              "disabled": false,
+                              "key": "id",
+                              "type": "any",
+                              "value": "<uuid>"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ],
+                  "name": "{id}"
+                }
+              ],
+              "name": "deposits"
+            },
+            {
+              "description": "",
+              "item": [
+                {
+                  "description": "",
+                  "item": [
+                    {
+                      "event": [],
+                      "name": "Preview a settlement",
+                      "protocolProfileBehavior": {
+                        "disableBodyPruning": true
+                      },
+                      "request": {
+                        "auth": null,
+                        "body": {},
+                        "description": {
+                          "content": "Scope `collections:read`. What `POST /collections/receiving-accounts/offramp`\nwould cost and deliver for the same parameters, running the same quote\nand plan; nothing is recorded and nothing moves. A settlement that\ncannot go ahead is still `200`, with `canSettle: false` and a `reason`.\n",
+                          "type": "text/plain"
+                        },
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "{{accept}}"
+                          }
+                        ],
+                        "method": "GET",
+                        "name": "Preview a settlement",
+                        "url": {
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "collections",
+                            "receiving-accounts",
+                            "offramp",
+                            "preview"
+                          ],
+                          "query": [
+                            {
+                              "description": {
+                                "content": "(Required) Positive decimal. The delivery (default) or, with `amountIs=spend`, what may leave the balance.",
+                                "type": "text/plain"
+                              },
+                              "disabled": false,
+                              "key": "amount",
+                              "value": "{{amount}}"
+                            },
+                            {
+                              "description": {
+                                "content": "(Required) ISO 4217 code, or `USDC` to be paid out in stablecoin.",
+                                "type": "text/plain"
+                              },
+                              "disabled": false,
+                              "key": "targetFiatCurrency",
+                              "value": "{{targetfiatcurrency}}"
+                            },
+                            {
+                              "description": {
+                                "content": "The recipient payment method to settle to. Required unless `payoutAddress` is sent.",
+                                "type": "text/plain"
+                              },
+                              "disabled": false,
+                              "key": "recipientPaymentMethodId",
+                              "value": "{{recipientpaymentmethodid}}"
+                            },
+                            {
+                              "description": {
+                                "content": "A registered payout address; only with `targetFiatCurrency=USDC`.",
+                                "type": "text/plain"
+                              },
+                              "disabled": false,
+                              "key": "payoutAddress",
+                              "value": "{{payoutaddress}}"
+                            },
+                            {
+                              "description": {
+                                "content": " (This can only be one of delivery,spend)",
+                                "type": "text/plain"
+                              },
+                              "disabled": false,
+                              "key": "amountIs",
+                              "value": "{{amountis}}"
+                            },
+                            {
+                              "description": {
+                                "content": "Which held balance settles \u2014 `low` (USDC) or `high` (USDT). (This can only be one of low,high)",
+                                "type": "text/plain"
+                              },
+                              "disabled": false,
+                              "key": "riskClass",
+                              "value": "{{riskclass}}"
+                            },
+                            {
+                              "description": {
+                                "content": " (This can only be one of home_convert,collections_settle)",
+                                "type": "text/plain"
+                              },
+                              "disabled": false,
+                              "key": "settlementRoute",
+                              "value": "{{settlementroute}}"
+                            }
+                          ],
+                          "variable": []
+                        }
+                      }
+                    }
+                  ],
+                  "name": "preview"
+                },
+                {
+                  "description": "",
+                  "item": [
+                    {
+                      "event": [],
+                      "name": "Upload the outgoing invoice for a settlement",
+                      "protocolProfileBehavior": {
+                        "disableBodyPruning": true
+                      },
+                      "request": {
+                        "auth": null,
+                        "body": {
+                          "formdata": [
+                            {
+                              "description": {
+                                "content": "(Required) ",
+                                "type": "text/plain"
+                              },
+                              "key": "document",
+                              "type": "file"
+                            }
+                          ],
+                          "mode": "formdata"
+                        },
+                        "description": {
+                          "content": "Scope `settlements:write`. Multipart, file field `document` (PDF, JPG,\nPNG or WEBP, at most 5 MB). Returns the `fileId` that `POST\n/collections/receiving-accounts/offramp` requires as\n`outgoingInvoiceDocumentFileId`; it is usable only by the business that\nuploaded it. Not idempotent: a retried upload returns a new file and the\nunused one is never consumed.\n",
+                          "type": "text/plain"
+                        },
+                        "header": [
+                          {
+                            "key": "Content-Type",
+                            "value": "{{contentType}}"
+                          },
+                          {
+                            "key": "Accept",
+                            "value": "{{accept}}"
+                          }
+                        ],
+                        "method": "POST",
+                        "name": "Upload the outgoing invoice for a settlement",
+                        "url": {
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "collections",
+                            "receiving-accounts",
+                            "offramp",
+                            "document"
+                          ],
+                          "query": [],
+                          "variable": []
+                        }
+                      }
+                    }
+                  ],
+                  "name": "document"
+                },
+                {
+                  "event": [],
+                  "name": "Settle held balance to fiat or USDC",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "auth": null,
+                    "body": {
+                      "mode": "raw",
+                      "options": {
+                        "raw": {
+                          "headerFamily": "json",
+                          "language": "json"
+                        }
+                      },
+                      "raw": "{\n  \"asset\": \"<string>\",\n  \"amount\": \"<number>\",\n  \"targetFiatCurrency\": \"<string>\",\n  \"targetRail\": \"<string>\",\n  \"recipientPaymentMethodId\": \"<uuid>\",\n  \"destination\": \"<enum>\",\n  \"payoutAddressId\": \"<uuid>\",\n  \"settlementRoute\": \"<enum>\",\n  \"riskClass\": \"<enum>\",\n  \"amountIs\": \"<enum>\",\n  \"outgoingInvoiceDocumentFileId\": \"<uuid>\"\n}"
+                    },
+                    "description": {
+                      "content": "Scope `settlements:write`. Moves money. `Idempotency-Key` is REQUIRED\nand is held on the settlement itself rather than in a response cache:\na retry with the same key and the same `amount`, `targetFiatCurrency`,\n`riskClass`, `recipientPaymentMethodId` and `payoutAddressId` returns\nthat settlement in its current status (with `Idempotency-Replayed:\ntrue`) for as long as it exists; the same key with a different request\nis `409 IDEMPOTENCY_KEY_REUSED`. A settlement\nthat failed before moving anything is retried, not replayed.\n\nAnswers `202` with the settlement. A settlement still running after\nabout 20 seconds is answered early with its current status (`pending`\nor `transferring`) \u2014 poll `GET /collections/receiving-accounts/offramps/{id}`.\nIf it has not been recorded yet the body is `{idempotencyKey, status:\npending}`: nothing has moved, and retrying with the same key returns\nthe settlement once it exists.\n\nAllowed only when Teel can sign for the settlement wallet (custodial,\nor a scoped settle signer on Tron). A wallet the business controls\nmust be settled from the dashboard: `409\nSETTLEMENT_REQUIRES_DASHBOARD_AUTHORIZATION`, nothing moved.\n",
+                      "type": "text/plain"
+                    },
+                    "header": [
+                      {
+                        "description": {
+                          "content": "(Required) Your name for this settle intent. Missing is `400 MISSING_PARAMETER`.",
+                          "type": "text/plain"
+                        },
+                        "disabled": false,
+                        "key": "Idempotency-Key",
+                        "value": "{{idempotencyKey}}"
+                      },
+                      {
+                        "key": "Content-Type",
+                        "value": "{{contentType}}"
+                      },
+                      {
+                        "key": "Accept",
+                        "value": "{{accept}}"
+                      }
+                    ],
+                    "method": "POST",
+                    "name": "Settle held balance to fiat or USDC",
+                    "url": {
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "collections",
+                        "receiving-accounts",
+                        "offramp"
+                      ],
+                      "query": [],
+                      "variable": []
+                    }
+                  }
+                }
+              ],
+              "name": "offramp"
+            },
+            {
+              "description": "",
+              "item": [
+                {
+                  "event": [],
+                  "name": "List settlements (paginated)",
+                  "protocolProfileBehavior": {
+                    "disableBodyPruning": true
+                  },
+                  "request": {
+                    "auth": null,
+                    "body": {},
+                    "description": {
+                      "content": "Scope `collections:read`. Newest first.",
+                      "type": "text/plain"
+                    },
+                    "header": [
+                      {
+                        "key": "Accept",
+                        "value": "{{accept}}"
+                      }
+                    ],
+                    "method": "GET",
+                    "name": "List settlements (paginated)",
+                    "url": {
+                      "host": [
+                        "{{baseUrl}}"
+                      ],
+                      "path": [
+                        "collections",
+                        "receiving-accounts",
+                        "offramps"
+                      ],
+                      "query": [
+                        {
+                          "description": {
+                            "content": "Clamped to [1, 100]. Values outside this range are silently clamped.",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "limit",
+                          "value": "{{limit}}"
+                        },
+                        {
+                          "description": {
+                            "content": "",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "offset",
+                          "value": "{{offset}}"
+                        },
+                        {
+                          "description": {
+                            "content": "Any other value is `400 INVALID_PARAMETER`. (This can only be one of pending,transferring,settling,completed,failed)",
+                            "type": "text/plain"
+                          },
+                          "disabled": false,
+                          "key": "status",
+                          "value": "{{status}}"
+                        }
+                      ],
+                      "variable": []
+                    }
+                  }
+                },
+                {
+                  "description": "",
+                  "item": [
+                    {
+                      "event": [],
+                      "name": "Get one settlement",
+                      "protocolProfileBehavior": {
+                        "disableBodyPruning": true
+                      },
+                      "request": {
+                        "auth": null,
+                        "body": {},
+                        "description": {
+                          "content": "Scope `collections:read`. Poll this while a settlement runs. Another business's settlement is `404`, the same as a nonexistent one.",
+                          "type": "text/plain"
+                        },
+                        "header": [
+                          {
+                            "key": "Accept",
+                            "value": "{{accept}}"
+                          }
+                        ],
+                        "method": "GET",
+                        "name": "Get one settlement",
+                        "url": {
+                          "host": [
+                            "{{baseUrl}}"
+                          ],
+                          "path": [
+                            "collections",
+                            "receiving-accounts",
+                            "offramps",
+                            ":id"
+                          ],
+                          "query": [],
+                          "variable": [
+                            {
+                              "description": {
+                                "content": "(Required) ",
+                                "type": "text/plain"
+                              },
+                              "disabled": false,
+                              "key": "id",
+                              "type": "any",
+                              "value": "<uuid>"
+                            }
+                          ]
+                        }
+                      }
+                    }
+                  ],
+                  "name": "{id}"
+                }
+              ],
+              "name": "offramps"
+            }
+          ],
+          "name": "receiving-accounts"
+        }
+      ],
+      "name": "collections"
     }
   ],
   "variable": [
     {
       "key": "baseUrl",
       "value": "https://api.teel.finance"
+    },
+    {
+      "key": "baseUrl1",
+      "value": "https://api.teel.finance/sandbox"
     }
   ]
 }

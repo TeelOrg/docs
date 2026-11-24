@@ -1,0 +1,7 @@
+<ParamField header="Authorization" type="string" required>
+  `Bearer` followed by your API key.
+</ParamField>
+
+<ParamField header="X-Teel-Entity-Id" type="string">
+  Only needed when the key's owner belongs to more than one business. The UUID of the business this request acts for. Without it, such a key gets `400 ENTITY_REQUIRED`.
+</ParamField>

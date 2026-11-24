@@ -1,0 +1,64 @@
+---
+title: List deposits
+api: GET /api/collections/receiving-accounts/deposits
+description: Fiat payments into your receiving accounts, newest first
+---
+
+import Headers from '/snippets/collections/headers.mdx';
+import DepositFields from '/snippets/collections/deposit-fields.mdx';
+
+Returns bank transfers into your [receiving accounts](/api-reference/collections/virtual-accounts/list), newest first. Subscribe to `collections.deposit.received` instead of polling; it fires when a deposit is credited.
+
+<Info>**Scope** `collections:read` · rate limit `collections_read` (120/min, burst 40)</Info>
+
+## Headers
+
+<Headers />
+
+## Query parameters
+
+<ParamField query="limit" type="integer" default="10">
+  Page size. Values outside 1–100 are clamped to that range.
+</ParamField>
+
+<ParamField query="offset" type="integer" default="0">
+  Number of deposits to skip.
+</ParamField>
+
+<ParamField query="virtualAccountId" type="string">
+  Only deposits into this receiving account (UUID). An account of another business returns an empty list.
+</ParamField>
+
+## Response
+
+An array of deposits. Each item has these fields:
+
+<DepositFields />
+
+<ResponseExample>
+```json 200
+[
+  {
+    "id": "e1f2a3b4-c5d6-4e7f-8a9b-0c1d2e3f4a5b",
+    "virtualAccountId": "c2d4e6f8-1a3b-4c5d-8e9f-0a1b2c3d4e5f",
+    "amount": "5000.00",
+    "currency": "USD",
+    "status": "credited",
+    "senderName": "ACME IMPORTS LTD",
+    "senderReference": "20261013MMQFMP2K000123",
+    "createdAt": "2026-10-13T14:02:11Z",
+    "updatedAt": "2026-10-13T14:20:45Z"
+  }
+]
+```
+</ResponseExample>
+
+## Errors
+
+| Status | Code | When |
+| --- | --- | --- |
+| `400` | `INVALID_PARAMETER` | `virtualAccountId` is not a UUID. |
+| `400` | `ENTITY_REQUIRED` | The key's owner belongs to more than one business and `X-Teel-Entity-Id` is missing. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `collections:read`. |
+| `429` | `RATE_LIMITED` | `collections_read` budget exhausted. Wait for `Retry-After`. |

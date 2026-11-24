@@ -1,0 +1,110 @@
+---
+title: Bulk-create recipients
+api: POST /api/recipients/bulk
+description: Create several recipients in one request.
+---
+
+Each entry in `recipients` takes the same body as [`POST /recipients`](/api-reference/recipients/create). Rows are processed one at a time, in order. A row that fails validation does not stop the others, so the request returns `200` even when some rows fail. Check each row's `error`.
+
+<Info>**Scope** `recipients:write` · rate limit `default` (60/min, burst 20)</Info>
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  API key.
+</ParamField>
+
+<ParamField header="X-Teel-Entity-Id" type="string">
+  Only needed when the key's owner belongs to more than one business. The UUID of the business this request acts for. Without it, such a key gets `400 ENTITY_REQUIRED`.
+</ParamField>
+
+<ParamField header="Idempotency-Key" type="string">
+  Optional. Up to 255 url-safe characters (≥8). Replays the cached response within 24 hours; mismatched bodies on the same key return `409 IDEMPOTENCY_KEY_REUSED`.
+</ParamField>
+
+## Request body
+
+<ParamField body="recipients" type="object[]" required>
+  At least one recipient. Each entry is a [create recipient](/api-reference/recipients/create) body.
+</ParamField>
+
+## Response
+
+<ResponseField name="results" type="object[]">
+  One entry per input row, in input order.
+  <Expandable title="results[]">
+    <ResponseField name="index" type="integer">1-based position of the row in `recipients`.</ResponseField>
+    <ResponseField name="email" type="string">Echo of the row's `email`.</ResponseField>
+    <ResponseField name="isBusiness" type="boolean">`true` for a business recipient, `false` for an individual.</ResponseField>
+    <ResponseField name="businessName" type="string">Echo of the row's `businessName`.</ResponseField>
+    <ResponseField name="firstName" type="string">Echo of the row's `firstName`. Omitted when empty.</ResponseField>
+    <ResponseField name="lastName" type="string">Echo of the row's `lastName`. Omitted when empty.</ResponseField>
+    <ResponseField name="recipient" type="object">
+      The created recipient. Present when the row was created. Same fields as the [recipient](/api-reference/recipients/retry#recipient) returned by retry, without `bankPaymentMethod` and `walletPaymentMethod`.
+    </ResponseField>
+    <ResponseField name="provisioningError" type="string">
+      Present when the recipient was created but its setup did not complete for every payout route. The row still counts as a success. Display text that may change; branch on `retryable`, never on this text.
+    </ResponseField>
+    <ResponseField name="retryable" type="boolean">
+      Set with `provisioningError`. `true` when every failure was temporary, so [`POST /recipients/{id}/retry`](/api-reference/recipients/retry) may complete setup. `false` means retrying will not help; contact support.
+    </ResponseField>
+    <ResponseField name="error" type="string">
+      Present when the row was not created. For a schema failure this is a summary of the `VALIDATION_FAILED` violations.
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="total" type="integer">Number of rows submitted.</ResponseField>
+<ResponseField name="successCount" type="integer">Rows that created a recipient, including rows with a `provisioningError`.</ResponseField>
+<ResponseField name="failureCount" type="integer">Rows that did not create a recipient.</ResponseField>
+
+### Errors
+
+| Status | `code` | When |
+|---|---|---|
+| `400` | `INVALID_JSON` | The body is not valid JSON. |
+| `400` | `INVALID_REQUEST` | `recipients` is missing or empty. |
+| `400` | `IDEMPOTENCY_KEY_INVALID` | `Idempotency-Key` is malformed. |
+| `400` | `ENTITY_REQUIRED` | The key's owner belongs to more than one business and `X-Teel-Entity-Id` is missing. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `recipients:write`. |
+| `409` | `IDEMPOTENCY_KEY_REUSED` / `IDEMPOTENCY_REQUEST_IN_FLIGHT` | Idempotency conflict. For in-flight, wait for `Retry-After`. |
+| `413` | `REQUEST_BODY_TOO_LARGE` | An `Idempotency-Key` was sent and the body is over 1 MiB. Split the batch. |
+| `429` | `RATE_LIMITED` | Per-key rate limit exhausted. Wait for `Retry-After`. |
+
+<ResponseExample>
+```json 200
+{
+  "results": [
+    {
+      "index": 1,
+      "email": "payments@acme-ph.com",
+      "isBusiness": true,
+      "businessName": "Acme Corp Philippines",
+      "recipient": {
+        "id": "8b1a4c1d-7a3c-4a08-94ad-9f1ef1e0c3a2",
+        "email": "payments@acme-ph.com",
+        "isBusiness": true,
+        "businessName": "Acme Corp Philippines",
+        "country": "PH",
+        "transferType": "fiat",
+        "relationship": "third_party",
+        "createdAt": "2026-06-09T10:00:00Z",
+        "updatedAt": "2026-06-09T10:00:00Z",
+        "isSelf": false
+      }
+    },
+    {
+      "index": 2,
+      "email": "not-an-email",
+      "isBusiness": true,
+      "businessName": "Globex",
+      "error": "request failed schema validation (1 violation(s); first: email)"
+    }
+  ],
+  "total": 2,
+  "successCount": 1,
+  "failureCount": 1
+}
+```
+</ResponseExample>

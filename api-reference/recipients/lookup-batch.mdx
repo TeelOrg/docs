@@ -1,0 +1,87 @@
+---
+title: Look up recipients by account numbers
+api: POST /api/recipients/lookup/batch
+description: Find your recipients for several account numbers in one request.
+---
+
+The batch form of [`GET /recipients/lookup`](/api-reference/recipients/lookup). This is a read: it changes nothing.
+
+<Info>**Scope** `recipients:read` · rate limit `default` (60/min, burst 20)</Info>
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  API key.
+</ParamField>
+
+<ParamField header="X-Teel-Entity-Id" type="string">
+  Only needed when the key's owner belongs to more than one business. The UUID of the business this request acts for. Without it, such a key gets `400 ENTITY_REQUIRED`.
+</ParamField>
+
+## Request body
+
+<ParamField body="account_numbers" type="string[]" required>
+  Account numbers to match exactly. At least one. This key is snake_case.
+</ParamField>
+
+## Response
+
+An object keyed by account number. Each value is an array of match rows in the same shape as [`GET /recipients/lookup`](/api-reference/recipients/lookup), newest recipient first. An account number with no match is left out of the object.
+
+<ResponseField name="{accountNumber}" type="object[]">
+  Matches for that account number.
+  <Expandable title="match">
+    <ResponseField name="recipientId" type="string">Recipient UUID.</ResponseField>
+    <ResponseField name="businessId" type="string">Owning business UUID.</ResponseField>
+    <ResponseField name="email" type="string" />
+    <ResponseField name="isBusiness" type="boolean" />
+    <ResponseField name="businessName" type="string" />
+    <ResponseField name="firstName" type="string">Omitted when empty.</ResponseField>
+    <ResponseField name="lastName" type="string">Omitted when empty.</ResponseField>
+    <ResponseField name="country" type="string">ISO 3166-1 alpha-2.</ResponseField>
+    <ResponseField name="transferType" type="string">`"fiat"` or `"stablecoin"`. Older recipients may carry an empty string; treat it as `"fiat"`.</ResponseField>
+    <ResponseField name="relationship" type="string">`self` or `third_party`.</ResponseField>
+    <ResponseField name="paymentMethodId" type="string">UUID of the matching payment method.</ResponseField>
+    <ResponseField name="type" type="string">`"bank"` or `"wallet"`.</ResponseField>
+    <ResponseField name="currency" type="string">ISO 4217 code of the payment method.</ResponseField>
+    <ResponseField name="accountNumber" type="string">Omitted when not set.</ResponseField>
+    <ResponseField name="accountOwnerName" type="string">Omitted when not set.</ResponseField>
+    <ResponseField name="bankName" type="string">Omitted when not set.</ResponseField>
+    <ResponseField name="rail" type="string">Omitted when not set.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Errors
+
+| Status | `code` | When |
+|---|---|---|
+| `400` | `MISSING_PARAMETER` | The body is malformed, or `account_numbers` is missing or empty. |
+| `400` | `ENTITY_REQUIRED` | The key's owner belongs to more than one business and `X-Teel-Entity-Id` is missing. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `recipients:read`. |
+| `429` | `RATE_LIMITED` | Per-key rate limit exhausted. Wait for `Retry-After`. |
+
+<ResponseExample>
+```json 200
+{
+  "001271545517": [
+    {
+      "recipientId": "8b1a4c1d-7a3c-4a08-94ad-9f1ef1e0c3a2",
+      "businessId": "0d6c5f0e-3f43-4a0e-8d8f-2b7f0f1c9a11",
+      "email": "payments@acme-ph.com",
+      "isBusiness": true,
+      "businessName": "Acme Corp Philippines",
+      "country": "PH",
+      "transferType": "fiat",
+      "relationship": "third_party",
+      "paymentMethodId": "5c0e1a77-2d1b-4f0e-9a3e-6b1f3d2c4e55",
+      "type": "bank",
+      "currency": "PHP",
+      "accountNumber": "001271545517",
+      "bankName": "BDO Unibank",
+      "rail": "bank_transfer"
+    }
+  ]
+}
+```
+</ResponseExample>

@@ -1,0 +1,107 @@
+---
+title: Preview settlement
+api: GET /api/collections/receiving-accounts/offramp/preview
+description: See what a settlement would cost and deliver, without moving anything
+---
+
+import Headers from '/snippets/collections/headers.mdx';
+
+Runs the same quote and plan as [Create settlement](/api-reference/collections/settlements/create) for the same parameters. Nothing is recorded and nothing moves.
+
+A settlement that can't go ahead still returns `200`, with `canSettle: false` and a `reason`. Preview works even while converting to fiat is on hold for your account, so you can always see what a conversion would cost.
+
+<Info>**Scope** `collections:read` · rate limit `collections_read` (120/min, burst 40)</Info>
+
+## Headers
+
+<Headers />
+
+## Query parameters
+
+<ParamField query="amount" type="string" required>
+  Positive decimal. By default, what the recipient receives. With `amountIs=spend`, what may leave your balance.
+</ParamField>
+
+<ParamField query="targetFiatCurrency" type="string" required>
+  ISO 4217 code of the fiat to pay out, or `USDC` for a stablecoin payout.
+</ParamField>
+
+<ParamField query="recipientPaymentMethodId" type="string">
+  UUID of the recipient payment method to pay: the `id` of one of the recipient's `paymentMethods` (see [Recipients](/guides/recipients)). Required unless you send `payoutAddress`.
+</ParamField>
+
+<ParamField query="payoutAddress" type="string">
+  A payout address registered for your business in the dashboard. Only with `targetFiatCurrency=USDC`.
+</ParamField>
+
+<ParamField query="amountIs" type="string" default="delivery">
+  `delivery` (`amount` is what the recipient receives, and fees are added on top) or `spend` (`amount` is exactly what leaves your balance). Check `spendSettle` before settling with `spend`.
+</ParamField>
+
+<ParamField query="riskClass" type="string" default="low">
+  Which balance settles: `low` (your USDC balance) or `high` (your USDT balance, where stablecoin payment links collect). Any other value returns `400`.
+</ParamField>
+
+<ParamField query="settlementRoute" type="string">
+  Optional. What the settlement is for: `home_convert` (converting your own balance) or `collections_settle` (settling collected invoices). It can only narrow which routes are eligible, never open one. Any other value returns `400`.
+</ParamField>
+
+## Response
+
+Amounts are decimal strings in the settlement asset, except `targetAmount` and `minimumAmount`.
+
+<ResponseField name="canSettle" type="boolean" required>Whether a settlement with these parameters would go ahead.</ResponseField>
+<ResponseField name="reason" type="string">Present when `canSettle` is `false`. One of the [settlement reasons](/concepts#settlement-reasons).</ResponseField>
+<ResponseField name="exactness" type="string">`exact` (`targetAmount` is guaranteed) or `estimated`.</ResponseField>
+<ResponseField name="sourceAmount" type="string">Stablecoin sent for conversion.</ResponseField>
+<ResponseField name="totalDebit" type="string">Everything that leaves your balance.</ResponseField>
+<ResponseField name="feeAmount" type="string">`totalDebit` less the amount asked for. This is the one fee figure that governs.</ResponseField>
+<ResponseField name="deliveryAmount" type="string">With `amountIs=spend` only: what spending `amount` delivers.</ResponseField>
+<ResponseField name="targetAmount" type="string">What the recipient receives, in `targetCurrency`.</ResponseField>
+<ResponseField name="targetCurrency" type="string">Currency of `targetAmount`.</ResponseField>
+<ResponseField name="midMarketRate" type="string">Reference mid-market rate (target currency per unit of the settlement asset). Not the rate the settlement executes at. Absent on a pegged payout.</ResponseField>
+<ResponseField name="minimumAmount" type="string">Smallest delivery on this route, in `minimumCurrency`. Absent when unknown.</ResponseField>
+<ResponseField name="minimumCurrency" type="string">Currency of `minimumAmount`.</ResponseField>
+<ResponseField name="balance" type="string" required>The settleable balance the preview was judged against.</ResponseField>
+<ResponseField name="spendSettle" type="boolean" required>Whether [Create settlement](/api-reference/collections/settlements/create) will honour `amountIs: "spend"` for this request. When `false`, send the delivery amount instead.</ResponseField>
+
+<ResponseExample>
+```json 200
+{
+  "canSettle": true,
+  "exactness": "exact",
+  "sourceAmount": "1001.210000",
+  "totalDebit": "1003.210000",
+  "feeAmount": "3.210000",
+  "targetAmount": "1000.00",
+  "targetCurrency": "USD",
+  "midMarketRate": "0.998800",
+  "minimumAmount": "50.00",
+  "minimumCurrency": "USD",
+  "balance": "4210.550000",
+  "spendSettle": true
+}
+```
+
+```json 200 (cannot settle)
+{
+  "canSettle": false,
+  "reason": "AMOUNT_EXCEEDS_BALANCE",
+  "targetCurrency": "USD",
+  "balance": "420.000000",
+  "spendSettle": false
+}
+```
+</ResponseExample>
+
+## Errors
+
+| Status | Code | When |
+| --- | --- | --- |
+| `400` | `INVALID_PARAMETER` | `amount` not a positive decimal, `targetFiatCurrency` not a 3-letter code or `USDC`, `recipientPaymentMethodId` not a UUID, `payoutAddress` without `USDC`, or a bad `riskClass` or `settlementRoute`. |
+| `400` | `ENTITY_REQUIRED` | The key's owner belongs to more than one business and `X-Teel-Entity-Id` is missing. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `collections:read`. |
+| `404` | `PAYMENT_METHOD_NOT_FOUND` | No such recipient payment method for your business. |
+| `429` | `RATE_LIMITED` | `collections_read` budget exhausted. Wait for `Retry-After`. |
+| `503` | `OFFRAMP_DISABLED` | Settlement is switched off. |

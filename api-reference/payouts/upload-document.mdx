@@ -1,0 +1,66 @@
+---
+title: Upload a payout document
+api: POST /api/payouts/document
+description: Upload a supporting document before you execute a payout.
+---
+
+Some routes need a supporting document, such as an invoice. A quote route says so in its `offrampRequirements`. Upload the file here, then send the returned `fileId` as `supportingDocumentFileId` on [`POST /rfq/execute`](/api-reference/payouts/execute) or on an item of [`POST /rfq/execute-batch`](/api-reference/payouts/execute-batch). Only your account can use the file.
+
+This endpoint is not idempotent. A retried upload creates a new file; the unused one is never attached to a payout.
+
+<Info>**Scope** `payouts:write` · rate limit `payouts_write` (30/min, burst 10)</Info>
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  API key.
+</ParamField>
+
+<ParamField header="X-Teel-Entity-Id" type="string">
+  Only needed when the key's owner belongs to more than one business. The UUID of the business this request acts for. Without it, such a key gets `400 ENTITY_REQUIRED`.
+</ParamField>
+
+<ParamField header="Content-Type" type="string" required>
+  `multipart/form-data`.
+</ParamField>
+
+## Request body
+
+<ParamField body="document" type="file" required>
+  PDF, JPG, PNG, or WEBP. At most 5 MB (5,000,000 bytes). The file extension and the file content must both be one of these types.
+</ParamField>
+
+## Response
+
+<ResponseField name="fileId" type="string">
+  File UUID. Send it as `supportingDocumentFileId` when you execute the payout.
+</ResponseField>
+
+### Errors
+
+| Status | `code` | When |
+|---|---|---|
+| `400` | `MISSING_PARAMETER` | No `document` part in the form. |
+| `400` | `INVALID_REQUEST` | The file type is not allowed, or the file cannot be read. |
+| `400` | `ENTITY_REQUIRED` | The key's owner belongs to more than one business and `X-Teel-Entity-Id` is missing. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `payouts:write`. |
+| `413` | `REQUEST_BODY_TOO_LARGE` | The file is over 5 MB. |
+| `429` | `RATE_LIMITED` | `payouts_write` budget exhausted. Wait for `Retry-After`. |
+| `503` | `DOWNSTREAM_UNAVAILABLE` | Document storage is temporarily unavailable. Retry. |
+
+<RequestExample>
+```bash cURL
+curl -X POST https://api.teel.finance/api/payouts/document \
+  -H "Authorization: Bearer sk_live_..." \
+  -F "document=@invoice.pdf"
+```
+</RequestExample>
+
+<ResponseExample>
+```json 200
+{
+  "fileId": "7d9e2b14-6a3c-4f1e-9b0d-2c5a8e7f1d36"
+}
+```
+</ResponseExample>

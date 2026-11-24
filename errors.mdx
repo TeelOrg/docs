@@ -79,15 +79,22 @@ curl https://api.teel.finance/rfq/execute \
 
 The header is **not** required on quotes (those are idempotent by request shape) or on reads, and is not honored on update / delete endpoints.
 
+Collections follow the same rules on `POST /collections/payment-links` and `POST /collections/buyers`. **Settlements are different:** `POST /collections/receiving-accounts/offramp` *requires* `Idempotency-Key` (missing is `400 MISSING_PARAMETER`), and the key is stored on the settlement itself rather than in the 24-hour cache. A retry with the same key returns that settlement for as long as it exists, and the same key with a different request returns `409 IDEMPOTENCY_KEY_REUSED`. See [Create settlement](/api-reference/collections/settlements/create).
+
 ## Rate limiting
 
 Per-key default: **60 requests per minute, burst 20**. Specific endpoint families have tighter limits:
+
+Each route is governed by exactly one limit: its family's, or the per-key default when it has none. The `X-RateLimit-*` headers describe that limit.
 
 | Endpoint | Limit | Notes |
 | --- | --- | --- |
 | `GET /quotes/*` | 120/min, burst 40 | Quotes are cheap; higher limit reflects their typical poll-during-checkout pattern |
 | `POST /rfq/execute` | 30/min, burst 10 | Creating money movements should be relatively rare |
 | `POST /webhooks/deliveries/:id/replay` | **5/min, burst 5** per account | Stricter — manual ops affordance, not a programmatic endpoint |
+| `GET /collections/*` (`collections_read`) | 120/min, burst 40 | Reads and settlement previews |
+| `POST`/`PUT`/`DELETE` payment links and buyers (`collections_write`) | 30/min, burst 10 | Creating a link locks a rate; creating a buyer can mint an address |
+| `POST /collections/receiving-accounts/offramp` and `/offramp/document` (`settlements_write`) | 10/min, burst 5 | Settlements move money |
 
 Every response carries:
 

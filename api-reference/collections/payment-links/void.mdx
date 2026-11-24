@@ -1,0 +1,53 @@
+---
+title: Void payment link
+api: POST /api/collections/payment-links/{id}/void
+description: Withdraw an unpaid payment link
+---
+
+import Headers from '/snippets/collections/headers.mdx';
+
+Withdraws an unpaid link. It then reads as `expired` everywhere, and the payer page stops accepting payment. Only an `open` link with nothing received can be voided. A link that is `detected`, `paid`, already `expired` (including one you voided before), or `open` with part of its amount received returns `409 PAYMENT_LINK_NOT_VOIDABLE`.
+
+<Info>**Scope** `collections:write` · rate limit `collections_write` (30/min, burst 10) · needs collections enabled on your business</Info>
+
+## Headers
+
+<Headers />
+
+## Path parameters
+
+<ParamField path="id" type="string" required>
+  Payment link UUID.
+</ParamField>
+
+## Response
+
+<ResponseField name="id" type="string" required>Payment link UUID.</ResponseField>
+<ResponseField name="reference" type="string" required>The link's public reference.</ResponseField>
+<ResponseField name="status" type="string" required>Always `expired` on success.</ResponseField>
+<ResponseField name="expiresAt" type="string">ISO 8601. Set to just before the moment of voiding.</ResponseField>
+
+<ResponseExample>
+```json 200
+{
+  "id": "0b6f2c1e-3c1d-4f43-9a55-2a7f3d1e9c10",
+  "reference": "PL-K5XQ2M7RZJ4NVB6TQW3YHPDLCE",
+  "status": "expired",
+  "expiresAt": "2026-10-13T10:41:07Z"
+}
+```
+</ResponseExample>
+
+## Errors
+
+| Status | Code | When |
+| --- | --- | --- |
+| `400` | `INVALID_PARAMETER` | `id` is not a UUID. |
+| `400` | `ENTITY_REQUIRED` | The key's owner belongs to more than one business and `X-Teel-Entity-Id` is missing. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `collections:write`. |
+| `403` | `COLLECTIONS_NOT_ENABLED` | Collections is not enabled for your business. |
+| `403` | `COLLECTIONS_FROZEN` | Collections was switched off for your business. Links can be read but not voided. |
+| `404` | `NOT_FOUND` | No such link for your business. |
+| `409` | `PAYMENT_LINK_NOT_VOIDABLE` | The link is `detected`, `paid`, already `expired`, or has part of its amount received. `error` says which. |
+| `429` | `RATE_LIMITED` | `collections_write` budget exhausted. Wait for `Retry-After`. |

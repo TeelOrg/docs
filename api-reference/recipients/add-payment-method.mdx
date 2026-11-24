@@ -1,0 +1,185 @@
+---
+title: Add a recipient payment method
+api: POST /api/recipients/{id}/payment-methods
+description: Add one bank account or wallet to an existing recipient.
+---
+
+Teel validates the payment method against the recipient's details, saves it, then registers it with each payout route. Call [`GET /recipients/requirements`](/api-reference/recipients/requirements) first for the fields each rail needs.
+
+<Info>**Scope** `recipients:write` · rate limit `default` (60/min, burst 20)</Info>
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  API key.
+</ParamField>
+
+<ParamField header="X-Teel-Entity-Id" type="string">
+  Only needed when the key's owner belongs to more than one business. The UUID of the business this request acts for. Without it, such a key gets `400 ENTITY_REQUIRED`.
+</ParamField>
+
+<ParamField header="Idempotency-Key" type="string">
+  Optional. 8–255 characters of `[A-Za-z0-9_-]`. The same key and body within 24 hours replays the original response. The same key with a different body returns `409 IDEMPOTENCY_KEY_REUSED`. A retry while the first request is still running returns `409 IDEMPOTENCY_REQUEST_IN_FLIGHT` with `Retry-After`.
+</ParamField>
+
+## Path parameters
+
+<ParamField path="id" type="string" required>
+  Recipient UUID.
+</ParamField>
+
+## Request body
+
+Send only the fields the chosen `rail` needs.
+
+<ParamField body="type" type="string" required>`"bank"` or `"wallet"`.</ParamField>
+<ParamField body="currency" type="string" required>
+  ISO 4217 code (bank) or token symbol (wallet) this payment method settles in. It selects the corridor and is never inferred from the recipient's country.
+</ParamField>
+<ParamField body="rail" type="string">
+  For `type: "bank"`, the payment rail, for example `ach`, `sepa`, `pix`, or `mobile_money`. Defaults to `bank_transfer` when omitted. For `type: "wallet"`, the network the address is on, for example `polygon`: a `wallet.chains[].code` from [`GET /config/coverage`](/api-reference/config/coverage).
+</ParamField>
+
+### Bank
+
+<ParamField body="bankName" type="string" />
+<ParamField body="accountNumber" type="string" />
+<ParamField body="accountType" type="string" />
+<ParamField body="accountOwnerName" type="string" />
+<ParamField body="routingNumber" type="string">US (ACH).</ParamField>
+<ParamField body="swiftCode" type="string">SWIFT/BIC.</ParamField>
+<ParamField body="branchCode" type="string" />
+<ParamField body="bankCode" type="string" />
+<ParamField body="sortCode" type="string">UK.</ParamField>
+<ParamField body="bsb" type="string">Australia.</ParamField>
+<ParamField body="nuban" type="string">Nigeria.</ParamField>
+<ParamField body="ifsc" type="string">India.</ParamField>
+<ParamField body="iban" type="string">SEPA and similar.</ParamField>
+<ParamField body="pixKey" type="string">Brazil.</ParamField>
+<ParamField body="brebKey" type="string">Colombia.</ParamField>
+<ParamField body="mobileMoneyPhone" type="string">E.164 phone (Mobile Money).</ParamField>
+<ParamField body="networkSlug" type="string">Mobile Money operator.</ParamField>
+<ParamField body="bankAccountNumberType" type="string">Argentina: `CVU`, `CBU`, or `ALIAS`.</ParamField>
+<ParamField body="tin" type="string">Tax identification number, for rails that require it.</ParamField>
+<ParamField body="country" type="string">Bank country, ISO 3166-1 alpha-2. Can differ from the recipient's country.</ParamField>
+<ParamField body="address" type="object">Bank address, with the same fields as the recipient `address`.</ParamField>
+<ParamField body="institutionType" type="string">`"bank"` or `"ewallet"`.</ParamField>
+<ParamField body="accountHolderName" type="string">Account holder name (business accounts).</ParamField>
+<ParamField body="accountHolderFirstName" type="string">Account holder first name (individual accounts).</ParamField>
+<ParamField body="accountHolderLastName" type="string">Account holder last name (individual accounts).</ParamField>
+<ParamField body="accountHolderPhone" type="string">E.164. Required on bank rails by the recipient schema.</ParamField>
+<ParamField body="accountHolderCountry" type="string">ISO 3166-1 alpha-2.</ParamField>
+<ParamField body="eWalletProvider" type="string">E-wallet rail only.</ParamField>
+<ParamField body="eWalletPhoneNumber" type="string">E-wallet rail only.</ParamField>
+<ParamField body="eWalletHolderName" type="string">E-wallet rail only.</ParamField>
+
+### Wallet
+
+<ParamField body="walletAddress" type="string">Destination address. Screened for compliance before it is saved.</ParamField>
+<ParamField body="walletLabel" type="string">Your label for the wallet.</ParamField>
+
+## Response
+
+`201` with the payment method when setup completed for every payout route. `207` when it was saved but its setup did not complete. A `207` body wraps the payment method and never says which route failed or why:
+
+<ResponseField name="paymentMethod" type="object">`207` only. The saved payment method, with the fields below.</ResponseField>
+<ResponseField name="provisioningError" type="string">`207` only. Present when setup failed. Display text that may change; branch on `retryable`, never on this text.</ResponseField>
+<ResponseField name="retryable" type="boolean">`207` only. Set with `provisioningError`. `true` when every failure was temporary, so trying again shortly may complete setup. `false` means retrying will not help; contact support.</ResponseField>
+<ResponseField name="provisioningWarning" type="string">`207` only. Present without `provisioningError` when the payment method was registered but some of its details could not be registered yet. Display text; try again shortly.</ResponseField>
+
+### Payment method
+
+<ResponseField name="id" type="string">Payment method UUID.</ResponseField>
+<ResponseField name="recipientId" type="string">Recipient UUID.</ResponseField>
+<ResponseField name="type" type="string">`"bank"` or `"wallet"`.</ResponseField>
+<ResponseField name="currency" type="string" />
+<ResponseField name="status" type="string">`"active"` once saved.</ResponseField>
+<ResponseField name="rail" type="string">Omitted when not set.</ResponseField>
+<ResponseField name="bankName" type="string">Omitted when not set.</ResponseField>
+<ResponseField name="accountNumber" type="string">Omitted when not set.</ResponseField>
+<ResponseField name="accountType" type="string">Omitted when not set.</ResponseField>
+<ResponseField name="accountOwnerName" type="string">Omitted when not set.</ResponseField>
+<ResponseField name="routingNumber" type="string">Omitted when not set.</ResponseField>
+<ResponseField name="swiftCode" type="string">Omitted when not set.</ResponseField>
+<ResponseField name="branchCode" type="string">Omitted when not set.</ResponseField>
+<ResponseField name="bankCode" type="string">Omitted when not set.</ResponseField>
+<ResponseField name="sortCode" type="string">Omitted when not set.</ResponseField>
+<ResponseField name="bsbNumber" type="string">Australian BSB, sent as `bsb`. Omitted when not set.</ResponseField>
+<ResponseField name="nubanCode" type="string">Nigerian NUBAN, sent as `nuban`. Omitted when not set.</ResponseField>
+<ResponseField name="ifscCode" type="string">Indian IFSC, sent as `ifsc`. Omitted when not set.</ResponseField>
+<ResponseField name="iban" type="string">Omitted when not set.</ResponseField>
+<ResponseField name="pixKey" type="string">Omitted when not set.</ResponseField>
+<ResponseField name="walletAddress" type="string">Omitted when not set.</ResponseField>
+<ResponseField name="walletNetwork" type="string">Network of `walletAddress`: the `rail` you sent for a wallet. Omitted when not set.</ResponseField>
+<ResponseField name="walletLabel" type="string">Omitted when not set.</ResponseField>
+<ResponseField name="addressScreenedAt" type="string">ISO 8601. When the wallet address passed compliance screening.</ResponseField>
+<ResponseField name="address" type="object">
+  Bank address.
+  <Expandable title="address">
+    <ResponseField name="streetLine1" type="string" />
+    <ResponseField name="streetLine2" type="string" />
+    <ResponseField name="city" type="string" />
+    <ResponseField name="state" type="string" />
+    <ResponseField name="postalCode" type="string" />
+    <ResponseField name="country" type="string" />
+  </Expandable>
+</ResponseField>
+<ResponseField name="tin" type="string">Omitted when not set.</ResponseField>
+<ResponseField name="createdAt" type="string">ISO 8601.</ResponseField>
+<ResponseField name="updatedAt" type="string">ISO 8601.</ResponseField>
+
+### Errors
+
+| Status | `code` | When |
+|---|---|---|
+| `400` | `INVALID_PARAMETER` | `id` is not a UUID. |
+| `400` | `INVALID_JSON` | The body is not valid JSON. |
+| `400` | `INVALID_REQUEST` | `currency` is missing, or the rail is not supported for the currency. |
+| `400` | `VALIDATION_FAILED` | The payment method fails the recipient schema. `details.violations` lists each field. |
+| `400` | `IDEMPOTENCY_KEY_INVALID` | `Idempotency-Key` is malformed. |
+| `400` | `ENTITY_REQUIRED` | The key's owner belongs to more than one business and `X-Teel-Entity-Id` is missing. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `recipients:write`. |
+| `404` | `RECIPIENT_NOT_FOUND` | The recipient does not exist or is not yours. Both answer the same. |
+| `409` | `CONFLICT` | The recipient is your own Teel-held account (`isSelf`), which Teel manages. |
+| `409` | `IDEMPOTENCY_KEY_REUSED` / `IDEMPOTENCY_REQUEST_IN_FLIGHT` | Idempotency conflict. For in-flight, wait for `Retry-After`. |
+| `422` | `ADDRESS_SCREENING_BLOCKED` | The wallet address failed compliance screening. Nothing was saved. |
+| `422` | `ADDRESS_SCREENING_UNDER_REVIEW` | The wallet address is under compliance review. Nothing was saved. |
+| `429` | `RATE_LIMITED` | Per-key rate limit exhausted. Wait for `Retry-After`. |
+| `503` | `ADDRESS_SCREENING_UNAVAILABLE` | Screening is temporarily unavailable. Nothing was saved; retry. |
+
+<ResponseExample>
+```json 201
+{
+  "id": "5c0e1a77-2d1b-4f0e-9a3e-6b1f3d2c4e55",
+  "recipientId": "8b1a4c1d-7a3c-4a08-94ad-9f1ef1e0c3a2",
+  "type": "bank",
+  "currency": "PHP",
+  "status": "active",
+  "rail": "bank_transfer",
+  "bankName": "BDO Unibank",
+  "accountNumber": "001271545517",
+  "accountOwnerName": "Acme Corp Philippines",
+  "address": { "country": "PH" },
+  "createdAt": "2026-06-09T10:00:00Z",
+  "updatedAt": "2026-06-09T10:00:00Z"
+}
+```
+```json 207
+{
+  "paymentMethod": {
+    "id": "5c0e1a77-2d1b-4f0e-9a3e-6b1f3d2c4e55",
+    "recipientId": "8b1a4c1d-7a3c-4a08-94ad-9f1ef1e0c3a2",
+    "type": "bank",
+    "currency": "PHP",
+    "status": "active",
+    "rail": "bank_transfer",
+    "address": {},
+    "createdAt": "2026-06-09T10:00:00Z",
+    "updatedAt": "2026-06-09T10:00:00Z"
+  },
+  "provisioningError": "Setup did not complete for some payout routes. Contact support.",
+  "retryable": false
+}
+```
+</ResponseExample>

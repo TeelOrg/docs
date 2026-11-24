@@ -1,0 +1,66 @@
+---
+title: List settlements
+api: GET /api/collections/receiving-accounts/offramps
+description: Your business's settlements, newest first
+---
+
+import Headers from '/snippets/collections/headers.mdx';
+import SettlementFields from '/snippets/collections/settlement-fields.mdx';
+
+Returns your business's settlements, newest first, including ones made from the dashboard.
+
+<Info>**Scope** `collections:read` · rate limit `collections_read` (120/min, burst 40)</Info>
+
+## Headers
+
+<Headers />
+
+## Query parameters
+
+<ParamField query="limit" type="integer" default="10">
+  Page size. Values outside 1–100 are clamped to that range.
+</ParamField>
+
+<ParamField query="offset" type="integer" default="0">
+  Number of settlements to skip.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Only settlements in this status: `pending`, `transferring`, `settling`, `completed` or `failed`. Any other value returns `400 INVALID_PARAMETER`.
+</ParamField>
+
+## Response
+
+An array of settlements. Each item has these fields:
+
+<SettlementFields />
+
+<ResponseExample>
+```json 200
+[
+  {
+    "id": "a7b8c9d0-e1f2-4a3b-8c4d-5e6f7a8b9c0d",
+    "status": "completed",
+    "sourceAmount": "1001.210000",
+    "sourceAsset": "USDTTRON",
+    "targetAmount": "1000.00",
+    "targetCurrency": "USD",
+    "feeAmount": "2.000000",
+    "recipientPaymentMethodId": "3f2e1d0c-9b8a-4c7d-8e6f-5a4b3c2d1e0f",
+    "transferTxHash": "5d1e8f3a9c2b7e4f6a0d1c3b5e7f9a2c4d6e8f0a1b3c5d7e9f2a4c6e8b0d1f3a",
+    "createdAt": "2026-10-13T15:00:02Z",
+    "updatedAt": "2026-10-14T01:12:40Z"
+  }
+]
+```
+</ResponseExample>
+
+## Errors
+
+| Status | Code | When |
+| --- | --- | --- |
+| `400` | `INVALID_PARAMETER` | `status` is not a recognised value. |
+| `400` | `ENTITY_REQUIRED` | The key's owner belongs to more than one business and `X-Teel-Entity-Id` is missing. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `collections:read`. |
+| `429` | `RATE_LIMITED` | `collections_read` budget exhausted. Wait for `Retry-After`. |

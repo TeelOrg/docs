@@ -1,0 +1,17 @@
+<ResponseField name="id" type="string" required>Buyer UUID.</ResponseField>
+<ResponseField name="name" type="string" required>Buyer name.</ResponseField>
+<ResponseField name="email" type="string">Where invoices issued to this buyer are emailed.</ResponseField>
+<ResponseField name="entityType" type="string">`individual` or `business`.</ResponseField>
+<ResponseField name="country" type="string">ISO 3166-1 alpha-2.</ResponseField>
+<ResponseField name="walletAddress" type="string">A wallet this buyer sends from, if one is on record.</ResponseField>
+<ResponseField name="receivingAddress" type="string">The buyer's own on-chain receiving address. Stablecoin links issued to this buyer are paid here. Absent until one is minted.</ResponseField>
+<ResponseField name="receivingChain" type="string">Network of `receivingAddress`, for example `tron`.</ResponseField>
+<ResponseField name="credit" type="object[]" required>
+  Unspent prepaid credit (for example, from an overpayment), one entry per asset. Empty when there is none.
+  <Expandable title="credit[]">
+    <ResponseField name="asset" type="string" required>Asset symbol, for example `USDT`.</ResponseField>
+    <ResponseField name="amount" type="string" required>Decimal string.</ResponseField>
+  </Expandable>
+</ResponseField>
+<ResponseField name="createdAt" type="string" required>ISO 8601.</ResponseField>
+<ResponseField name="updatedAt" type="string" required>ISO 8601.</ResponseField>

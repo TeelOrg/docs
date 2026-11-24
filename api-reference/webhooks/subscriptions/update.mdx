@@ -27,7 +27,7 @@ All fields are optional — any field you omit stays unchanged. Returns the upda
 </ParamField>
 
 <ParamField body="events" type="string[]">
-  New event allow-list. Replaces the existing list.
+  New event allow-list. Replaces the existing list. Adding a `collections.*` event needs the `collections:read` scope on this key, or returns `403 INSUFFICIENT_SCOPE`.
 </ParamField>
 
 <ParamField body="status" type="string">

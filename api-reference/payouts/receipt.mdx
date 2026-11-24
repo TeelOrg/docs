@@ -1,0 +1,64 @@
+---
+title: Get payout receipt
+api: GET /api/payouts/{id}/receipt
+description: The receipt details of one payout.
+---
+
+Returns the same details Teel puts on the payout's receipt. The keys in this response are snake_case.
+
+<Info>**Scope** `payouts:read` · rate limit `default` (60/min, burst 20)</Info>
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  API key.
+</ParamField>
+
+<ParamField header="X-Teel-Entity-Id" type="string">
+  Only needed when the key's owner belongs to more than one business. The UUID of the business this request acts for. Without it, such a key gets `400 ENTITY_REQUIRED`.
+</ParamField>
+
+## Path parameters
+
+<ParamField path="id" type="string" required>
+  Payout `transactionId` from [`POST /rfq/execute`](/api-reference/payouts/execute).
+</ParamField>
+
+## Response
+
+<ResponseField name="status" type="string">Payout status. See [Core Concepts](/concepts#transaction-status).</ResponseField>
+<ResponseField name="reference_id" type="string">Payout UUID.</ResponseField>
+<ResponseField name="payment_date" type="string">ISO 8601. When the payout completed, or when it was created if it has not completed.</ResponseField>
+<ResponseField name="amount" type="string">Payout currency and amount, formatted for display, for example `MYR 4,425.00`.</ResponseField>
+<ResponseField name="sender_name" type="string">Name on your funding account, or your business name. Empty when unknown.</ResponseField>
+<ResponseField name="sender_account" type="string">Your funding account number. Empty when unknown.</ResponseField>
+<ResponseField name="beneficiary_name" type="string">Recipient business name, full name, or email.</ResponseField>
+<ResponseField name="receiving_bank" type="string">Recipient bank name. Empty when unknown.</ResponseField>
+<ResponseField name="beneficiary_account" type="string">Recipient account number. Empty when unknown.</ResponseField>
+
+### Errors
+
+| Status | `code` | When |
+|---|---|---|
+| `400` | `INVALID_PARAMETER` | `id` is not a UUID. |
+| `400` | `ENTITY_REQUIRED` | The key's owner belongs to more than one business and `X-Teel-Entity-Id` is missing. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `payouts:read`. |
+| `404` | `NOT_FOUND` | The payout does not exist, is not yours, or has not been released yet. All three answer the same. |
+| `429` | `RATE_LIMITED` | Per-key rate limit exhausted. Wait for `Retry-After`. |
+
+<ResponseExample>
+```json 200
+{
+  "status": "completed",
+  "reference_id": "3f2a9c1e-5b7d-4e2a-8c1f-0a9b8c7d6e5f",
+  "payment_date": "2026-03-01T10:05:00Z",
+  "amount": "MYR 4,425.00",
+  "sender_name": "Acme Treasury",
+  "sender_account": "123456789",
+  "beneficiary_name": "Acme Corp Malaysia",
+  "receiving_bank": "Maybank",
+  "beneficiary_account": "514012345678"
+}
+```
+</ResponseExample>

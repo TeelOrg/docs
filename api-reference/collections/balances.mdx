@@ -1,0 +1,62 @@
+---
+title: Get balances
+api: GET /api/collections/balances
+description: Your business's collected balances, the same figures as the dashboard home
+---
+
+import Headers from '/snippets/collections/headers.mdx';
+
+Returns the same balances as the dashboard home:
+
+- **`held`**: stablecoin you can settle, one entry per asset. This includes what [`auto_onramp`](/api-reference/collections/virtual-accounts/list) receiving accounts converted.
+- **`fiatBalances`**: fiat sitting in your receiving accounts, one entry per account: what a `hold` account can spend, and, depending on how your account is set up, anything that has arrived on an `auto_onramp` account but is not converted yet. The figure can be up to 60 seconds old.
+
+A figure that can't be read is left out and sets `available` to `false`. **A missing entry is never a zero balance.**
+
+<Info>**Scope** `collections:read` · rate limit `collections_read` (120/min, burst 40) · needs collections enabled on your business</Info>
+
+## Headers
+
+<Headers />
+
+## Response
+
+<ResponseField name="held" type="object[]" required>
+  Settleable stablecoin, one entry per asset.
+  <Expandable title="held[]">
+    <ResponseField name="asset" type="string" required>Asset symbol, for example `USDT` or `USDC`.</ResponseField>
+    <ResponseField name="amount" type="string" required>Decimal string.</ResponseField>
+  </Expandable>
+</ResponseField>
+<ResponseField name="fiatBalances" type="object[]">
+  Fiat in receiving accounts, one entry per account. The key is absent when no account's figure can be read at all, for example when you have no receiving accounts.
+  <Expandable title="fiatBalances[]">
+    <ResponseField name="currency" type="string" required>ISO 4217, for example `USD`.</ResponseField>
+    <ResponseField name="amount" type="string" required>Decimal string.</ResponseField>
+  </Expandable>
+</ResponseField>
+<ResponseField name="settlementFeeBps" type="integer" required>Settlement fee a new stablecoin link adds, in basis points.</ResponseField>
+<ResponseField name="defaultAsset" type="string" required>Asset a new stablecoin link settles in, for example `USDT`.</ResponseField>
+<ResponseField name="available" type="boolean" required>`false` when any figure could not be read or is incomplete. Treat the response as partial and read again later.</ResponseField>
+
+<ResponseExample>
+```json 200
+{
+  "held": [{ "asset": "USDT", "amount": "4210.550000" }],
+  "fiatBalances": [{ "currency": "USD", "amount": "12500.00" }],
+  "settlementFeeBps": 20,
+  "defaultAsset": "USDT",
+  "available": true
+}
+```
+</ResponseExample>
+
+## Errors
+
+| Status | Code | When |
+| --- | --- | --- |
+| `400` | `ENTITY_REQUIRED` | The key's owner belongs to more than one business and `X-Teel-Entity-Id` is missing. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `collections:read`. |
+| `403` | `COLLECTIONS_NOT_ENABLED` | Collections is not enabled for your business. |
+| `429` | `RATE_LIMITED` | `collections_read` budget exhausted. Wait for `Retry-After`. |

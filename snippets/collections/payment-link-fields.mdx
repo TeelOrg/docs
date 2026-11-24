@@ -1,0 +1,32 @@
+<ResponseField name="id" type="string" required>Payment link UUID.</ResponseField>
+<ResponseField name="reference" type="string" required>Public reference: `PL-` followed by 26 characters. It is the only credential on the payer-facing page, and the key the sandbox simulators take. Bank-transfer payers quote it on their payment.</ResponseField>
+<ResponseField name="url" type="string" required>Payer-facing page for this link. Share it with your payer.</ResponseField>
+<ResponseField name="status" type="string" required>Effective status: `open`, `detected`, `paid` or `expired`. `detected` means a transfer was seen but is not confirmed yet. Only `paid` is settled. An `open` link past `expiresAt`, or one you voided, reads as `expired`. See [Payment link status](/concepts#payment-link-status).</ResponseField>
+<ResponseField name="amount" type="string" required>Invoice total in `currency`, as a decimal string. When you sent line items, this is their sum.</ResponseField>
+<ResponseField name="currency" type="string" required>Invoice currency: `USD`, `EUR`, `GBP`, `AED`, `MXN`, `BRL` or `COP`.</ResponseField>
+<ResponseField name="collectionType" type="string" required>`stablecoin` (the payer sends stablecoin on-chain) or `fiat` (the payer pays by bank transfer).</ResponseField>
+<ResponseField name="settlementCurrency" type="string">Fiat the business receives when the link converts on collection. Absent on `fiat` and `stablecoin` links.</ResponseField>
+<ResponseField name="invoiceNumber" type="string">Your invoice number. A link with several line items leaves this out, and each line carries its own.</ResponseField>
+<ResponseField name="customerName" type="string">Who the invoice is for. Defaults to the buyer's name.</ResponseField>
+<ResponseField name="customerEmail" type="string">Where the invoice was emailed. Defaults to the buyer's email.</ResponseField>
+<ResponseField name="buyerId" type="string">UUID of the [buyer](/api-reference/collections/buyers/get) the link is issued to.</ResponseField>
+<ResponseField name="lineItems" type="object[]" required>
+  Invoice lines. Empty when the link was created with a single `amount`.
+  <Expandable title="lineItems[]">
+    <ResponseField name="invoiceNumber" type="string">Invoice number for this line.</ResponseField>
+    <ResponseField name="description" type="string">Free-text description.</ResponseField>
+    <ResponseField name="quantity" type="number">Display only. Never used to compute `amount`.</ResponseField>
+    <ResponseField name="unitPrice" type="string">Display only. A decimal string.</ResponseField>
+    <ResponseField name="amount" type="string" required>What this line owes, as a decimal string.</ResponseField>
+  </Expandable>
+</ResponseField>
+<ResponseField name="dueDate" type="string">ISO 8601. The due date shown to the payer. It does not expire the link.</ResponseField>
+<ResponseField name="depositAddress" type="string">Stablecoin links only. The address the payer sends to, which is the buyer's own receiving address.</ResponseField>
+<ResponseField name="chain" type="string">Network of `depositAddress`, for example `tron`.</ResponseField>
+<ResponseField name="usdtAmount" type="string">Stablecoin links only. What the payer sends, in the settlement asset, as a decimal string. Priced from the rate locked when the link was created.</ResponseField>
+<ResponseField name="feeBps" type="integer">Stablecoin links only. Settlement fee on this link, in basis points.</ResponseField>
+<ResponseField name="feeAmount" type="string">Stablecoin links only. Settlement fee on this link, as a decimal string.</ResponseField>
+<ResponseField name="expiresAt" type="string">ISO 8601. When the link stops accepting new payments. A transfer already in flight is still matched for 60 minutes after this time.</ResponseField>
+<ResponseField name="paidAt" type="string">ISO 8601. When the link reached `paid`.</ResponseField>
+<ResponseField name="paymentTxHashes" type="string[]" required>On-chain transfers that paid this link, oldest first. Empty until a payment arrives, and always empty on `fiat` links.</ResponseField>
+<ResponseField name="createdAt" type="string" required>ISO 8601.</ResponseField>

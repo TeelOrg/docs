@@ -1,0 +1,99 @@
+---
+title: List recipient payment methods
+api: GET /api/recipients/{id}/payment-methods
+description: List a recipient's active payment methods
+---
+
+Returns the recipient's active payment methods, newest first. Pass a payment method's `id` as `recipientPaymentMethodId` when you [execute a payout](/api-reference/payouts/execute).
+
+<Info>**Scope** `recipients:read`</Info>
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  `Bearer <key>`, where `<key>` is your API key.
+</ParamField>
+
+<ParamField header="X-Teel-Entity-Id" type="string">
+  Only needed when the key's owner belongs to more than one business. The UUID of the business this request acts for. Without it, such a key gets `400 ENTITY_REQUIRED`.
+</ParamField>
+
+## Path parameters
+
+<ParamField path="id" type="string" required>
+  Recipient UUID.
+</ParamField>
+
+## Response
+
+Array of payment methods. Bank and wallet fields with no value are omitted.
+
+<ResponseField name="id" type="string" required>Payment method UUID.</ResponseField>
+<ResponseField name="recipientId" type="string" required>Recipient UUID.</ResponseField>
+<ResponseField name="type" type="string" required>`"bank"` or `"wallet"`.</ResponseField>
+<ResponseField name="currency" type="string" required />
+<ResponseField name="status" type="string" required>Always `"active"`.</ResponseField>
+<ResponseField name="rail" type="string" />
+<ResponseField name="bankName" type="string" />
+<ResponseField name="accountNumber" type="string" />
+<ResponseField name="accountType" type="string" />
+<ResponseField name="accountOwnerName" type="string" />
+<ResponseField name="routingNumber" type="string" />
+<ResponseField name="swiftCode" type="string" />
+<ResponseField name="branchCode" type="string" />
+<ResponseField name="bankCode" type="string" />
+<ResponseField name="sortCode" type="string" />
+<ResponseField name="bsbNumber" type="string" />
+<ResponseField name="nubanCode" type="string" />
+<ResponseField name="ifscCode" type="string" />
+<ResponseField name="iban" type="string" />
+<ResponseField name="pixKey" type="string" />
+<ResponseField name="walletAddress" type="string" />
+<ResponseField name="walletNetwork" type="string" />
+<ResponseField name="walletLabel" type="string" />
+<ResponseField name="addressScreenedAt" type="string">ISO 8601. When Teel's compliance screening cleared this wallet address as it was saved. Absent for an address saved before screening applied.</ResponseField>
+<ResponseField name="address" type="object" required>
+  <Expandable title="address">
+    <ResponseField name="streetLine1" type="string" />
+    <ResponseField name="streetLine2" type="string" />
+    <ResponseField name="city" type="string" />
+    <ResponseField name="state" type="string" />
+    <ResponseField name="postalCode" type="string" />
+    <ResponseField name="country" type="string" />
+  </Expandable>
+</ResponseField>
+<ResponseField name="tin" type="string">Account holder's tax ID, where the rail takes one.</ResponseField>
+<ResponseField name="createdAt" type="string" required>ISO 8601.</ResponseField>
+<ResponseField name="updatedAt" type="string" required>ISO 8601.</ResponseField>
+
+<ResponseExample>
+```json 200
+[
+  {
+    "id": "3c9e7f12-5b4a-4d1e-8f2a-6a7b8c9d0e1f",
+    "recipientId": "8b1a4c1d-7a3c-4a08-94ad-9f1ef1e0c3a2",
+    "type": "bank",
+    "currency": "EUR",
+    "status": "active",
+    "bankName": "Example Bank",
+    "accountOwnerName": "Acme GmbH",
+    "swiftCode": "EXMPDEFFXXX",
+    "iban": "DE89370400440532013000",
+    "address": { "country": "DE" },
+    "createdAt": "2026-11-18T09:30:00Z",
+    "updatedAt": "2026-11-18T09:30:00Z"
+  }
+]
+```
+</ResponseExample>
+
+## Errors
+
+| Status | Code | Meaning |
+| --- | --- | --- |
+| `400` | `INVALID_PARAMETER` | `id` is not a UUID. |
+| `400` | `ENTITY_REQUIRED` | The key's owner belongs to more than one business and `X-Teel-Entity-Id` is missing. |
+| `401` | `UNAUTHORIZED` | Missing/invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `recipients:read`. |
+| `404` | `RECIPIENT_NOT_FOUND` | The recipient doesn't exist or isn't yours. |
+| `429` | `RATE_LIMITED` | Per-key rate limit exhausted. Wait for `Retry-After`. |

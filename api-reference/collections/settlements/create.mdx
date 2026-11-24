@@ -1,0 +1,177 @@
+---
+title: Create settlement
+api: POST /api/collections/receiving-accounts/offramp
+description: Settle held stablecoin to a recipient in fiat or USDC
+---
+
+import Headers from '/snippets/collections/headers.mdx';
+import SettlementFields from '/snippets/collections/settlement-fields.mdx';
+
+Converts held stablecoin and pays it out to a recipient, in fiat or as USDC. **This moves money.** Run [Preview settlement](/api-reference/collections/settlements/preview) with the same parameters first, and [upload the outgoing invoice](/api-reference/collections/settlements/upload-document) to get the `outgoingInvoiceDocumentFileId` this call requires.
+
+<Warning>
+  **API settlements need a Teel-signed wallet.** A settlement through the API is allowed only when Teel can sign for the wallet holding your balance: a custodial wallet, or, for the USDT balance (`riskClass: "high"`), one where you have granted Teel a scoped settle signer. For the USDC balance (`riskClass: "low"`), a wallet your business controls is refused even with a scoped signer. If your business controls the wallet itself, you must authorize settlements in the Teel dashboard. The API answers `409 SETTLEMENT_REQUIRES_DASHBOARD_AUTHORIZATION`, and nothing moves.
+</Warning>
+
+<Info>**Scope** `settlements:write` · rate limit `settlements_write` (10/min, burst 5) · `Idempotency-Key` **required**</Info>
+
+## How the response works
+
+The call answers `202 Accepted` with the settlement. A settlement still running after about 20 seconds is answered early with its current status (`pending` or `transferring`). Follow it with [Get settlement](/api-reference/collections/settlements/get) or the `collections.offramp.status.updated` webhook.
+
+Rarely, the settlement has not been recorded yet when that early answer is sent. Then the body is `{"idempotencyKey": "…", "status": "pending"}`. Nothing has moved yet. Retry with the same `Idempotency-Key` to get the settlement once it exists.
+
+## Headers
+
+<Headers />
+
+<ParamField header="Idempotency-Key" type="string" required>
+  Required for API keys. 8–255 characters of `[A-Za-z0-9_-]`, naming this settlement. The key is stored on the settlement itself, not in a 24-hour response cache:
+  - The same key with the same `amount`, `targetFiatCurrency`, `riskClass`, `recipientPaymentMethodId` and `payoutAddressId` returns that settlement in its current status, with `Idempotency-Replayed: true`, for as long as it exists.
+  - The same key with a different request returns `409 IDEMPOTENCY_KEY_REUSED`.
+  - If the earlier attempt failed before moving anything, the same key starts a fresh attempt instead of replaying the failure.
+
+  Missing returns `400 MISSING_PARAMETER`. Malformed returns `400 IDEMPOTENCY_KEY_INVALID`.
+</ParamField>
+
+## Request body
+
+<ParamField body="asset" type="string" required>
+  Which balance settles: `USDC` (the `low` class) or `USDT` (the `high` class, where stablecoin payment links collect).
+</ParamField>
+
+<ParamField body="amount" type="number" required>
+  A JSON number greater than 0, with at most 6 decimal places. With `amountIs: "delivery"` (the default), this is what the recipient receives, and the fee is debited on top. A fiat delivery is truncated to 2 decimal places, never rounded up. With `amountIs: "spend"`, this is exactly what leaves your balance.
+</ParamField>
+
+<ParamField body="targetFiatCurrency" type="string" required>
+  ISO 4217 code of the fiat to pay out, or `USDC` for a stablecoin payout.
+</ParamField>
+
+<ParamField body="recipientPaymentMethodId" type="string">
+  UUID of the recipient payment method to pay: the `id` of one of the recipient's `paymentMethods` (see [Recipients](/guides/recipients)). Required when `destination` is `recipient` (the default).
+</ParamField>
+
+<ParamField body="outgoingInvoiceDocumentFileId" type="string" required>
+  The `fileId` (UUID) from [Upload settlement invoice](/api-reference/collections/settlements/upload-document). Missing returns `400 OUTGOING_INVOICE_DOCUMENT_REQUIRED`. A file ID that is not an invoice this business and API key owner uploaded returns `422 OUTGOING_INVOICE_DOCUMENT_INVALID`.
+</ParamField>
+
+<ParamField body="riskClass" type="string">
+  Optional. Derived from `asset` when absent. When sent, it must match `asset` (`low` for `USDC`, `high` for `USDT`), otherwise `400 INVALID_PARAMETER`.
+</ParamField>
+
+<ParamField body="amountIs" type="string" default="delivery">
+  `delivery` or `spend`. `spend` is honoured only where [Preview settlement](/api-reference/collections/settlements/preview) returns `spendSettle: true`. Elsewhere it returns `400 SPEND_MODE_UNSUPPORTED`. Any other value returns `400 AMOUNT_IS_INVALID`.
+</ParamField>
+
+<ParamField body="destination" type="string" default="recipient">
+  `recipient` (a recipient's payment method) or `payout_address` (a USDC payout to a payout address registered for your business in the dashboard).
+</ParamField>
+
+<ParamField body="payoutAddressId" type="string">
+  With `destination: "payout_address"`: which registered payout address to pay. Required when your business has more than one.
+</ParamField>
+
+<ParamField body="settlementRoute" type="string">
+  Optional. `home_convert` (converting your own balance) or `collections_settle` (settling collected invoices). It can only narrow which routes are eligible, never open one.
+</ParamField>
+
+<ParamField body="targetRail" type="string">
+  Optional. Recorded on the settlement.
+</ParamField>
+
+```bash
+curl -X POST https://api.teel.finance/collections/receiving-accounts/offramp \
+  -H "Authorization: Bearer $TEEL_API_KEY" \
+  -H "Idempotency-Key: settle-inv-1042" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "asset": "USDT",
+    "amount": 1000,
+    "targetFiatCurrency": "USD",
+    "recipientPaymentMethodId": "3f2e1d0c-9b8a-4c7d-8e6f-5a4b3c2d1e0f",
+    "riskClass": "high",
+    "outgoingInvoiceDocumentFileId": "3c2b1a09-8f7e-4d6c-9b5a-4f3e2d1c0b9a"
+  }'
+```
+
+## Response
+
+`202 Accepted` with the settlement:
+
+<SettlementFields />
+
+If the settlement is not recorded yet at the early answer, the body is instead:
+
+<ResponseField name="idempotencyKey" type="string">The `Idempotency-Key` you sent. Retry with it to get the settlement.</ResponseField>
+<ResponseField name="status" type="string">Always `pending`.</ResponseField>
+
+<ResponseExample>
+```json 202
+{
+  "id": "a7b8c9d0-e1f2-4a3b-8c4d-5e6f7a8b9c0d",
+  "status": "transferring",
+  "sourceAmount": "1001.210000",
+  "sourceAsset": "USDTTRON",
+  "targetAmount": "1000.00",
+  "targetCurrency": "USD",
+  "feeAmount": "2.000000",
+  "recipientPaymentMethodId": "3f2e1d0c-9b8a-4c7d-8e6f-5a4b3c2d1e0f",
+  "transferTxHash": "5d1e8f3a9c2b7e4f6a0d1c3b5e7f9a2c4d6e8f0a1b3c5d7e9f2a4c6e8b0d1f3a",
+  "createdAt": "2026-10-13T15:00:02Z",
+  "updatedAt": "2026-10-13T15:00:19Z"
+}
+```
+
+```json 202 (not recorded yet)
+{
+  "idempotencyKey": "settle-inv-1042",
+  "status": "pending"
+}
+```
+</ResponseExample>
+
+## Holds and refusals
+
+- **Converting to fiat on hold.** When converting to fiat is not enabled for your account yet, any fiat `targetFiatCurrency` returns `403 MANUAL_CONVERT_DISABLED`. A `USDC` payout is still allowed, and preview still works.
+- **Refused settlement.** A settlement Teel can't carry out returns `422 SETTLEMENT_REFUSED`. `details.reason` is a [settlement reason](/concepts#settlement-reasons), and `details.settlement` is the failed settlement when one was recorded. A refusal caused by a downstream outage returns `502` or `503 DOWNSTREAM_UNAVAILABLE` with the same `details`.
+
+```json 422
+{
+  "code": "SETTLEMENT_REFUSED",
+  "error": "The settlement was refused; details.reason says why.",
+  "details": { "reason": "AMOUNT_BELOW_MIN" }
+}
+```
+
+## Errors
+
+| Status | Code | When |
+| --- | --- | --- |
+| `400` | `INVALID_REQUEST` | Body malformed or a required field missing. |
+| `400` | `INVALID_PARAMETER` | `amount` not greater than 0, `targetFiatCurrency` not a 3-letter code or `USDC`, a bad `asset`, a `riskClass` that does not match `asset`, a bad `settlementRoute` or `destination`, or a fiat delivery smaller than one cent. |
+| `400` | `MISSING_PARAMETER` | `Idempotency-Key` missing, or `recipientPaymentMethodId` missing for the `recipient` destination. |
+| `400` | `IDEMPOTENCY_KEY_INVALID` | `Idempotency-Key` is malformed. |
+| `400` | `AMOUNT_IS_INVALID` | `amountIs` is not `delivery` or `spend`. |
+| `400` | `SPEND_MODE_UNSUPPORTED` | `amountIs: "spend"` is not supported for this settlement. Send the delivery amount. |
+| `400` | `OUTGOING_INVOICE_DOCUMENT_REQUIRED` | `outgoingInvoiceDocumentFileId` missing. |
+| `400` | `ENTITY_REQUIRED` | The key's owner belongs to more than one business and `X-Teel-Entity-Id` is missing. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `settlements:write`. |
+| `403` | `MANUAL_CONVERT_DISABLED` | Converting to fiat is on hold for your account. A `USDC` payout is still allowed. |
+| `404` | `PAYMENT_METHOD_NOT_FOUND` | No such recipient payment method for your business. |
+| `409` | `SETTLEMENT_REQUIRES_DASHBOARD_AUTHORIZATION` | Your business controls the settlement wallet. Settle from the dashboard. Nothing moved. |
+| `409` | `insufficient_available_balance` | More than your uncommitted balance, or another settlement of it is in flight. Send less, or retry shortly. |
+| `409` | `IDEMPOTENCY_KEY_REUSED` | The key was used for a different settlement. |
+| `409` | `IDEMPOTENCY_REQUEST_IN_FLIGHT` | A request with this key is still running. Retry shortly. |
+| `409` | `CONFLICT` | The server is restarting. Nothing was sent; retry in a moment. |
+| `422` | `SETTLEMENT_REFUSED` | See [Holds and refusals](#holds-and-refusals). |
+| `422` | `OUTGOING_INVOICE_DOCUMENT_INVALID` | The file ID is not an invoice uploaded by this business and API key owner. |
+| `429` | `RATE_LIMITED` | `settlements_write` budget exhausted. Wait for `Retry-After`. |
+| `502` | `DOWNSTREAM_UNAVAILABLE` | The settlement could not be completed upstream. `details` as for `422`. |
+| `503` | `OFFRAMP_DISABLED` | Settlement, or settling to a payout address, is switched off. |
+| `503` | `DOWNSTREAM_UNAVAILABLE` | A required service is unavailable. `details` as for `422`. |
+
+## Sandbox
+
+In sandbox, settlements are simulated. Nothing leaves the platform, the custody check does not apply, and the settlement is recorded as `completed` straight away. It sends one `collections.offramp.status.updated` webhook.

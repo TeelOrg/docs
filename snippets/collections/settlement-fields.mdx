@@ -1,0 +1,12 @@
+<ResponseField name="id" type="string" required>Settlement UUID.</ResponseField>
+<ResponseField name="status" type="string" required>`pending`, `transferring`, `settling`, `completed` or `failed`. See [Settlement status](/concepts#settlement-status).</ResponseField>
+<ResponseField name="sourceAmount" type="string">Stablecoin sent for conversion, as a decimal string. `feeAmount` is debited on top. Absent on a fiat settlement that has not been priced yet.</ResponseField>
+<ResponseField name="sourceAsset" type="string" required>The asset the settlement draws from, for example `USDTTRON` or `USDCPOLYGON`.</ResponseField>
+<ResponseField name="targetAmount" type="string" required>What the recipient receives in `targetCurrency`: the settled figure once known, otherwise the estimate, otherwise the delivery you asked for.</ResponseField>
+<ResponseField name="targetCurrency" type="string" required>ISO 4217, or `USDC` for a stablecoin payout.</ResponseField>
+<ResponseField name="feeAmount" type="string" required>Teel's charge, in the source asset, as a decimal string.</ResponseField>
+<ResponseField name="recipientPaymentMethodId" type="string">UUID of the recipient payment method being paid.</ResponseField>
+<ResponseField name="transferTxHash" type="string">The on-chain transfer that sent `sourceAmount`.</ResponseField>
+<ResponseField name="failureCode" type="string">Present when `status` is `failed`. One of the [settlement reasons](/concepts#settlement-reasons).</ResponseField>
+<ResponseField name="createdAt" type="string" required>ISO 8601.</ResponseField>
+<ResponseField name="updatedAt" type="string" required>ISO 8601.</ResponseField>

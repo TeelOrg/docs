@@ -1,0 +1,79 @@
+---
+title: Get batch payout rows
+api: GET /api/payouts/batch/{batchId}/rows
+description: Whether each payout in a batch has its offramp order yet.
+---
+
+[`POST /rfq/execute-batch`](/api-reference/payouts/execute-batch) returns before each recipient's offramp order exists. Poll [`GET /jobs/{jobId}`](/api-reference/jobs/get) until the batch has been created, then poll this endpoint until `producer` is `succeeded` or `failed`. This endpoint returns `404` while the batch is still being created.
+
+<Info>**Scope** `payouts:read` · rate limit `default` (60/min, burst 20)</Info>
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  API key.
+</ParamField>
+
+<ParamField header="X-Teel-Entity-Id" type="string">
+  Only needed when the key's owner belongs to more than one business. The UUID of the business this request acts for. Without it, such a key gets `400 ENTITY_REQUIRED`.
+</ParamField>
+
+## Path parameters
+
+<ParamField path="batchId" type="string" required>
+  Batch UUID.
+</ParamField>
+
+## Response
+
+<ResponseField name="batchId" type="string">Batch UUID.</ResponseField>
+<ResponseField name="collectionId" type="string">UUID of the batch's shared collection. See [`GET /payouts/batch/{batchId}/collection`](/api-reference/payouts/batch-collection).</ResponseField>
+<ResponseField name="producer" type="string">
+  Batch-level state:
+  - `running`: not finished. Keep polling.
+  - `succeeded`: the remaining rows have offramp orders and the collection was charged. Some rows can still be `failed`; the other recipients are paid.
+  - `failed`: the batch will not proceed. If it failed before the charge, nothing was taken.
+</ResponseField>
+<ResponseField name="rows" type="object[]">
+  One entry per payout in the batch, oldest first. Join on `transactionId` with the rows from `/rfq/execute-batch`.
+  <Expandable title="rows[]">
+    <ResponseField name="transactionId" type="string">Payout UUID.</ResponseField>
+    <ResponseField name="status" type="string">Payout status. See [Core Concepts](/concepts#transaction-status).</ResponseField>
+    <ResponseField name="failureCode" type="string">Stable failure code. Omitted unless the payout failed.</ResponseField>
+    <ResponseField name="hasOfframpOrder" type="boolean">`true` once the offramp order exists. A row has the same `status` before and after its order is created, so read this field instead.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Errors
+
+| Status | `code` | When |
+|---|---|---|
+| `400` | `INVALID_PARAMETER` | `batchId` is not a UUID. |
+| `400` | `ENTITY_REQUIRED` | The key's owner belongs to more than one business and `X-Teel-Entity-Id` is missing. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `payouts:read`. |
+| `404` | `NOT_FOUND` | No batch with this ID has been created yet, or the batch is not yours. Both answer the same. |
+| `429` | `RATE_LIMITED` | Per-key rate limit exhausted. Wait for `Retry-After`. |
+
+<ResponseExample>
+```json 200
+{
+  "batchId": "c4d5e6f7-0a1b-4c2d-8e3f-4a5b6c7d8e9f",
+  "collectionId": "e1f2a3b4-c5d6-4e7f-8a9b-0c1d2e3f4a5b",
+  "producer": "succeeded",
+  "rows": [
+    {
+      "transactionId": "3f2a9c1e-5b7d-4e2a-8c1f-0a9b8c7d6e5f",
+      "status": "processing",
+      "hasOfframpOrder": true
+    },
+    {
+      "transactionId": "9a8b7c6d-5e4f-4a3b-8c2d-1e0f9a8b7c6d",
+      "status": "failed",
+      "failureCode": "RECIPIENT_DETAILS_INVALID",
+      "hasOfframpOrder": false
+    }
+  ]
+}
+```
+</ResponseExample>

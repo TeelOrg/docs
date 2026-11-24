@@ -1,0 +1,83 @@
+---
+title: Get earnings
+api: GET /api/metrics/earnings
+description: Teel fees and subsidy on your settled payouts.
+---
+
+Totals the Teel fee and the subsidy Teel absorbed across your completed payouts, dated by settlement. The response is always scoped to your own account. Amounts are exact decimal strings in USDC.
+
+<Info>**Scope** `payouts:read` · rate limit `default` (60/min, burst 20)</Info>
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  API key.
+</ParamField>
+
+## Query parameters
+
+<ParamField query="from" type="string">
+  Lower bound on settlement time, inclusive. `YYYY-MM-DD` or RFC 3339.
+</ParamField>
+
+<ParamField query="to" type="string">
+  Upper bound on settlement time, inclusive. `YYYY-MM-DD` or RFC 3339. A bare date means midnight at the start of that day, so to include a whole day pass the next day or a full timestamp.
+</ParamField>
+
+<ParamField query="chain" type="integer">
+  Only payouts settled on this chain ID, for example `137`.
+</ParamField>
+
+<ParamField query="group_by" type="string">
+  Add a per-key breakdown in `rows`: `day` or `chain`. Any other value returns `400 INVALID_PARAMETER`.
+</ParamField>
+
+## Response
+
+<ResponseField name="success" type="boolean">Always `true` on `200`.</ResponseField>
+<ResponseField name="data" type="object">
+  <Expandable title="data">
+    <ResponseField name="earnedUsdc" type="string">Total Teel fee.</ResponseField>
+    <ResponseField name="subsidizedUsdc" type="string">Total subsidy absorbed by Teel.</ResponseField>
+    <ResponseField name="count" type="integer">Number of settled payouts counted.</ResponseField>
+    <ResponseField name="groupBy" type="string">Echo of `group_by`. Present only when it was set.</ResponseField>
+    <ResponseField name="rows" type="object[]">
+      Present only when `group_by` was set. Sorted by `key`.
+      <Expandable title="rows[]">
+        <ResponseField name="key" type="string">The group: a `YYYY-MM-DD` date for `day`, or a chain ID for `chain`. Can be `null`.</ResponseField>
+        <ResponseField name="earnedUsdc" type="string" />
+        <ResponseField name="subsidizedUsdc" type="string" />
+        <ResponseField name="count" type="integer" />
+      </Expandable>
+    </ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Errors
+
+| Status | `code` | When |
+|---|---|---|
+| `400` | `INVALID_PARAMETER` | `group_by` is not `day` or `chain`. |
+| `400` | none | `chain` is not an integer. The body is `{"success": false, "error": "…"}`. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `payouts:read`. |
+| `429` | `RATE_LIMITED` | Per-key rate limit exhausted. Wait for `Retry-After`. |
+| `502` | none | Earnings could not be reached. Retry. The body is `{"success": false, "error": "…"}`. |
+
+<ResponseExample>
+```json 200
+{
+  "success": true,
+  "data": {
+    "earnedUsdc": "182.450000",
+    "subsidizedUsdc": "12.000000",
+    "count": 41,
+    "groupBy": "day",
+    "rows": [
+      { "key": "2026-03-01", "earnedUsdc": "90.250000", "subsidizedUsdc": "0", "count": 20 },
+      { "key": "2026-03-02", "earnedUsdc": "92.200000", "subsidizedUsdc": "12.000000", "count": 21 }
+    ]
+  }
+}
+```
+</ResponseExample>

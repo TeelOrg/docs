@@ -19,16 +19,16 @@ sk_<env>_<43 url-safe base64 chars>
 | Prefix     | Environment | Base URL                            |
 | ---------- | ----------- | ----------------------------------- |
 | `sk_live_` | Production  | `https://api.teel.finance`          |
-| `sk_test_` | Sandbox     | `https://api-sandbox.teel.finance`  |
+| `sk_test_` | Sandbox     | `https://api.teel.finance/sandbox`  |
 
 <Note>
-  Sandbox provider APIs don't move real funds — use `sk_test_…` keys against `api-sandbox.teel.finance` for end-to-end integration testing before switching to production credentials.
+  Sandbox provider APIs don't move real funds — use `sk_test_…` keys against `api.teel.finance/sandbox` for end-to-end integration testing before switching to production credentials.
 </Note>
 
 The fixed `sk_` prefix is recognized by GitHub secret scanning, GitGuardian, and TruffleHog — if you accidentally commit a key, you'll get a leak notification. The visible `live` vs `test` distinction prevents the "prod creds in Slack" failure mode.
 
 <Warning>
-  Use each key only against its matching host. A key sent to the wrong environment is rejected with `403` and the body `{"error": "environment_scope mismatch"}` — `sk_live_…` belongs on `api.teel.finance`, `sk_test_…` on `api-sandbox.teel.finance`.
+  Use each key only against its matching base URL. A key sent to the wrong environment is rejected with `403` and the body `{"error": "environment_scope mismatch"}` — `sk_live_…` belongs on `api.teel.finance`, `sk_test_…` on `api.teel.finance/sandbox`.
 </Warning>
 
 ## Issuing a key
@@ -57,6 +57,9 @@ Each key carries a subset of scopes. Default for a newly-minted key is read-only
 | `recipients:read` | List / fetch recipients |
 | `webhooks:write` | Create / update / delete webhook subscriptions |
 | `webhooks:read` | List / fetch webhook subscriptions and deliveries |
+| `collections:read` | Read payment links, buyers, balances, receiving accounts, deposits and settlements; preview a settlement; subscribe to `collections.*` webhook events |
+| `collections:write` | Create / void payment links; create / update / delete buyers |
+| `settlements:write` | Upload a settlement invoice and create settlements (moves money) |
 
 Webhook subscriptions are managed entirely through the API with the `webhooks:read` / `webhooks:write` scopes — see the [Webhooks guide](/guides/webhooks).
 
@@ -106,6 +109,6 @@ Specific limits per endpoint family + the per-key default are documented in the 
 
 ## Dashboard authentication
 
-The Teel dashboard is a separate, browser-only session and is **not** the API authentication path. Partner integrations should always use the `sk_` API key pattern above — dashboard sessions are not accepted on `api.teel.finance` or `api-sandbox.teel.finance`.
+The Teel dashboard is a separate, browser-only session and is **not** the API authentication path. Partner integrations should always use the `sk_` API key pattern above — dashboard sessions are not accepted on `api.teel.finance` or `api.teel.finance/sandbox`.
 
 If you build an internal tool that needs to act on behalf of multiple Teel accounts, request one `sk_` key per account rather than reusing your own dashboard session.

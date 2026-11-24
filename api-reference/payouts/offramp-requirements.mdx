@@ -1,0 +1,57 @@
+---
+title: Get offramp requirements (deprecated)
+api: GET /api/payouts/offramp-requirements/{protocol}
+description: Whether a route needs a supporting document.
+deprecated: true
+---
+
+<Warning>
+  Deprecated. Read `offrampRequirements` on each route in the `/quotes/*` response instead. It carries the same `document` requirement for the route you are quoting, with no extra request. This endpoint will be removed.
+</Warning>
+
+<Info>**Scope** `payouts:read` · rate limit `default` (60/min, burst 20)</Info>
+
+## Headers
+
+<ParamField header="Authorization" type="string" required>
+  API key.
+</ParamField>
+
+## Path parameters
+
+<ParamField path="protocol" type="string" required>
+  The route's `protocol` value from a `/quotes/*` response, passed as is.
+</ParamField>
+
+## Response
+
+<ResponseField name="provider" type="string">The `protocol` you sent, echoed back. Despite the field name, it never names a provider.</ResponseField>
+<ResponseField name="document" type="object">
+  Omitted when the route needs no document.
+  <Expandable title="document">
+    <ResponseField name="required" type="boolean">`true` when a supporting document must be attached. Upload it with [`POST /payouts/document`](/api-reference/payouts/upload-document).</ResponseField>
+    <ResponseField name="acceptedFormats" type="string[]">File formats, for example `["pdf", "jpeg", "png"]`.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+An unknown `protocol` returns `200` with no `document`.
+
+## Errors
+
+| Status | `code` | When |
+|---|---|---|
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `payouts:read`. |
+| `429` | `RATE_LIMITED` | Per-key rate limit exhausted. Wait for `Retry-After`. |
+
+<ResponseExample>
+```json 200
+{
+  "provider": "rt_Zm9yLWV4YW1wbGUtb25seQ",
+  "document": {
+    "required": true,
+    "acceptedFormats": ["pdf", "jpeg", "png"]
+  }
+}
+```
+</ResponseExample>

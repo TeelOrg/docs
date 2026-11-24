@@ -1,6 +1,6 @@
 ---
 title: Get Coverage Matrix
-api: GET https://api.teel.finance/api/config/coverage
+api: GET /api/config/coverage
 description: Currencies, rails, directions, and amount bounds the platform can onramp/offramp
 ---
 
@@ -42,7 +42,7 @@ This endpoint is derived entirely from live platform configuration — as corrid
     <ResponseField name="chains" type="array">
       Chains the tokens settle on.
       <Expandable title="Chain object">
-        <ResponseField name="code" type="string">Chain code (e.g. `polygon`, `base`, `arbitrum`).</ResponseField>
+        <ResponseField name="code" type="string">Chain code (e.g. `polygon`, `base`, `arbitrum`). Send it as `rail` on a `type: "wallet"` payment method.</ResponseField>
         <ResponseField name="label" type="string">Display label for the chain.</ResponseField>
       </Expandable>
     </ResponseField>

@@ -23,7 +23,7 @@ Register a delivery URL.
 </ParamField>
 
 <ParamField body="events" type="string[]" required>
-  Non-empty list of event types. Allowed: `payout.created`, `payout.status.updated`.
+  Non-empty list of event types. Allowed: `payout.created`, `payout.status.updated`, `collections.payment_link.paid`, `collections.deposit.received`, `collections.offramp.status.updated`. The `collections.*` events also need the `collections:read` scope on this key.
 </ParamField>
 
 <ParamField body="label" type="string">
@@ -73,4 +73,5 @@ The other fields (`url`, `events`, `label`, `lastSuccessAt`, `lastFailureAt`, `c
 | Status | Meaning |
 | --- | --- |
 | `400` | Invalid URL (not https, missing host, private IP, metadata host) or unknown event type. |
+| `403` | `INSUFFICIENT_SCOPE`: a `collections.*` event was requested by a key without `collections:read`. `details.requiredScopes` maps each such event to the scope it needs. |
 | `409` | You've reached the per-account limit (25). Delete or pause an existing one first. |

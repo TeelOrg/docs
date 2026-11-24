@@ -1,0 +1,66 @@
+---
+title: Get payment link
+api: GET /api/collections/payment-links/{id}
+description: Fetch one payment link by ID
+---
+
+import Headers from '/snippets/collections/headers.mdx';
+import PaymentLinkFields from '/snippets/collections/payment-link-fields.mdx';
+
+Returns `404` if the ID isn't yours. A link of another business looks the same as one that doesn't exist.
+
+<Info>**Scope** `collections:read` · rate limit `collections_read` (120/min, burst 40) · needs collections enabled on your business</Info>
+
+## Headers
+
+<Headers />
+
+## Path parameters
+
+<ParamField path="id" type="string" required>
+  Payment link UUID.
+</ParamField>
+
+## Response
+
+<PaymentLinkFields />
+
+<ResponseExample>
+```json 200
+{
+  "id": "0b6f2c1e-3c1d-4f43-9a55-2a7f3d1e9c10",
+  "reference": "PL-K5XQ2M7RZJ4NVB6TQW3YHPDLCE",
+  "url": "https://pay.teel.finance/PL-K5XQ2M7RZJ4NVB6TQW3YHPDLCE",
+  "status": "open",
+  "amount": "1250.00",
+  "currency": "USD",
+  "collectionType": "stablecoin",
+  "invoiceNumber": "INV-1042",
+  "customerName": "Acme Imports Ltd",
+  "customerEmail": "ap@acme-imports.example",
+  "buyerId": "5a1f0d3e-8b2c-4e7a-9f61-2c3d4e5f6a7b",
+  "lineItems": [],
+  "dueDate": "2026-10-31T00:00:00Z",
+  "depositAddress": "TJ3pXbWq6kq1N9GmV2eYcR8sLhD4uZaF7w",
+  "chain": "tron",
+  "usdtAmount": "1251.876000",
+  "feeBps": 20,
+  "feeAmount": "2.503752",
+  "expiresAt": "2026-10-20T09:00:00Z",
+  "paymentTxHashes": [],
+  "createdAt": "2026-10-13T09:00:00Z"
+}
+```
+</ResponseExample>
+
+## Errors
+
+| Status | Code | When |
+| --- | --- | --- |
+| `400` | `INVALID_PARAMETER` | `id` is not a UUID. |
+| `400` | `ENTITY_REQUIRED` | The key's owner belongs to more than one business and `X-Teel-Entity-Id` is missing. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `collections:read`. |
+| `403` | `COLLECTIONS_NOT_ENABLED` | Collections is not enabled for your business. |
+| `404` | `NOT_FOUND` | No such link for your business. |
+| `429` | `RATE_LIMITED` | `collections_read` budget exhausted. Wait for `Retry-After`. |

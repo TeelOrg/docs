@@ -1,0 +1,47 @@
+---
+title: Delete buyer
+api: DELETE /api/collections/buyers/{id}
+description: Delete a buyer that holds no wallet, payments or credit
+---
+
+import Headers from '/snippets/collections/headers.mdx';
+
+Deletes a buyer. Links already issued to them are unaffected.
+
+A buyer that holds a receiving address, has received payments, or holds prepaid credit can't be deleted, because that address can still receive money. In practice, any buyer created with `depositAddress: true` can't be deleted.
+
+<Info>**Scope** `collections:write` · rate limit `collections_write` (30/min, burst 10)</Info>
+
+## Headers
+
+<Headers />
+
+## Path parameters
+
+<ParamField path="id" type="string" required>
+  Buyer UUID.
+</ParamField>
+
+## Response
+
+Returns `204 No Content` with an empty body.
+
+## Errors
+
+| Status | Code | When |
+| --- | --- | --- |
+| `400` | `INVALID_PARAMETER` | `id` is not a UUID. |
+| `400` | `ENTITY_REQUIRED` | The key's owner belongs to more than one business and `X-Teel-Entity-Id` is missing. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `collections:write`. |
+| `404` | `NOT_FOUND` | No such buyer for your business. |
+| `409` | `REFERENCED_BY_OTHERS` | The buyer can't be deleted. `details.blockedBy` names why: `receiving_wallet`, `payments` or `prepaid_credit`. |
+| `429` | `RATE_LIMITED` | `collections_write` budget exhausted. Wait for `Retry-After`. |
+
+```json 409
+{
+  "code": "REFERENCED_BY_OTHERS",
+  "error": "this buyer is referenced by other records and cannot be deleted",
+  "details": { "blockedBy": "receiving_wallet" }
+}
+```
