@@ -15,11 +15,27 @@ description: List all payouts with pagination
 ## Query parameters
 
 <ParamField query="limit" type="integer">
-  Maximum number of results (default: 1000)
+  Maximum number of results (default: 10)
 </ParamField>
 
 <ParamField query="offset" type="integer">
   Number of results to skip (default: 0)
+</ParamField>
+
+<ParamField query="recipient_id" type="string">
+  Only payouts to this recipient UUID.
+</ParamField>
+
+<ParamField query="batch_id" type="string">
+  Only payouts in this batch, the `batchId` from [`POST /rfq/execute-batch`](/api-reference/payouts/execute-batch).
+</ParamField>
+
+<ParamField query="status" type="string">
+  Only payouts in this status.
+</ParamField>
+
+<ParamField query="transaction_type" type="string">
+  Only payouts of this type.
 </ParamField>
 
 ## Response
@@ -42,3 +58,14 @@ description: List all payouts with pagination
 ]
 ```
 </ResponseExample>
+
+## Errors
+
+| Status | Code | When |
+| --- | --- | --- |
+| `400` | `FIELD_NOT_WRITABLE` | The request sends `stage` or `q`, which are not partner API parameters. |
+| `400` | `INVALID_PARAMETER` | `recipient_id` or `batch_id` is not a UUID. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `payouts:read`. |
+| `404` | `NOT_FOUND` | `recipient_id` names a recipient that does not exist or is not yours. |
+| `429` | `RATE_LIMITED` | Per-key rate limit. Wait for `Retry-After`. |

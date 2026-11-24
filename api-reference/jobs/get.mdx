@@ -21,7 +21,7 @@ Once the batch exists, follow each row's offramp order with [`GET /payouts/batch
 ## Path parameters
 
 <ParamField path="jobId" type="string" required>
-  Job UUID, from the response that accepted the work.
+  Job UUID. For a batch, this is the `batchId` in the `202` response of [`POST /rfq/execute-batch`](/api-reference/payouts/execute-batch).
 </ParamField>
 
 ## Response

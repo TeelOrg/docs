@@ -238,12 +238,13 @@ Fires every time a payout's status or step changes. Multiple events are emitted 
   "data": {
     "payoutId": "3d1f7c20-9b8a-4e6d-bf12-7a4c9e2d1f0b",
     "status": "processing",
-    "provider": "provider_b",
     "step": "settling",
     "stepChangedAt": "2026-05-27T09:31:02Z"
   }
 }
 ```
+
+`data` carries exactly `payoutId`, `status`, `step` and `stepChangedAt`. It has no failure detail: on a `failed` or `cancelled` status, read `failureCode` and `failureReason` from [`GET /payouts/{id}`](/api-reference/payouts/get).
 
 ### Collections events
 

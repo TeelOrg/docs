@@ -168,11 +168,18 @@ Switch tabs for the type-specific fields and response shape.
 
 | Status | Code | When |
 |---|---|---|
-| `400` | `INVALID_JSON` / `INVALID_PARAMETER` | Body malformed, required field missing, or a UUID doesn't belong to your account. |
+| `400` | `INVALID_JSON` / `INVALID_PARAMETER` | Body malformed, required field missing, or a UUID is malformed. |
 | `401` | `UNAUTHORIZED` | Missing or invalid key. |
-| `403` | `FORBIDDEN` | Key lacks `payouts:write`. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `payouts:write`. |
+| `403` | `PAYOUTS_NOT_ENABLED` | Payouts are not enabled for your business. |
+| `403` | `APPROVAL_REQUIRED` | Your business approves payouts before they execute, so this route cannot commit one in a single call. |
+| `403` | `FORBIDDEN` | A currency is outside your business's payouts scope. |
+| `404` | `RECIPIENT_NOT_FOUND` / `PAYMENT_METHOD_NOT_FOUND` | A recipient or payment method does not exist or is not yours. |
 | `409` | `IDEMPOTENCY_KEY_REUSED` / `IDEMPOTENCY_REQUEST_IN_FLIGHT` | Idempotency conflict — back off per `Retry-After` for in-flight. |
+| `409` | `rate_moved` / `route_infeasible`, nested in `error` | The price moved past your tolerance, or the pinned route can no longer carry the payout. Nothing was locked; get a new quote. See [Errors](/errors#conflicts). |
+| `422` | See [Business rules](/errors#business-rules) | The payout breaks a business rule, for example `HELD_BALANCE_INSUFFICIENT` or `SUPPORTING_DOCUMENT_REQUIRED`. |
 | `429` | `RATE_LIMITED` | Per-key rate limit. |
+| `502` / `503` | `DOWNSTREAM_UNAVAILABLE` | The payout engine could not be reached. Retry with the same `Idempotency-Key`. |
 
 ## Next steps
 

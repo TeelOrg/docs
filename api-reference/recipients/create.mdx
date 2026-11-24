@@ -24,7 +24,7 @@ Body is a common section + a type-specific section keyed on `transferType`. Call
 
 <ParamField body="email" type="string" required />
 <ParamField body="country" type="string" required>ISO 3166-1 alpha-2.</ParamField>
-<ParamField body="isBusiness" type="string">`"business"` (default) or `"individual"`.</ParamField>
+<ParamField body="isBusiness" type="string">A string, not a boolean: `"business"` (default when omitted) or `"individual"`. Any other string creates an individual, and a JSON boolean returns `400 INVALID_REQUEST`. The response carries `isBusiness` as a boolean.</ParamField>
 <ParamField body="businessName" type="string">Required when `isBusiness="business"`.</ParamField>
 <ParamField body="firstName" type="string">Required when `isBusiness="individual"`.</ParamField>
 <ParamField body="lastName" type="string">Required when `isBusiness="individual"`.</ParamField>
@@ -52,6 +52,7 @@ Body is a common section + a type-specific section keyed on `transferType`. Call
       One entry per (currency, rail). Send only fields the chosen `rail` needs.
       <Expandable title="paymentMethods[]">
         <ParamField body="type" type="string" required>`"bank"`</ParamField>
+        <ParamField body="currency" type="string" required>Currency this method settles in. It selects the corridor and is never inferred from `country`.</ParamField>
         <ParamField body="rail" type="string" required>e.g. `ach`, `sepa`, `pix`, `mobile_money`.</ParamField>
         <ParamField body="accountNumber" type="string" />
         <ParamField body="bankName" type="string" />
@@ -71,8 +72,18 @@ Body is a common section + a type-specific section keyed on `transferType`. Call
 
   <Tab title="Stablecoin (wallet)">
     <ParamField body="transferType" type="string" required>`"stablecoin"`</ParamField>
-    <ParamField body="walletAddresses" type="object" required>
-      Chain ID → wallet address.
+    <ParamField body="paymentMethods" type="object[]">
+      One entry per wallet. Each address is screened before the recipient is saved.
+      <Expandable title="paymentMethods[]">
+        <ParamField body="type" type="string" required>`"wallet"`</ParamField>
+        <ParamField body="currency" type="string" required>Token the wallet receives, e.g. `USDC`.</ParamField>
+        <ParamField body="rail" type="string" required>The network the address is on: a `wallet.chains[].code` from [`GET /config/coverage`](/api-reference/config/coverage), e.g. `polygon`.</ParamField>
+        <ParamField body="walletAddress" type="string" required>The address.</ParamField>
+        <ParamField body="walletLabel" type="string">Your label for the wallet.</ParamField>
+      </Expandable>
+    </ParamField>
+    <ParamField body="walletAddresses" type="object">
+      Alternative to wallet payment methods. Chain ID → wallet address.
 
       ```json
       {
@@ -86,6 +97,8 @@ Body is a common section + a type-specific section keyed on `transferType`. Call
 </Tabs>
 
 ## Response
+
+`201 Created` with the recipient. `207 Multi-Status` when the recipient was saved but its setup for some payout routes did not complete; see [Partial setup](#partial-setup-207).
 
 <ResponseField name="id" type="string">UUID.</ResponseField>
 <ResponseField name="email" type="string" />
@@ -147,3 +160,45 @@ Body is a common section + a type-specific section keyed on `transferType`. Call
 }
 ```
 </ResponseExample>
+
+### Partial setup (207)
+
+The recipient exists, so do not create it again.
+
+<ResponseField name="recipient" type="object">The saved recipient, with the fields above.</ResponseField>
+<ResponseField name="provisioningError" type="string">Present when setup failed for some routes. Display text that may change; never branch on it.</ResponseField>
+<ResponseField name="retryable" type="boolean">Set with `provisioningError`. `true` when every failure was temporary: call [`POST /recipients/{id}/retry`](/api-reference/recipients/retry) to complete setup. `false`: contact support.</ResponseField>
+<ResponseField name="provisioningWarning" type="string">Present, without `provisioningError`, when some payment details could not be registered yet. Display text.</ResponseField>
+
+<ResponseExample>
+```json 207
+{
+  "recipient": {
+    "id": "8b1a4c1d-7a3c-4a08-94ad-9f1ef1e0c3a2",
+    "email": "payments@acme-ph.com",
+    "isBusiness": true,
+    "businessName": "Acme Corp Philippines",
+    "country": "PH",
+    "transferType": "fiat",
+    "status": "pending",
+    "createdAt": "2026-06-09T10:00:00Z",
+    "updatedAt": "2026-06-09T10:00:00Z"
+  },
+  "provisioningError": "Setup did not complete because of a temporary error. Try again shortly.",
+  "retryable": true
+}
+```
+</ResponseExample>
+
+## Errors
+
+| Status | Code | When |
+| --- | --- | --- |
+| `400` | `INVALID_REQUEST` | Body malformed, a field has the wrong shape, or a payment method has no `currency`. |
+| `400` | `VALIDATION_FAILED` | Field values break the corridor's schema. `details.violations` lists each field. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `recipients:write`. |
+| `403` | `FORBIDDEN` | The key's owner is not a member of the business named in `X-Teel-Entity-Id`, or belongs to no business. |
+| `409` | `IDEMPOTENCY_KEY_REUSED` / `IDEMPOTENCY_REQUEST_IN_FLIGHT` | Idempotency conflict. |
+| `422` | `ADDRESS_SCREENING_BLOCKED` / `ADDRESS_SCREENING_UNDER_REVIEW` | Screening refused a wallet address. Nothing was saved. |
+| `503` | `ADDRESS_SCREENING_UNAVAILABLE` | A wallet address could not be screened. Nothing was saved; retry. |

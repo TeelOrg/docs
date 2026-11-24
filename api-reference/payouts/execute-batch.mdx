@@ -1,12 +1,18 @@
 ---
 title: Execute a batch of payouts
 api: POST /api/rfq/execute-batch
-description: Lock and execute N payouts that share a source currency, in one call.
+description: Submit N payouts that share a source currency, in one call.
 ---
 
-Batched [`POST /rfq/execute`](/api-reference/payouts/execute). Rows share `fromCurrency`. Partial failure is per-row — walk `data.rows`, retry `retryable: true`.
+Batched [`POST /rfq/execute`](/api-reference/payouts/execute). Rows share `fromCurrency` and the funding source. The call answers `202` as soon as the batch is recorded. Each row's rate is locked afterwards, so every row in the response is `pending`.
 
-<Info>**Scope** `payouts:write` · rate-limited</Info>
+Use the returned `batchId` to follow the batch:
+
+1. Poll [`GET /jobs/{jobId}`](/api-reference/jobs/get) with `batchId` as the `jobId`. It reports each row's verdict (`accepted` or `failed`), the locked rates, and `collectionId`. Stop on `terminal: true`.
+2. Read the funding collection, and its deposit instructions, from [`GET /payouts/batch/{batchId}/collection`](/api-reference/payouts/batch-collection).
+3. Follow each recipient's offramp order with [`GET /payouts/batch/{batchId}/rows`](/api-reference/payouts/batch-rows).
+
+<Info>**Scope** `payouts:write` · rate limit `payouts_write` (30/min, burst 10) · requires payouts to be enabled for your business</Info>
 
 ## Headers
 
@@ -15,81 +21,113 @@ Batched [`POST /rfq/execute`](/api-reference/payouts/execute). Rows share `fromC
 </ParamField>
 
 <ParamField header="Idempotency-Key" type="string">
-  Optional envelope-level dedup. Per-row dedup uses `items[].idempotency_key`.
+  Optional, recommended. 8–255 characters from `[A-Za-z0-9_-]`. Within 24 hours, a retry with the same key replays the original `202` instead of submitting the batch again. The same key with a different body returns `409 IDEMPOTENCY_KEY_REUSED`; a retry while the first request is still running returns `409 IDEMPOTENCY_REQUEST_IN_FLIGHT`. Per-row dedup uses `items[].idempotency_key`.
 </ParamField>
 
 ## Request body
 
 <Info>
-  **Batch is exact-output by design.** Each row's `targetAmount` is what the recipient receives; the engine sizes the source spend. `items[].amount` is accepted on the wire but informational only — `targetAmount` drives quoting.
+  **Batch is exact-output by design.** Each row's `targetAmount` is what the recipient receives; the engine sizes the source spend. `items[].amount` is informational, except from the collections wallet (see below).
 </Info>
 
-<Tabs>
-  <Tab title="Fiat-to-fiat / Onramp">
-    <ParamField body="fromCurrency" type="string" required>Shared source currency.</ParamField>
-    <ParamField body="onrampProtocol" type="string" required>Opaque onramp route token. Pins every row to the same onramp route.</ParamField>
-    <ParamField body="userPaymentMethodId" type="string" required>Shared funding source.</ParamField>
-    <ParamField body="items" type="object[]" required>
-      Non-empty array of payouts.
-      <Expandable title="items[]">
-        <ParamField body="toCurrency" type="string" required>Destination currency.</ParamField>
-        <ParamField body="targetAmount" type="number" required>Destination amount the recipient receives. Must be `> 0`.</ParamField>
-        <ParamField body="recipientId" type="string" required>Recipient UUID.</ParamField>
-        <ParamField body="amount" type="number">Informational source amount. Accepted but not used for sizing — `targetAmount` drives quoting.</ParamField>
-        <ParamField body="recipientPaymentMethodId" type="string">Recipient PM UUID.</ParamField>
-        <ParamField body="offrampProvider" type="string">Offramp routing hint.</ParamField>
-        <ParamField body="routeProtocol" type="string">Per-row opaque route token.</ParamField>
-        <ParamField body="paymentPurpose" type="string">Per-row classification.</ParamField>
-        <ParamField body="reference" type="string">Per-row free-text reference.</ParamField>
-        <ParamField body="idempotencyKey" type="string">Per-row dedup key — retry just this row.</ParamField>
-      </Expandable>
-    </ParamField>
-  </Tab>
+<ParamField body="fromCurrency" type="string" required>Shared source currency.</ParamField>
+<ParamField body="onrampProtocol" type="string" required>Opaque onramp route token from a quote. Every row shares the same onramp route. Required even when it is unused.</ParamField>
+<ParamField body="userPaymentMethodId" type="string" required>UUID of the shared funding source.</ParamField>
+<ParamField body="railPreference" type="string">
+  How each row's payout rail is chosen. `best_rate` (default): each row locks on its cheapest route across rails. `fastest`: each row whose corridor has more than one rail is put on the fastest rail it can use. Any other value returns `400 INVALID_PARAMETER`.
+</ParamField>
+<ParamField body="walletAddresses" type="object" deprecated>Ignored.</ParamField>
+<ParamField body="items" type="object[]" required>
+  Non-empty array of payouts, at most 49.
+  <Expandable title="items[]">
+    <ParamField body="toCurrency" type="string" required>Destination currency.</ParamField>
+    <ParamField body="targetAmount" type="number" required>Destination amount the recipient receives. Must be `> 0`.</ParamField>
+    <ParamField body="recipientId" type="string" required>Recipient UUID.</ParamField>
+    <ParamField body="recipientPaymentMethodId" type="string">Recipient payment method UUID.</ParamField>
+    <ParamField body="amount" type="number">Informational source amount; `targetAmount` drives quoting. Required from the collections wallet.</ParamField>
+    <ParamField body="offrampProvider" type="string">The offramp the row is locked through. A row it cannot price fails rather than locking on another offramp.</ParamField>
+    <ParamField body="routeProtocol" type="string">Per-row opaque route token.</ParamField>
+    <ParamField body="paymentPurpose" type="string">Per-row classification.</ParamField>
+    <ParamField body="purposeDescription" type="string">Per-row free-text description of the purpose.</ParamField>
+    <ParamField body="reference" type="string">Per-row free-text reference.</ParamField>
+    <ParamField body="idempotency_key" type="string">Per-row dedup key. A row whose key matches a live payout from an earlier batch is reported `duplicate` on the job poll and is not charged again.</ParamField>
+    <ParamField body="supportingDocumentFileId" type="string">The `fileId` from [`POST /payouts/document`](/api-reference/payouts/upload-document), for a row whose route asks for a document. Sending `supportingDocumentKey` or `payoutRail` on a row returns `400 INVALID_PARAMETER`.</ParamField>
+  </Expandable>
+</ParamField>
 
-  <Tab title="Stablecoin-to-fiat">
-    <ParamField body="fromCurrency" type="string" required>Stablecoin ticker (e.g. `USDC`).</ParamField>
-    <ParamField body="onrampProtocol" type="string" required>Required at the top level even for S2F (handler-level constraint).</ParamField>
-    <ParamField body="userPaymentMethodId" type="string" required>Required at the top level even for S2F (handler-level constraint).</ParamField>
-    <ParamField body="walletAddresses" type="object">Per-chain source wallet — `{"polygon": "0x…", "arbitrum": "0x…"}`.</ParamField>
-    <ParamField body="items" type="object[]" required>
-      Non-empty array of payouts. Same `items[]` shape as the other tab.
-    </ParamField>
-  </Tab>
-</Tabs>
+### From the collections wallet
+
+When `userPaymentMethodId` is your business's collections wallet, each row is sent as its own stablecoin payout from the wallet. There is no collection and no `/payouts/batch/{batchId}/rows` result: [`GET /jobs/{jobId}`](/api-reference/jobs/get) is the whole answer. Every row needs `supportingDocumentFileId` (else `422 SUPPORTING_DOCUMENT_REQUIRED`) and `amount`, the source its own quote showed (else `400 INVALID_PARAMETER`).
 
 ## Response
 
-Always `{ "success": true, "data": { "rows": [...], "items": [...] } }`. Use `rows` — `items` is a deprecation alias.
+`202 Accepted`. Nothing is priced yet, and the batch's payouts do not exist yet.
 
-<ResponseField name="rows" type="object[]">
-  One entry per input row, in the same order.
-  <Expandable title="rows[]">
-    <ResponseField name="idx" type="integer">Zero-based input index.</ResponseField>
-    <ResponseField name="status" type="string">`accepted` or `failed`.</ResponseField>
-    <ResponseField name="transactionId" type="string">Present when `accepted`.</ResponseField>
-    <ResponseField name="quoteId" type="string">Echoed for correlation.</ResponseField>
-    <ResponseField name="errorCode" type="string">Present when `failed`.</ResponseField>
-    <ResponseField name="retryable" type="boolean">When `true`, re-fire just this row with the same `idempotencyKey`.</ResponseField>
+<ResponseField name="success" type="boolean">`true`.</ResponseField>
+<ResponseField name="data" type="object">
+  <Expandable title="data">
+    <ResponseField name="batchId" type="string">Batch UUID. It is the `jobId` for [`GET /jobs/{jobId}`](/api-reference/jobs/get) and the `batchId` for [`/payouts/batch/{batchId}/rows`](/api-reference/payouts/batch-rows) and [`/payouts/batch/{batchId}/collection`](/api-reference/payouts/batch-collection). Every payout the batch creates carries it.</ResponseField>
+    <ResponseField name="collectionId" type="string">Always `""` here. The collection is created after this response; read its id from the job poll.</ResponseField>
+    <ResponseField name="totalSourceAmount" type="number">Always `0` here.</ResponseField>
+    <ResponseField name="escrowTxHash" type="string">Always `""` here.</ResponseField>
+    <ResponseField name="rows" type="object[]">
+      One entry per input row, in the same order.
+      <Expandable title="rows[]">
+        <ResponseField name="idx" type="integer">Zero-based index into `items`.</ResponseField>
+        <ResponseField name="status" type="string">Always `pending` here. The verdict arrives on [`GET /jobs/{jobId}`](/api-reference/jobs/get).</ResponseField>
+      </Expandable>
+    </ResponseField>
   </Expandable>
 </ResponseField>
 
-<ResponseField name="items" type="object[]">
-  Deprecation alias for `rows`. Same shape, same order, same contents — kept for one major-version of backward compatibility. New code should read `rows`.
-</ResponseField>
-
 <ResponseExample>
-```json 200
+```json 202
 {
   "success": true,
   "data": {
+    "batchId": "6e5d4c3b-2a19-4f08-8e7d-6c5b4a392817",
+    "collectionId": "",
+    "totalSourceAmount": 0,
     "rows": [
-      { "idx": 0, "status": "accepted", "transactionId": "8b1a4c1d-…", "quoteId": "4c2b7e8f-…" },
-      { "idx": 1, "status": "failed", "errorCode": "RECIPIENT_NOT_FOUND", "retryable": false },
-      { "idx": 2, "status": "accepted", "transactionId": "4f9e5f15-…", "quoteId": "1c84203c-…" }
-    ]
+      { "idx": 0, "status": "pending" },
+      { "idx": 1, "status": "pending" },
+      { "idx": 2, "status": "pending" }
+    ],
+    "escrowTxHash": ""
   }
 }
 ```
 </ResponseExample>
 
-HTTP status is `200` even when some rows fail — `data.rows[].status` is the source of truth.
+## Errors
+
+These refuse the whole batch before anything is created.
+
+| Status | Code | When |
+|---|---|---|
+| `400` | `INVALID_JSON` | Body malformed, or a required field is missing. |
+| `400` | `INVALID_PARAMETER` | A UUID is malformed, `railPreference` is unknown, a row sends `payoutRail` or `supportingDocumentKey`, a `supportingDocumentFileId` is not a document you uploaded, or a collections-wallet row has no `amount`. |
+| `400` | none | More than 49 items. The body is `{"success": false, "error": "…"}`. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `payouts:write`. |
+| `403` | `PAYOUTS_NOT_ENABLED` | Payouts are not enabled for your business. |
+| `403` | `APPROVAL_REQUIRED` | Your business approves payouts before they execute, so this route cannot commit one in a single call. |
+| `403` | `FORBIDDEN` | A currency is outside your business's payouts scope. |
+| `404` | `RECIPIENT_NOT_FOUND` / `PAYMENT_METHOD_NOT_FOUND` | A recipient or payment method does not exist or is not yours. |
+| `409` | `IDEMPOTENCY_KEY_REUSED` / `IDEMPOTENCY_REQUEST_IN_FLIGHT` | Idempotency conflict. |
+| `422` | `DIRECT_BANK_BATCH_UNSUPPORTED` | The funding route pays directly from your bank account. Create those payouts one at a time with [`POST /rfq/execute`](/api-reference/payouts/execute). |
+| `422` | `OWNER_HELD_WALLET_BATCH_UNSUPPORTED` | The funding wallet is held by your business's owners, so a teammate signs each send. Send this batch from the dashboard. |
+| `422` | `SUPPORTING_DOCUMENT_REQUIRED` | A collections-wallet row has no `supportingDocumentFileId`. |
+| `422` | `PAYMENT_METHOD_UNAVAILABLE` | The funding source could not be found. |
+| `422` | `COLLECTIONS_WALLET_SOURCE_NOT_SUPPORTED` | The funding source is a collections wallet that cannot fund payouts. |
+| `422` | `FUNDING_RAIL_UNSUPPORTED` | The funding source is a held balance, which a batch cannot fund. |
+| `429` | `RATE_LIMITED` | Per-key rate limit. Wait for `Retry-After`. |
+| `502` / `503` | `DOWNSTREAM_UNAVAILABLE` | The payout engine, or the funding source's details, could not be reached. Nothing was created. Retry with the same `Idempotency-Key`. |
+| `503` | none | The batch could not be started; nothing was created. The body is `{"success": false, "error": "…"}`, with `"retryable": true` when a retry can succeed. Retry with the same `Idempotency-Key`. |
+
+### After the `202`
+
+A failure after the response is reported on [`GET /jobs/{jobId}`](/api-reference/jobs/get), never as an HTTP error here:
+
+- A row that fails to lock is `failed` with its `errorCode`; the other rows proceed. Resend a `retryable: true` row with the same `idempotency_key`.
+- A recipient the route's payout partner has not cleared fails the whole batch. The job ends `failed` with `failureCode` `RECIPIENT_VERIFICATION_PENDING` or `RECIPIENT_VERIFICATION_FAILED`, and `error` names the recipient.

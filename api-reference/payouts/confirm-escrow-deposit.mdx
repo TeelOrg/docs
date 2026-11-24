@@ -33,11 +33,16 @@ Manual deposit-confirmation fallback when on-chain auto-detect misses your trans
 
 ## Errors
 
-| Status | When |
-|---|---|
-| `400` | Request body malformed (missing `quoteId` / `txHash`, or non-JSON body). Returns `{"success": false, "error": "invalid request"}`. |
-| `401` | Missing or invalid key. |
-| `500` | Confirmation failed. Returns `{"success": false, "error": "escrow deposit confirmation failed"}`. **Every** persistent failure mode the handler can hit collapses here today — wrong `txHash`, amount mismatch, chain mismatch, quote not in the expected state, on-chain tx not yet confirmed. There is no granular error-shape distinction. **Don't blind-retry a 500 from this endpoint** — verify your tx hash, amount, and chain first. |
+| Status | Code | When |
+|---|---|---|
+| `400` | `INVALID_JSON` | Request body malformed: missing `quoteId` / `txHash`, or a non-JSON body. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `payouts:write`. |
+| `403` | `PAYOUTS_NOT_ENABLED` | Payouts are not enabled for your business. |
+| `409` | `IDEMPOTENCY_KEY_REUSED` / `IDEMPOTENCY_REQUEST_IN_FLIGHT` | Idempotency conflict. |
+| `429` | `RATE_LIMITED` | Per-key rate limit. Wait for `Retry-After`. |
+| `502` | `DOWNSTREAM_UNAVAILABLE` | The payout engine could not be reached. Retry. |
+| `500` | none | Confirmation failed. Returns `{"success": false, "error": "escrow deposit confirmation failed"}`. **Every** persistent failure mode the handler can hit collapses here today — wrong `txHash`, amount mismatch, chain mismatch, quote not in the expected state, on-chain tx not yet confirmed. There is no granular error-shape distinction. **Don't blind-retry a 500 from this endpoint** — verify your tx hash, amount, and chain first. |
 
 ## When not to call this
 

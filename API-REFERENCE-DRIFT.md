@@ -104,6 +104,17 @@ Docs follow the handler in each case.
 - **Void of an expired link returned `200`**: voiding an expired or already-voided link now returns `409 PAYMENT_LINK_NOT_VOIDABLE` for all callers, as the spec said.
 - **`test-fiat-payment` ignored expiry**: it now refuses links whose effective status isn't `open` with `409 CONFLICT`, like the stablecoin simulator.
 
+### Surfaced fixing stale payout, recipient and error pages (`docs/fix-stale-pages`)
+
+- **`GET /payouts/{id}/retryable` `data.action`** is described as "provider-specific" in `openapi.yaml`. A partner response must not vary by, or reveal, the provider; the description should name the actual action values.
+- **`GET /metrics/earnings` `from` / `to`** are typed `format: date`; the handler (quote-engine `internal/api/internal_router.go` `handleGetEarningsMetrics`) also accepts RFC 3339 timestamps.
+- **`POST /rfq/execute-batch` per-row key** is `items[].idempotency_key` (snake_case) in the quote-engine `batchItem` struct and the spec, against the camelCase convention. The docs page now says `idempotency_key`; it used to say `idempotencyKey`, which is silently dropped.
+- **`POST /rfq/execute-batch` 202 `rows[]`**: the spec lists `transactionId`, `quoteId`, `errorCode`, `retryable` on the 202 rows; the handler serves only `idx` and `status: pending` (they appear on `GET /jobs/{jobId}`). The spec's 202 also omits `batchId`, `collectionId`, `totalSourceAmount` and `escrowTxHash` from the schema while its prose names `batchId`. The handler comment says `items` is served empty; it is not served at all.
+- **`POST /rfq/execute-batch` refusals without a code**: more than 49 items (`400`) and the not-ready `503`s are `{"success": false, "error": …}` with no `code` (quote-engine `rfq_router.go` `handleLockAndExecuteBatch`). The spec lists `422` only as `FundingRailUnsupported` and has no `403 PAYOUTS_NOT_ENABLED` / `422 DIRECT_BANK_BATCH_UNSUPPORTED` / `502` entry.
+- **`POST /rfq/confirm-escrow-deposit` `400`**: the spec's body is `{success: false, error: "invalid request"}`; the Core proxy now refuses first with `{code: INVALID_JSON, error}`.
+- **`Error.code` enum lists codes nothing partner-reachable emits**: `UPSTREAM_TIMEOUT` and `SANDBOX_PAYOUTS_UNAVAILABLE` have no emitter; `WALLET_NOT_SET_UP` is documented in `api_errors.go` as never sent to a partner key. `errors.mdx` leaves them out.
+- **`COLLECTIONS_WALLET_SOURCE_NOT_SUPPORTED`** is `422` everywhere except `collections_convert_controller.go`, which sends it as `403`; a code should map to one status.
+
 ---
 
 _Add new rows below as later doc pages surface more drift._

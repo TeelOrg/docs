@@ -20,22 +20,128 @@ Teel returns standard HTTP status codes. The body is JSON with a stable, machine
 | --- | --- |
 | `200 OK` | Successful read |
 | `201 Created` | Successful create |
-| `202 Accepted` | Asynchronous work enqueued (e.g. webhook delivery replay) |
+| `202 Accepted` | Asynchronous work enqueued (e.g. a payout batch, or a webhook delivery replay) |
 | `400 Bad Request` | Your request was malformed — bad JSON, missing required field, validation failure (invalid URL, unknown event type, etc.) |
 | `401 Unauthorized` | Auth missing or invalid — see [Authentication](/authentication) |
-| `403 Forbidden` | Authenticated but lacks the required scope, or trying to act on a resource you don't own |
-| `404 Not Found` | Resource doesn't exist, or exists but isn't yours |
+| `403 Forbidden` | Authenticated, but the key lacks the required scope or your business is not allowed this action |
+| `404 Not Found` | Resource doesn't exist, or exists but isn't yours. Both answer the same body, so a `404` never reveals another business's resource. |
 | `409 Conflict` | Request conflicts with current state — e.g. you've reached a per-account limit (25 subscriptions, etc.) |
 | `422 Unprocessable Entity` | Validation passed but business rule rejected — e.g. payout amount below the provider's minimum |
 | `429 Too Many Requests` | Rate limit hit — back off per `Retry-After` |
 | `5xx Server Error` | Our side. Safe to retry per the schedule below. |
 
+## Error codes
+
+The codes a partner key can receive, with the status each is sent with. New codes may be added; a shipped code never changes meaning, so treat an unknown code by its status. Some payout refusals also carry `"success": false` next to `code` and `error`.
+
+### Authentication and access
+
+| Status | Code | Meaning |
+| --- | --- | --- |
+| `401` | `UNAUTHORIZED` | Key missing, malformed, expired or revoked. |
+| `403` | `INSUFFICIENT_SCOPE` | The key lacks the scope the route needs. |
+| `403` | `FORBIDDEN` | Not allowed for another reason, such as a currency outside your business's product scope or an entity you are not a member of. |
+| `403` | `ENV_SCOPE_MISMATCH` | A key for one environment was used against the other environment's host. |
+| `403` | `PAYOUTS_NOT_ENABLED` | Payouts are not enabled for your business. |
+| `403` | `APPROVAL_REQUIRED` | Your business approves payouts before they execute, so a single-call execute is refused. |
+| `403` | `COLLECTIONS_NOT_ENABLED` | Your business does not hold the collections product this request needs. |
+| `403` | `COLLECTIONS_FROZEN` | Collections is switched off for your business; its records are read-only. |
+| `403` | `MANUAL_CONVERT_DISABLED` | Settling to fiat is paused for your business. |
+| `429` | `RATE_LIMITED` | Rate limit hit. Wait for `Retry-After`. |
+
+### Request shape
+
+| Status | Code | Meaning |
+| --- | --- | --- |
+| `400` | `INVALID_REQUEST` | The request is structurally wrong. |
+| `400` | `INVALID_JSON` | The body is not valid JSON, or a required field is missing. |
+| `400` | `INVALID_PARAMETER` | A parameter has the wrong shape or value, such as a malformed UUID. |
+| `400` | `MISSING_PARAMETER` | A required parameter is absent. |
+| `400` | `ENTITY_REQUIRED` | The key's owner belongs to more than one business; name one in `X-Teel-Entity-Id`. |
+| `400` | `VALIDATION_FAILED` | Field values break the schema. `details.violations` lists `{path, code, message}` per field. |
+| `400` | `FIELD_NOT_WRITABLE` | The request sets a field, or query parameter, the partner API does not accept. |
+| `400` | `IDEMPOTENCY_KEY_INVALID` | `Idempotency-Key` is not 8–255 characters from `[A-Za-z0-9_-]`. |
+| `400` | `INVALID_PAYOUT_RAIL` | `payoutRail` is not a rail Teel knows. |
+| `400` | `OUTGOING_INVOICE_DOCUMENT_REQUIRED` | A settlement needs `outgoingInvoiceDocumentKey`. |
+| `400` | `AMOUNT_IS_INVALID` | `amountIs` is neither `delivery` nor `spend`. |
+| `400` | `SPEND_MODE_UNSUPPORTED` | `amountIs=spend` on a settlement whose rail cannot debit exactly the spend. |
+| `413` | `REQUEST_BODY_TOO_LARGE` | The body is over the size limit. |
+
+### Not found
+
+A resource that is not yours answers the same `404` as one that does not exist.
+
+| Status | Code | Meaning |
+| --- | --- | --- |
+| `404` | `NOT_FOUND` | The resource does not exist or is not yours. |
+| `404` | `RECIPIENT_NOT_FOUND` | The recipient does not exist or is not yours. |
+| `404` | `BUSINESS_NOT_FOUND` | The business does not exist or is not yours. `PUT /recipients/{id}` sends it as `400`. |
+| `404` | `PAYMENT_METHOD_NOT_FOUND` | The payment method does not exist or is not yours. |
+| `404` | `WEBHOOK_SUBSCRIPTION_NOT_FOUND` | The webhook subscription does not exist or is not yours. |
+| `404` | `WEBHOOK_DELIVERY_NOT_FOUND` | The webhook delivery does not exist or is not yours. |
+
+### Conflicts
+
+| Status | Code | Meaning |
+| --- | --- | --- |
+| `409` | `IDEMPOTENCY_KEY_REUSED` | The `Idempotency-Key` was used with a different request. |
+| `409` | `IDEMPOTENCY_REQUEST_IN_FLIGHT` | The first request with this key is still running. Back off per `Retry-After`. |
+| `409` | `CONFLICT` | The request conflicts with the resource's current state. |
+| `409` | `ALREADY_EXISTS` | The resource already exists. |
+| `409` | `REFERENCED_BY_OTHERS` | The resource cannot be deleted while something else points at it. `DELETE /recipients/{id}` sends it as `400`. |
+| `409` | `MAX_ACTIVE_SUBSCRIPTIONS_EXCEEDED` | You have reached the active webhook subscription limit. |
+| `409` | `PAYMENT_LINK_NOT_VOIDABLE` | The payment link has left `open`, so it cannot be voided. |
+| `409` | `insufficient_available_balance` | The settlement is more than the uncommitted balance, or another settlement of it is in flight. Lower case for historical reasons. |
+| `409` | `SETTLEMENT_REQUIRES_DASHBOARD_AUTHORIZATION` | The settlement wallet can only be moved from the dashboard. |
+| `409` | `OWNER_MFA_REQUIRED` | A wallet the request needs waits on an owner setting up their authenticator. |
+| `409` | `MFA_REQUIRED` | A wallet the request needs waits on you setting up your authenticator. |
+| `409` | `WALLET_DISABLED` | A wallet the request needs is switched off. |
+
+`POST /rfq/execute` can also answer `409` with the code nested inside `error`, for example `{"success": false, "error": {"code": "rate_moved", …}}`:
+
+- `rate_moved`: the price moved past your tolerance since the quote. Nothing was locked; get a new quote.
+- `route_infeasible`: the route you pinned can no longer carry this payout. Nothing was locked; get a new quote and pick its route.
+
+### Business rules
+
+| Status | Code | Meaning |
+| --- | --- | --- |
+| `422` | `HELD_BALANCE_INSUFFICIENT` | The held balance does not cover the payout. |
+| `422` | `SUPPORTING_DOCUMENT_REQUIRED` | The payout needs a supporting document. |
+| `422` | `FUNDING_RAIL_UNSUPPORTED` | The source cannot fund the requested funding rail. |
+| `422` | `PAYOUT_RAIL_UNAVAILABLE` | No route pays the chosen `payoutRail` for this payout. |
+| `422` | `RECIPIENT_DETAILS_REJECTED` | The route would refuse the recipient's payout details. Edit the recipient; retrying unchanged does not help. |
+| `422` | `RECIPIENT_VERIFICATION_PENDING` | The route's payout partner has not cleared the recipient yet. |
+| `422` | `RECIPIENT_VERIFICATION_FAILED` | The route's payout partner refused the recipient. |
+| `422` | `ADDRESS_SCREENING_BLOCKED` | Screening refused the crypto address. Final. |
+| `422` | `ADDRESS_SCREENING_UNDER_REVIEW` | The crypto address is held for compliance review. |
+| `422` | `COLLECTIONS_WALLET_SOURCE_NOT_SUPPORTED` | The source cannot fund this payout. |
+| `422` | `COLLECTIONS_WALLET_TARGET_REQUIRED` | A payout from the collections wallet must send `targetAmount`. |
+| `422` | `OWNER_HELD_WALLET_BATCH_UNSUPPORTED` | A batch from a wallet your business's owners hold; send it from the dashboard. |
+| `422` | `DIRECT_BANK_BATCH_UNSUPPORTED` | A batch funded directly from your bank account; create those payouts one at a time. |
+| `422` | `PAYMENT_METHOD_UNAVAILABLE` | The named payment method cannot be used. |
+| `422` | `SETTLEMENT_MODE_REQUIRED` | The invoice currency has both a holding and an auto-convert account; name `settlementMode`. |
+| `422` | `SETTLEMENT_MODE_UNAVAILABLE` | You have no active receiving account for that `settlementMode`. |
+| `422` | `OUTGOING_INVOICE_DOCUMENT_INVALID` | The document was not uploaded by your business. |
+| `422` | `SETTLEMENT_REFUSED` | The settlement was refused; `details.reason` says why. Retrying the same request fails the same way. |
+
+### Server side
+
+| Status | Code | Meaning |
+| --- | --- | --- |
+| `500` | `INTERNAL_ERROR` | Something we did not expect went wrong. |
+| `502` / `503` | `DOWNSTREAM_UNAVAILABLE` | A service the request depends on could not be reached. Retry. |
+| `503` | `QUOTE_UNAVAILABLE` | A price or fee needed for the request is not available right now. Retry. |
+| `503` | `ADDRESS_SCREENING_UNAVAILABLE` | The crypto address could not be screened. Retry. |
+| `503` | `OFFRAMP_DISABLED` | The settlement path you asked for is switched off. |
+
 ## What is and isn't retryable
 
 | Status | Retryable? | Why |
 | --- | --- | --- |
-| `4xx` (except `429`) | **No** | The request will fail the same way until you change it. Retrying wastes your rate budget. |
+| `4xx` (except `429` and `409 IDEMPOTENCY_REQUEST_IN_FLIGHT`) | **No** | The request will fail the same way until you change it. Retrying wastes your rate budget. |
 | `429` | **Yes**, after `Retry-After` | The server told you when to come back. Respect it. |
+| `409 IDEMPOTENCY_REQUEST_IN_FLIGHT` | **Yes**, after `Retry-After`, with the same `Idempotency-Key` | The first request with this key is still running. The retry replays its result once it finishes. |
 | `5xx` | **Yes**, with exponential backoff | Likely transient — our side. |
 | Network timeout / connection error | **Yes**, with exponential backoff + idempotency | The server may or may not have processed your request — see [Idempotency](#idempotency). |
 
@@ -54,18 +160,18 @@ attempt 6 → give up, surface to the user
 
 With ±20% jitter to spread retry storms across many clients. Total wait: ~31 seconds across 5 attempts.
 
-For `429` responses, ignore the schedule above and wait the number of seconds in the `Retry-After` header. A retry before that just adds load.
+For `429` and `409 IDEMPOTENCY_REQUEST_IN_FLIGHT` responses, ignore the schedule above and wait the number of seconds in the `Retry-After` header. A retry before that just adds load.
 
 ```http
 HTTP/1.1 429 Too Many Requests
 Retry-After: 13
 
-{"error": "rate limit exceeded"}
+{"code": "RATE_LIMITED", "error": "rate limit exceeded"}
 ```
 
 ## Idempotency
 
-Mutating POSTs accept an **`Idempotency-Key`** header — `POST /rfq/execute`, `POST /rfq/execute-batch`, `POST /recipients`, `POST /recipients/bulk`, and `POST /webhooks/subscriptions`. Include a UUID you generate; if the same key is sent within 24 hours, Teel returns the original response without creating a duplicate.
+Mutating POSTs accept an **`Idempotency-Key`** header — `POST /rfq/execute`, `POST /rfq/execute-batch`, `POST /rfq/confirm-escrow-deposit`, `POST /recipients`, `POST /recipients/bulk`, `POST /recipients/{id}/retry`, `POST /recipients/{id}/payment-methods`, and `POST /webhooks/subscriptions`. Include a UUID you generate; if the same key is sent within 24 hours, Teel returns the original response without creating a duplicate.
 
 ```bash
 curl https://api.teel.finance/rfq/execute \
@@ -110,7 +216,7 @@ If you find yourself consistently near the limit, batch where possible (`POST /r
 
 ## What we never do
 
-- **We do not return 4xx for transient issues.** If you got a `400` / `401` / `403` / `404` / `409`, the request is wrong; do not retry.
+- **We do not return 4xx for transient issues.** If you got a `400` / `401` / `403` / `404` / `409`, the request is wrong; do not retry. The exceptions are `429` and `409 IDEMPOTENCY_REQUEST_IN_FLIGHT`, which say when to come back in `Retry-After`.
 - **We do not silently truncate fields.** If a field exceeds a limit, you get a `400` with the field name and the violated bound. Quietly truncating user-supplied amounts is a class of bug we deliberately avoid.
 - **We do not return generic 500s if we can avoid it.** Validation failures are `400` / `422`; permission failures are `403`; missing resources are `404`. A `500` from our side really means "something we didn't expect went wrong" — please report it to **support@teel.finance** so we can fix it.
 
@@ -138,14 +244,16 @@ async function createPayoutWithRetries(payload) {
     // 2xx — done.
     if (res.ok) return res.json();
 
-    // 4xx (except 429) — bug in our request; do not retry.
-    if (res.status >= 400 && res.status < 500 && res.status !== 429) {
-      const err = await res.json();
+    const err = res.status >= 400 && res.status < 500 ? await res.json() : null;
+    const inFlight = res.status === 409 && err?.code === "IDEMPOTENCY_REQUEST_IN_FLIGHT";
+
+    // 4xx (except 429 and an in-flight 409) — bug in our request; do not retry.
+    if (err && res.status !== 429 && !inFlight) {
       throw new Error(`Teel ${res.status}: ${err.error}`);
     }
 
-    // 429 — server-told wait.
-    if (res.status === 429) {
+    // 429 or in-flight 409 — server-told wait.
+    if (res.status === 429 || inFlight) {
       const retryAfter = Number(res.headers.get("Retry-After") ?? 1);
       await new Promise((r) => setTimeout(r, retryAfter * 1000));
       continue;

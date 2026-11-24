@@ -66,7 +66,7 @@ This guide walks you through making your first payout against the Teel **sandbox
       }'
     ```
 
-    Request bodies are **camelCase** (`isBusiness`, `businessName`, `paymentMethods`); responses are snake_case. Save the `id` from the response — that's your `recipientId`.
+    Request bodies and responses are **camelCase** (`isBusiness`, `businessName`, `paymentMethods`); the few legacy snake_case keys are called out on their reference pages. Two responses keep snake_case keys: [`GET /payouts/{id}/receipt`](/api-reference/payouts/receipt) and the top level of [`GET /payouts/batch/{batchId}/collection`](/api-reference/payouts/batch-collection). Save the `id` from the response — that's your `recipientId`.
 
     The `Idempotency-Key` header is optional but recommended: a timeout-retry with the same key replays the cached response (24h window) instead of creating a duplicate recipient. See [`POST /recipients`](/api-reference/recipients/create) for every field.
   </Step>
