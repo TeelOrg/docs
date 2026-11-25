@@ -46,7 +46,7 @@ The plaintext key is shown **exactly once**. Teel stores only a hash of the key 
 
 Each key carries a set of scopes. A key created from **API Keys** holds every scope in the table below.
 
-The sandbox key you claim from the dashboard's one-time **Your sandbox API key** dialog holds `quotes:read`, `recipients:read`, `recipients:write`, `payouts:write`, `collections:read`, `collections:write` and `settlements:write`. It has no `payouts:read`, `webhooks:read` or `webhooks:write`; create a key from **API Keys** when you need those.
+The sandbox key you claim from the dashboard's one-time **Your sandbox API key** dialog holds `quotes:read`, `recipients:read`, `recipients:write`, `payouts:write`, `collections:read`, `collections:write`, `settlements:write` and `payment_methods:read`. It has no `payouts:read`, `webhooks:read` or `webhooks:write`; create a key from **API Keys** when you need those.
 
 | Scope | What it allows |
 | --- | --- |
@@ -60,6 +60,7 @@ The sandbox key you claim from the dashboard's one-time **Your sandbox API key**
 | `collections:read` | Read payment links, buyers, balances, receiving accounts, deposits and settlements; preview a settlement; subscribe to `collections.*` webhook events |
 | `collections:write` | Create / void payment links; create / update / delete buyers |
 | `settlements:write` | Upload a settlement invoice and create settlements (moves money) |
+| `payment_methods:read` | List and read your funding sources, the `userPaymentMethodId` a payout is paid from |
 
 Manage webhook subscriptions through the API with the `webhooks:read` / `webhooks:write` scopes, or on the dashboard's **Settings** → **Webhooks** page. See the [Webhooks guide](/guides/webhooks).
 

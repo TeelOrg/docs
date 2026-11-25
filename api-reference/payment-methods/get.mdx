@@ -1,0 +1,53 @@
+---
+title: Get a funding source
+api: GET /api/payment-methods/{id}
+description: One of your funding sources by id
+---
+
+import Headers from '/snippets/collections/headers.mdx';
+import Fields from '/snippets/payment-methods/fields.mdx';
+
+Returns one row of [List funding sources](/api-reference/payment-methods/list), with the same fields.
+
+<Info>**Scope** `payment_methods:read` · rate limit `default` (60/min, burst 20)</Info>
+
+## Headers
+
+<Headers />
+
+## Path parameters
+
+<ParamField path="id" type="string" required>Funding source UUID.</ParamField>
+
+## Response
+
+<Fields />
+
+<ResponseExample>
+```json 200
+{
+  "id": "74b84711-6976-4c6b-8cc3-e19fa887732e",
+  "type": "bank",
+  "name": "USD receiving account",
+  "currency": "USD",
+  "sourceCurrency": "USD",
+  "status": "active",
+  "virtualAccountId": "c2d4e6f8-1a3b-4c5d-8e9f-0a1b2c3d4e5f",
+  "supportingDocumentRequired": false,
+  "createdAt": "2026-09-30T04:12:00Z",
+  "updatedAt": "2026-09-30T04:12:00Z"
+}
+```
+</ResponseExample>
+
+## Errors
+
+| Status | Code | When |
+| --- | --- | --- |
+| `400` | `INVALID_PARAMETER` | `id` or `X-Teel-Entity-Id` is not a UUID. |
+| `400` | `ENTITY_REQUIRED` | The key's owner belongs to more than one business and `X-Teel-Entity-Id` is missing. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `FORBIDDEN` | The key's owner is not a member of the business `X-Teel-Entity-Id` names. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `payment_methods:read`. |
+| `404` | `PAYMENT_METHOD_NOT_FOUND` | No funding source with this id for your business, including a bank account or wallet added by hand in the dashboard. |
+| `429` | `RATE_LIMITED` | `default` budget exhausted. Wait for `Retry-After`. |

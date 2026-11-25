@@ -78,6 +78,13 @@
             ]
           },
           {
+            "group": "Payment methods",
+            "pages": [
+              "api-reference/payment-methods/list",
+              "api-reference/payment-methods/get"
+            ]
+          },
+          {
             "group": "Recipients",
             "pages": [
               "api-reference/recipients/requirements",

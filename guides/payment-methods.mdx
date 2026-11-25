@@ -7,25 +7,25 @@ description: "How your funding sources and recipient payment methods differ"
 
 Teel has two distinct concepts that are easy to confuse:
 
-- **Your payment methods** — the accounts you fund payouts *from*. Configured in the **Teel dashboard**, not via the API.
+- **Your payment methods** — the accounts you fund payouts *from*. Set up in the **Teel dashboard**; read their ids through the API.
 - **Recipient payment methods** — the accounts your recipients receive funds *into*. Managed via the API, as part of [creating a recipient](/guides/recipients).
 
 | | Your payment method | Recipient payment method |
 |---|---|---|
 | **Purpose** | Fund outgoing payouts | Receive incoming payments |
-| **Configured via** | Teel dashboard | API — `POST /recipients` and `POST /recipients/{id}/payment-methods` |
+| **Configured via** | Teel dashboard (read with `GET /payment-methods`) | API — `POST /recipients` and `POST /recipients/{id}/payment-methods` |
 | **Belongs to** | Your organization | The recipient |
 | **Example** | Your company's USD bank account | A vendor's EUR IBAN |
 
-## Your funding payment methods (dashboard)
+## Your funding sources
 
-Your funding sources are set up in the Teel dashboard, during or after onboarding. Partner API keys (`sk_live_…` / `sk_test_…`) are scoped to operational endpoints (recipients, quotes, payouts, webhooks) and **cannot** create or list your funding payment methods — those endpoints are dashboard-only and reject partner keys.
+Your funding sources are your receiving accounts and your collections wallets. They are set up in the Teel dashboard, during or after onboarding, and cannot be created or changed with an API key.
+
+To pay out from one, list them with [`GET /payment-methods`](/api-reference/payment-methods/list) (scope `payment_methods:read`) and pass the row's `id` as `userPaymentMethodId` on [`POST /rfq/execute`](/api-reference/payouts/execute) or [`POST /rfq/execute-batch`](/api-reference/payouts/execute-batch). You can also pass it to the quote endpoints so the price includes that source.
 
 <Note>
-To add or change a funding source, use the dashboard. If you need programmatic access to your funding configuration, contact **support@teel.finance**.
+Bank accounts and wallets added by hand in the dashboard are not returned to API keys.
 </Note>
-
-When you execute a fiat-funded payout, name the funding method by its id in `userPaymentMethodId` on [`POST /rfq/execute`](/api-reference/payouts/execute). You can also pass it to the quote endpoints so the price includes that source.
 
 ## Recipient payment methods (API)
 

@@ -1,0 +1,16 @@
+<ResponseField name="id" type="string" required>Funding source UUID. Pass it as `userPaymentMethodId` on [Execute a payout](/api-reference/payouts/execute) or [Execute a batch](/api-reference/payouts/execute-batch).</ResponseField>
+<ResponseField name="type" type="string" required>`bank` for a receiving account, `wallet` for a collections wallet.</ResponseField>
+<ResponseField name="name" type="string" required>Display name, for example `USD receiving account`.</ResponseField>
+<ResponseField name="currency" type="string" required>Currency held: ISO 4217 for a receiving account, the stablecoin for a collections wallet.</ResponseField>
+<ResponseField name="sourceCurrency" type="string" required>The source currency to quote a payout from this funding source with, for example `USD` or `USDC:137`.</ResponseField>
+<ResponseField name="status" type="string" required>`active` when it can fund a payout.</ResponseField>
+<ResponseField name="rail" type="string">The receiving account's rail, when it has one.</ResponseField>
+<ResponseField name="virtualAccountId" type="string">Receiving accounts only. The account's `id` in [List receiving accounts](/api-reference/collections/virtual-accounts/list).</ResponseField>
+<ResponseField name="collectionsWalletId" type="string">Collections wallets only. The wallet's UUID.</ResponseField>
+<ResponseField name="walletAddress" type="string">Collections wallets only. The wallet's address.</ResponseField>
+<ResponseField name="chain" type="string">Collections wallets only. The wallet's chain, for example `polygon`.</ResponseField>
+<ResponseField name="availableBalance" type="string">Collections wallets only. What a payout from the wallet can spend, as a decimal string. Absent when it could not be read.</ResponseField>
+<ResponseField name="custody" type="string">Collections wallets only. `teel`, or `self` when a payout from the wallet waits for a wallet owner to sign it in the dashboard.</ResponseField>
+<ResponseField name="supportingDocumentRequired" type="boolean" required>`true` when a payout from this receiving account needs a supporting document. Upload one with [Upload a payout document](/api-reference/payouts/upload-document) and pass its `fileId` as `supportingDocumentFileId`.</ResponseField>
+<ResponseField name="createdAt" type="string" required>ISO 8601.</ResponseField>
+<ResponseField name="updatedAt" type="string" required>ISO 8601.</ResponseField>
