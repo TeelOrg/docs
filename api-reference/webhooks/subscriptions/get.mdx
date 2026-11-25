@@ -6,7 +6,7 @@ description: Fetch one webhook subscription by ID
 
 Returns `404` if not yours.
 
-<Info>**Scope** `webhooks:read`</Info>
+<Info>**Scope** `webhooks:read` · rate limit `default` (60/min, burst 20)</Info>
 
 ## Headers
 
@@ -28,15 +28,25 @@ Same shape as one row on [List subscriptions](/api-reference/webhooks/subscripti
 ```json 200
 {
   "id": "1c84203c-b4e3-40de-83a9-51bc0d9c991f",
+  "userId": "6b1e4f2a-9c3d-4e8b-a7f5-2d0c1b3a4e5f",
   "url": "https://hooks.example.com/teel",
   "events": ["payout.created", "payout.status.updated"],
   "status": "active",
   "secretPrefix": "whsec_Pdt_BP",
   "label": "Production receiver",
   "lastSuccessAt": "2026-05-27T09:31:02Z",
-  "lastFailureAt": null,
   "createdAt": "2026-05-27T09:30:00Z",
   "updatedAt": "2026-05-27T09:30:00Z"
 }
 ```
 </ResponseExample>
+
+## Errors
+
+| Status | Code | When |
+| --- | --- | --- |
+| `400` | `INVALID_PARAMETER` | `id` is not a UUID. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `webhooks:read`. |
+| `404` | `WEBHOOK_SUBSCRIPTION_NOT_FOUND` | The subscription does not exist or is not yours. |
+| `429` | `RATE_LIMITED` | Rate limit hit. Wait for `Retry-After`. |

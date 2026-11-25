@@ -6,7 +6,7 @@ description: Update a webhook subscription
 
 All fields are optional — any field you omit stays unchanged. Returns the updated subscription. Pausing stops new deliveries from being enqueued; in-flight retries continue.
 
-<Info>**Scope** `webhooks:write` · rate-limited</Info>
+<Info>**Scope** `webhooks:write` · rate limit `default` (60/min, burst 20)</Info>
 
 ## Headers
 
@@ -46,15 +46,27 @@ Same shape as one row on [List subscriptions](/api-reference/webhooks/subscripti
 ```json 200
 {
   "id": "1c84203c-b4e3-40de-83a9-51bc0d9c991f",
+  "userId": "6b1e4f2a-9c3d-4e8b-a7f5-2d0c1b3a4e5f",
   "url": "https://hooks.example.com/teel",
   "events": ["payout.created", "payout.status.updated"],
   "status": "paused",
   "secretPrefix": "whsec_Pdt_BP",
   "label": "Production receiver",
   "lastSuccessAt": "2026-05-27T09:31:02Z",
-  "lastFailureAt": null,
   "createdAt": "2026-05-27T09:30:00Z",
   "updatedAt": "2026-05-27T10:15:00Z"
 }
 ```
 </ResponseExample>
+
+## Errors
+
+| Status | Code | When |
+| --- | --- | --- |
+| `400` | `INVALID_PARAMETER` | `id` is not a UUID. |
+| `400` | `INVALID_JSON` | The body is not valid JSON, or `url` is not a URL. |
+| `400` | `INVALID_REQUEST` | `url` fails the [Create](/api-reference/webhooks/subscriptions/create) rules, `events` is empty or names an unknown event type, or `status` is not `active` or `paused`. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `webhooks:write`, or `events` includes a `collections.*` event and the key lacks `collections:read`. |
+| `404` | `WEBHOOK_SUBSCRIPTION_NOT_FOUND` | The subscription does not exist or is not yours. |
+| `429` | `RATE_LIMITED` | Rate limit hit. Wait for `Retry-After`. |

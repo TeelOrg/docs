@@ -1,0 +1,40 @@
+<ResponseField name="protocol" type="string">Route token (`rt_…`). Send it as `routeProtocol` on [`POST /rfq/execute`](/api-reference/payouts/execute) to pin the route. Treat it as opaque.</ResponseField>
+<ResponseField name="fromCcy" type="string">Source currency.</ResponseField>
+<ResponseField name="toCcy" type="string">Destination currency or stablecoin.</ResponseField>
+<ResponseField name="fromAmount" type="string">Source amount, decimal string.</ResponseField>
+<ResponseField name="toAmount" type="string">Amount the recipient receives, decimal string.</ResponseField>
+<ResponseField name="exchangeRate" type="string">Exchange rate before fees.</ResponseField>
+<ResponseField name="effRate" type="number">Effective rate after all fees.</ResponseField>
+<ResponseField name="rateDecimals" type="integer">Decimal places to display the rate with.</ResponseField>
+<ResponseField name="fee" type="string">Total fee, in `fromCcy`.</ResponseField>
+<ResponseField name="providerFee" type="string">The route's own fee.</ResponseField>
+<ResponseField name="fees" type="object">Per-leg fees: `onrampFee`, `offrampFee`, and `fundingFee` for a held-balance source.</ResponseField>
+<ResponseField name="teelFee" type="number">Teel's fee, in `toCcy`.</ResponseField>
+<ResponseField name="teelFeeExact" type="string">Teel's fee in `fromCcy` as an exact decimal. Held-balance sources only.</ResponseField>
+<ResponseField name="teelFeeBps" type="integer">Teel's fee in basis points.</ResponseField>
+<ResponseField name="gasFeeUsdc" type="number">On-chain gas, in USDC, when charged.</ResponseField>
+<ResponseField name="flatFees" type="array">Each flat fee charged apart from the rate, one line each: `kind` (`provider`, `rail`, `network` or `funding`), `amount` and `currency`. A `funding` fee is charged on top of `fromAmount`; the others are inside it. Absent when there are none.</ResponseField>
+<ResponseField name="isCryptoQuote" type="boolean">`true` when the route settles through a stablecoin.</ResponseField>
+<ResponseField name="swapPath" type="array">The route's legs in order. Each has `hop`, `fromToken`, `toToken`, `dex` (a route token), `rate` and, when set, `requiresDocument`.</ResponseField>
+<ResponseField name="bridgingAsset" type="string">Stablecoin the route settles on. Send it as `bridgingAsset` when you pin the route.</ResponseField>
+<ResponseField name="executionKind" type="string">`direct_bank` for a direct delivery from a held fiat balance without conversion.</ResponseField>
+<ResponseField name="needsSupportingDocument" type="boolean">`true` when the route needs a supporting document.</ResponseField>
+<ResponseField name="enabled" type="boolean">`false` when the route is listed but cannot be used for this request.</ResponseField>
+<ResponseField name="disabledReason" type="string">Why `enabled` is `false`, for example `provider_disabled`, `amount_below_min`, `amount_above_max`, `spend_below_funding_fee` or `funding_fee_unavailable`.</ResponseField>
+<ResponseField name="disabledDetail" type="string">Short hint to go with `disabledReason`, for example `needs ≥550 PHP`.</ResponseField>
+<ResponseField name="recommended" type="boolean">`true` on the route Teel recommends.</ResponseField>
+<ResponseField name="intelScore" type="number">Route score, when scoring is available. Advisory.</ResponseField>
+<ResponseField name="intelBadges" type="array">Route badges, when scoring is available. Advisory.</ResponseField>
+<ResponseField name="intelWarning" type="string">Route warning, when scoring is available. Advisory.</ResponseField>
+<ResponseField name="intelChain" type="string">Recommended settlement chain, when scoring is available. Advisory.</ResponseField>
+<ResponseField name="validUntil" type="string">ISO 8601. Teel honours this quote until then.</ResponseField>
+<ResponseField name="midMarketRate" type="number">Mid-market rate used for the all-in cost.</ResponseField>
+<ResponseField name="allInCostBps" type="number">All-in cost against mid-market, in basis points. Negative means better than mid-market.</ResponseField>
+<ResponseField name="allInCostAmount" type="number">All-in cost in `fromCcy`.</ResponseField>
+<ResponseField name="allInCostAmountExact" type="string">`allInCostAmount` as an exact decimal.</ResponseField>
+<ResponseField name="onrampProviderToAmount" type="string">Collection leg's delivery before Teel's fee, in USDC.</ResponseField>
+<ResponseField name="offrampProviderToAmount" type="string">Delivery leg's delivery before Teel's fee, in the payout currency.</ResponseField>
+<ResponseField name="fundingRail" type="string">Held-balance sources only. The rail that funds the route; `internal` when no transfer is needed. Send it as `fundingRail` on execute.</ResponseField>
+<ResponseField name="fundingFee" type="string">Held-balance sources only. Charged on top of `fromAmount`, in `fromCcy`.</ResponseField>
+<ResponseField name="estimatedSettlementSeconds" type="integer">Held-balance sources only. Expected settlement time of the funding leg.</ResponseField>
+<ResponseField name="spendAmount" type="string">`amountIs=spend` only, on enabled routes: `fromAmount` + `fundingFee`.</ResponseField>

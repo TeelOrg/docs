@@ -3,12 +3,7 @@ title: Webhooks Overview
 description: Receive real-time updates for transaction and account status changes
 ---
 
-Teel sends real-time updates whenever events occur on your account (payout created, status changed, etc.). There are two delivery modes — pick whichever fits your stack:
-
-- **HTTP webhooks** — Teel POSTs HMAC-signed events to a URL you register. See [Subscriptions](/api-reference/webhooks/subscriptions) and [Deliveries](/api-reference/webhooks/deliveries) for the management endpoints, and the [Webhooks guide](/guides/webhooks) for the verifier samples + retry rules.
-- **WebSocket** — Connect to `wss://api.teel.finance/ws` and authenticate in-band with your API key. See the [Webhooks guide](/guides/webhooks#websocket-connection) for the client snippet.
-
-Both deliver payout events with the same payload shape. Collections events are delivered over HTTP webhooks only.
+Teel sends real-time updates whenever events occur on your account (payout created, status changed, collections activity). Teel POSTs HMAC-signed events to a URL you register. See [Subscriptions](/api-reference/webhooks/subscriptions/list) and [Deliveries](/api-reference/webhooks/deliveries/list) for the management endpoints, and the [Webhooks guide](/guides/webhooks) for the verifier samples and retry rules. You can also manage subscriptions in the dashboard under **Settings** → **Webhooks**.
 
 ## Event types
 

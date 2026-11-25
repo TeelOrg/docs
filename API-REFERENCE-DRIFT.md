@@ -65,21 +65,15 @@ Without it documented, partners can't pin a route. See `internal/routealias/rout
 
 ---
 
-## 5. `env_scope` 403 uses a non-standard error envelope
+## 5. ~~`env_scope` 403 uses a non-standard error envelope~~ (resolved)
 
-`internal/middleware/env_scope.go` returns `gin.H{"error": "environment_scope mismatch", "host_scope": ..., "actor_scope": ..., "actor": ...}` — **not** the canonical `respondError` shape `{code, error, details?}` mandated for partner-callable surfaces (see CLAUDE.md "Stable error codes on partner-callable handlers"). There is no stable `code` for this 403, so partners can't switch on it programmatically. Either route it through `respondError` with a new `ErrCode...` constant, or document the bespoke shape explicitly. (Docs now describe the literal body as-is.)
-
-Also note the **enforcement asymmetry**: `ENV_SCOPE_ENFORCE=true` in `deploy-sandbox.yml` but unset in production `deploy.yml`, so prod is warn-only today. Docs intentionally describe the enforced contract (rule + 403) without advertising the prod gap.
+The 403 now carries `code: "ENV_SCOPE_MISMATCH"` (`internal/middleware/env_scope.go`), and `ENV_SCOPE_ENFORCE` is set on the prod orchestrator overlay. `authentication.mdx` and `errors.mdx` name the code.
 
 ---
 
-## 6. `GET /config/coverage` is missing from `openapi.yaml`
+## 6. ~~`GET /config/coverage` is missing from `openapi.yaml`~~ (resolved)
 
-The endpoint exists (`internal/rest/currency_config_controller.go:GetCoverage`, `cmd/main.go`) and has a docs page (`api-reference/config/coverage.mdx`), but it is **not** declared in `openapi.yaml` — so it's absent from partner SDK codegen and the served spec. Add it (unauthenticated; response = the `Coverage` struct: `{fiat: CurrencyCoverage[], wallet: WalletCoverage}`).
-
-Also confirm the **public path**: the Go route is `api.GET("/config/coverage")` (internal `/api/config/coverage`), but every partner-facing path in the spec is served bare (no `/api`) on `api.teel.finance`. Docs now use `https://api.teel.finance/config/coverage` to match the quickstart and the rest of the surface — verify the ingress strips `/api` for this route too.
-
-The ingress rewrite is idempotent (`^(/api)?(.*) → /api\2`), so both `/config/coverage` and `/api/config/coverage` reach the route.
+`/config/coverage` is declared in the served spec.
 
 ---
 
@@ -93,8 +87,8 @@ Docs follow the handler in each case.
 - **`CreatePaymentLink.settlementCurrency`**: listed with no caveat. `buildPaymentLink` refuses it on `fiat` and `stablecoin` (it is only for the sandbox-only `fiat_conversion` type, which the partner `collectionType` enum does not list).
 - **`POST /collections/receiving-accounts/offramp/document`**: the spec says PDF, JPG or PNG. `utils.ValidateUpload` defaults (KYB set) also accept WEBP.
 - **`PartnerPaymentLink.reference` example** `PL-7F3K2Q`: real references are `PL-` + 26 base32 characters (`generatePaymentLinkReference`).
-- **`Error.code` description** still cites `go-server/rest/api_errors.go`.
-- **Spec `servers[1]` and the `PartnerBearer` description** name `api-sandbox.teel.finance`, which has no DNS record. The sandbox API is served at `https://api.teel.finance/sandbox` (`deploy/apps/sandbox-webapi/overlays/prod/ingress/sandbox.yaml`). The docs pages now use that (fixed in `authentication.mdx`, `introduction.mdx`, `quickstart.mdx` and the collections guides); the spec still needs it.
+- ~~**`Error.code` description** still cites `go-server/rest/api_errors.go`.~~ Resolved: the spec no longer names `go-server`.
+- ~~**Spec `servers[1]` and the `PartnerBearer` description** name `api-sandbox.teel.finance`.~~ Resolved: `servers[1]` is `https://api.teel.finance/sandbox`.
 - **Scoped settle signer is Tron-only**: `settleNeedsDashboardAuthorization` honours it on the Tron (USDT, `high`) rail only; any non-custodial Polygon/Ethereum (USDC, `low`) wallet is refused.
 - **Payment link status on partner reads** uses `models.EffectiveStatus`, not `EffectiveStatusWithAllocation`, so a part-paid stablecoin invoice past `expiresAt` reads `expired` to a partner while it is still payable.
 
@@ -112,9 +106,17 @@ Docs follow the handler in each case.
 - **`POST /rfq/execute-batch` 202 `rows[]`**: the spec lists `transactionId`, `quoteId`, `errorCode`, `retryable` on the 202 rows; the handler serves only `idx` and `status: pending` (they appear on `GET /jobs/{jobId}`). The spec's 202 also omits `batchId`, `collectionId`, `totalSourceAmount` and `escrowTxHash` from the schema while its prose names `batchId`. The handler comment says `items` is served empty; it is not served at all.
 - **`POST /rfq/execute-batch` refusals without a code**: more than 49 items (`400`) and the not-ready `503`s are `{"success": false, "error": …}` with no `code` (quote-engine `rfq_router.go` `handleLockAndExecuteBatch`). The spec lists `422` only as `FundingRailUnsupported` and has no `403 PAYOUTS_NOT_ENABLED` / `422 DIRECT_BANK_BATCH_UNSUPPORTED` / `502` entry.
 - **`POST /rfq/confirm-escrow-deposit` `400`**: the spec's body is `{success: false, error: "invalid request"}`; the Core proxy now refuses first with `{code: INVALID_JSON, error}`.
-- **`Error.code` enum lists codes nothing partner-reachable emits**: `UPSTREAM_TIMEOUT` and `SANDBOX_PAYOUTS_UNAVAILABLE` have no emitter; `WALLET_NOT_SET_UP` is documented in `api_errors.go` as never sent to a partner key. `errors.mdx` leaves them out.
+- **`Error.code` enum lists codes nothing partner-reachable emits**: `UPSTREAM_TIMEOUT`, `SANDBOX_PAYOUTS_UNAVAILABLE` and `QUOTE_NOT_FOUND` have no emitter; `WALLET_NOT_SET_UP` is documented in `api_errors.go` as never sent to a partner key; `SOURCE_NOT_SERVICEABLE` is sent only by `POST /payment-methods`, which is `denyPartner`. `errors.mdx` leaves them out.
 - **`COLLECTIONS_WALLET_SOURCE_NOT_SUPPORTED`** is `422` everywhere except `collections_convert_controller.go`, which sends it as `403`; a code should map to one status.
 
 ---
+
+### Surfaced fixing the auth, webhooks and collections pages (`docs/audit-auth-webhooks-collections`)
+
+- **`PATCH /webhooks/subscriptions/{id}` claims idempotency in the spec**: the route mounts no `idempotency` middleware (`cmd/main.go` webhooks group). The docs page does not document `Idempotency-Key`. Spec fix: TeelOrg/teel-backend#6145.
+- **Partner WebSocket auth removed from the docs**: `internal/websocket/handler.go` accepts only a dashboard JWT (`token`); the `{type: "auth", apiKey}` frame is no longer read. Decision: partners are pointed at webhooks and polling, and the dashboard JWT path is not documented. The `wss://…/sandbox/ws` host line in `AGENTS.md` is now unused by public pages.
+- **Item 2 above assumes `GET /recipients/wallet-networks` is partner-reachable**: it is mounted with `denyPartner`, so a partner key cannot call it.
+- **Webhook replay's per-user `429` has no `code`**: `middleware.PerUserRateLimiter` answers `{"success": false, "error": "rate limit exceeded"}`, outside the `respondError` shape. The replay page documents the bare body.
+- **Webhook subscription and delivery responses serve `userId`**: the handlers serialize `models.WebhookSubscription` / `models.WebhookDelivery` directly rather than through a partner DTO, so `userId` is on the wire. The pages document it as served.
 
 _Add new rows below as later doc pages surface more drift._

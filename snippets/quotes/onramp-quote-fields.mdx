@@ -1,0 +1,11 @@
+<ResponseField name="protocol" type="string">Route token (`rt_…`). Send it as `routeProtocol` on [`POST /rfq/execute`](/api-reference/payouts/execute) to pin the route. Treat it as opaque.</ResponseField>
+<ResponseField name="fromCcy" type="string">Source fiat currency.</ResponseField>
+<ResponseField name="toToken" type="string">Stablecoin bought.</ResponseField>
+<ResponseField name="fromAmount" type="string">Fiat amount, decimal string.</ResponseField>
+<ResponseField name="toAmount" type="string">Stablecoin received, decimal string.</ResponseField>
+<ResponseField name="rate" type="number">Conversion rate.</ResponseField>
+<ResponseField name="exchangeRate" type="string">Route's exchange rate, when it reports one.</ResponseField>
+<ResponseField name="fee" type="number">Total fee, in the source currency.</ResponseField>
+<ResponseField name="fixedFee" type="number">Flat per-transfer part of `fee`.</ResponseField>
+<ResponseField name="paymentFee" type="number">Part of `fee` the payer is charged on top of the deposit, already inside `fromAmount`.</ResponseField>
+<ResponseField name="metadata" type="object">Route-specific detail. Don't depend on its keys.</ResponseField>

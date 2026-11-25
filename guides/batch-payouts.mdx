@@ -1,0 +1,47 @@
+---
+title: "Batch payouts"
+description: "Send many payouts from one funding source in one call"
+---
+
+A batch sends up to 49 payouts that share a source currency and a funding source. Teel collects the funds once and pays each recipient from that collection.
+
+## Step 1: Submit the batch
+
+Call [`POST /rfq/execute-batch`](/api-reference/payouts/execute-batch). Each item's `targetAmount` is what that recipient receives.
+
+```bash
+curl -X POST https://api.teel.finance/api/rfq/execute-batch \
+  -H "Authorization: Bearer $TEEL_API_KEY" \
+  -H "Content-Type: application/json" \
+  -H "Idempotency-Key: $(uuidgen)" \
+  -d '{
+    "fromCurrency": "USD",
+    "onrampProtocol": "rt_8QmVxT2pA9c",
+    "userPaymentMethodId": "e5f6a7b8-c9d0-4e1f-8a2b-3c4d5e6f7a8b",
+    "items": [
+      { "toCurrency": "PHP", "targetAmount": 50000, "recipientId": "8f3c2a91-4e5b-4d8c-9a1f-3e2b1c4d5e6f", "idempotency_key": "inv-1042" },
+      { "toCurrency": "MXN", "targetAmount": 17000, "recipientId": "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d", "idempotency_key": "inv-1043" }
+    ]
+  }'
+```
+
+The call answers `202` with a `batchId` before anything is priced. Every row reads `pending`.
+
+## Step 2: Poll the job
+
+Poll [`GET /jobs/{jobId}`](/api-reference/jobs/get) with the `batchId` as `jobId` until `terminal` is `true`:
+
+```bash
+curl https://api.teel.finance/api/jobs/{batchId} \
+  -H "Authorization: Bearer $TEEL_API_KEY"
+```
+
+Each row in `progress.rows` ends `accepted` (with its `quoteId`, `transactionId`, `toAmount` and `effectiveRate`) or `failed` (with an `errorCode`, and `retryable` when resending it can succeed). A row whose `idempotency_key` matches a live payout from an earlier batch ends `accepted` with `"duplicate": true` and the earlier payout's `transactionId`; it is not charged again. `progress.collectionId` appears once the batch is created.
+
+## Step 3: Fund the collection
+
+Read [`GET /payouts/batch/{batchId}/collection`](/api-reference/payouts/batch-collection) for the batch's collection and its deposit instructions, then pay the total into it.
+
+## Step 4: Follow each payout
+
+Once the collection completes, each payout moves from `pending_collection` to its own delivery. Follow them with [`GET /payouts/batch/{batchId}/rows`](/api-reference/payouts/batch-rows), [`GET /payouts?batch_id={batchId}`](/api-reference/payouts/list), or `payout.status.updated` [webhooks](/guides/webhooks).

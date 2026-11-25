@@ -1,63 +1,66 @@
 ---
-title: Get Best Onramp Quote
+title: Get best onramp quote
 api: GET /api/quotes/onramp/best
-description: Get the best quote for onramping fiat currency to crypto
+description: The best quote for buying stablecoin with fiat.
 ---
 
-Returns the single best onramp quote for converting fiat currency into crypto tokens.
+import Headers from '/snippets/quotes/headers.mdx';
+import QuoteErrors from '/snippets/quotes/errors.mdx';
+import OnrampQuoteFields from '/snippets/quotes/onramp-quote-fields.mdx';
+
+Returns the single best route for converting fiat into stablecoin.
+
+<Info>**Scope** `quotes:read` · rate limit `quotes_read` (120/min, burst 40) · each currency must be in your business's payouts scope</Info>
+
+## Headers
+
+<Headers />
 
 ## Query parameters
+
 <ParamField query="sourceCurrency" type="string" required>
-  ISO 4217 currency code for the source fiat currency (e.g. `USD`, `EUR`).
+  ISO 4217 code of the fiat you pay in.
 </ParamField>
-
 <ParamField query="amount" type="number" required>
-  The amount in the source fiat currency to onramp.
+  Fiat amount. Must be `> 0`.
 </ParamField>
-
-<ParamField query="payoutCurrency" type="string">
-  Optional. The desired payout token (e.g. `USDC`). If omitted, the default is used.
+<ParamField query="userPaymentMethodId" type="string">
+  Your funding payment method. Prices the quote from that source, including a held balance's funding fee. Must be yours.
+</ParamField>
+<ParamField query="recipientPaymentMethodId" type="string">
+  Recipient payment method to price delivery to. Must be yours.
 </ParamField>
 
 ## Response
-<ResponseField name="protocol" type="string">
-  Opaque route token (`rt_...`) identifying the route. See [Route tokens](/api-reference/quotes/onramp-all#route-tokens).
-</ResponseField>
 
-<ResponseField name="fromCcy" type="string">
-  Source fiat currency code.
+<ResponseField name="success" type="boolean">`true`.</ResponseField>
+<ResponseField name="data" type="object">
+  The quote.
+  <Expandable title="data">
+    <OnrampQuoteFields />
+  </Expandable>
 </ResponseField>
-
-<ResponseField name="toToken" type="string">
-  The crypto token being purchased.
-</ResponseField>
-
-<ResponseField name="fromAmount" type="number">
-  Amount in the source fiat currency.
-</ResponseField>
-
-<ResponseField name="toAmount" type="number">
-  Amount of crypto tokens the user will receive.
-</ResponseField>
-
-<ResponseField name="rate" type="number">
-  The conversion rate applied.
-</ResponseField>
-
-<ResponseField name="fee" type="number">
-  Total fee charged for the onramp.
+<ResponseField name="warnings" type="object">
+  Present when the route is responding slowly. `providerSlow.p95LatencyMs` is its recent 95th-percentile response time in milliseconds.
 </ResponseField>
 
 <ResponseExample>
 ```json 200
 {
-  "protocol": "rt_8QmVxT2pA9c",
-  "fromCcy": "USD",
-  "toToken": "USDC",
-  "fromAmount": 500,
-  "toAmount": 493.75,
-  "rate": 1.0,
-  "fee": 6.25
+  "success": true,
+  "data": {
+    "protocol": "rt_8QmVxT2pA9c",
+    "fromCcy": "USD",
+    "toToken": "USDC",
+    "fromAmount": "500",
+    "toAmount": "493.75",
+    "rate": 1.0,
+    "fee": 6.25
+  }
 }
 ```
 </ResponseExample>
+
+## Errors
+
+<QuoteErrors />

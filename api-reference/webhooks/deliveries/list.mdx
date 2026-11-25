@@ -6,7 +6,7 @@ description: List webhook delivery attempts with filters
 
 Debug what reached your endpoint — attempt count, response code, response body excerpt, error.
 
-<Info>**Scope** `webhooks:read`</Info>
+<Info>**Scope** `webhooks:read` · rate limit `default` (60/min, burst 20)</Info>
 
 ## Headers
 
@@ -50,6 +50,10 @@ Debug what reached your endpoint — attempt count, response code, response body
   UUID of the subscription this delivery belongs to.
 </ResponseField>
 
+<ResponseField name="userId" type="string">
+  UUID of the user that owns the subscription.
+</ResponseField>
+
 <ResponseField name="eventType" type="string">
   Event type, e.g. `payout.status.updated`.
 </ResponseField>
@@ -67,19 +71,19 @@ Debug what reached your endpoint — attempt count, response code, response body
 </ResponseField>
 
 <ResponseField name="nextAttemptAt" type="string">
-  ISO 8601 timestamp of the next scheduled retry. `null` when in a terminal state.
+  ISO 8601 timestamp of the next scheduled attempt. Always present; ignore it once the delivery is `succeeded` or `permanently_failed`.
 </ResponseField>
 
 <ResponseField name="lastResponseCode" type="integer">
-  HTTP status of the most recent attempt. `null` if no transport-level response (timeout, connect refused).
+  HTTP status of the most recent attempt. Omitted if there was no HTTP response (timeout, connection refused).
 </ResponseField>
 
 <ResponseField name="lastResponseBody" type="string">
-  Excerpt of the most recent response body. May be truncated.
+  Excerpt of the most recent response body. May be truncated. Omitted when empty.
 </ResponseField>
 
 <ResponseField name="lastError" type="string">
-  Transport error message from the most recent failed attempt. `null` on success.
+  Transport error message from the most recent failed attempt. Omitted when there is none.
 </ResponseField>
 
 <ResponseField name="createdAt" type="string">
@@ -87,7 +91,7 @@ Debug what reached your endpoint — attempt count, response code, response body
 </ResponseField>
 
 <ResponseField name="deliveredAt" type="string">
-  ISO 8601 timestamp of the first successful delivery. `null` until success.
+  ISO 8601 timestamp of the first successful delivery. Omitted until success.
 </ResponseField>
 
 ### Delivery statuses
@@ -107,12 +111,13 @@ Rows older than 30 days are eligible for automatic pruning (terminal statuses on
   {
     "id": "54697e99-c2f5-4630-9f88-c1a3b1428d65",
     "subscriptionId": "1c84203c-b4e3-40de-83a9-51bc0d9c991f",
+    "userId": "6b1e4f2a-9c3d-4e8b-a7f5-2d0c1b3a4e5f",
     "eventType": "payout.status.updated",
     "payload": {
       "type": "payout.status.updated",
       "createdAt": "2026-05-27T09:30:46Z",
       "data": {
-        "payoutId": "txn_abc",
+        "payoutId": "3d1f7c20-9b8a-4e6d-bf12-7a4c9e2d1f0b",
         "status": "processing",
         "step": "settling"
       }
@@ -121,11 +126,18 @@ Rows older than 30 days are eligible for automatic pruning (terminal statuses on
     "attemptCount": 1,
     "nextAttemptAt": "2026-05-27T09:30:46Z",
     "lastResponseCode": 200,
-    "lastResponseBody": null,
-    "lastError": null,
     "createdAt": "2026-05-27T09:30:46Z",
     "deliveredAt": "2026-05-27T09:30:48Z"
   }
 ]
 ```
 </ResponseExample>
+
+## Errors
+
+| Status | Code | When |
+| --- | --- | --- |
+| `400` | `INVALID_PARAMETER` | `subscription_id` is not a UUID, or `since` / `until` is not an RFC 3339 timestamp. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `webhooks:read`. |
+| `429` | `RATE_LIMITED` | Rate limit hit. Wait for `Retry-After`. |

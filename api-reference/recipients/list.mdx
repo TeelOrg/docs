@@ -6,7 +6,7 @@ description: List every recipient on your account
 
 Paginated. Filter client-side — no server-side attribute filters.
 
-<Info>**Scope** `recipients:read`</Info>
+<Info>**Scope** `recipients:read` · rate limit `default` (60/min, burst 20)</Info>
 
 ## Headers
 
@@ -59,3 +59,11 @@ Array of [recipients](/api-reference/recipients/get#response).
 ]
 ```
 </ResponseExample>
+
+## Errors
+
+| Status | Code | When |
+|---|---|---|
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `recipients:read`. |
+| `429` | `RATE_LIMITED` | Per-key rate limit. Wait for `Retry-After`. |

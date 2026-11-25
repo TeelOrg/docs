@@ -16,7 +16,7 @@ All subscriptions on your account.
 
 Loopback, RFC1918 private, link-local, and known cloud metadata host/IP ranges are rejected at create time and at delivery time (DNS is re-resolved before every POST).
 
-<Info>**Scope** `webhooks:read`</Info>
+<Info>**Scope** `webhooks:read` · rate limit `default` (60/min, burst 20)</Info>
 
 ## Headers
 
@@ -24,10 +24,24 @@ Loopback, RFC1918 private, link-local, and known cloud metadata host/IP ranges a
   API key.
 </ParamField>
 
+## Query parameters
+
+<ParamField query="limit" type="integer">
+  Page size. Default `50`, max `200`.
+</ParamField>
+
+<ParamField query="offset" type="integer">
+  Pagination offset. Default `0`.
+</ParamField>
+
 ## Response
 
 <ResponseField name="id" type="string">
   Subscription UUID.
+</ResponseField>
+
+<ResponseField name="userId" type="string">
+  UUID of the user that owns the subscription: the owner of the key that created it, or the dashboard user.
 </ResponseField>
 
 <ResponseField name="url" type="string">
@@ -47,15 +61,15 @@ Loopback, RFC1918 private, link-local, and known cloud metadata host/IP ranges a
 </ResponseField>
 
 <ResponseField name="label" type="string">
-  Human-readable label shown in the dashboard. Never sent to your endpoint.
+  Omitted when not set. Human-readable label shown in the dashboard. Never sent to your endpoint.
 </ResponseField>
 
 <ResponseField name="lastSuccessAt" type="string">
-  ISO 8601 timestamp of the most recent 2xx delivery. `null` if none yet.
+  ISO 8601 timestamp of the most recent 2xx delivery. Omitted if none yet.
 </ResponseField>
 
 <ResponseField name="lastFailureAt" type="string">
-  ISO 8601 timestamp of the most recent failed delivery. `null` if none yet.
+  ISO 8601 timestamp of the most recent failed delivery. Omitted if none yet.
 </ResponseField>
 
 <ResponseField name="createdAt" type="string">
@@ -71,16 +85,24 @@ Loopback, RFC1918 private, link-local, and known cloud metadata host/IP ranges a
 [
   {
     "id": "1c84203c-b4e3-40de-83a9-51bc0d9c991f",
+    "userId": "6b1e4f2a-9c3d-4e8b-a7f5-2d0c1b3a4e5f",
     "url": "https://hooks.example.com/teel",
     "events": ["payout.created", "payout.status.updated"],
     "status": "active",
     "secretPrefix": "whsec_Pdt_BP",
     "label": "Production receiver",
     "lastSuccessAt": "2026-05-27T09:31:02Z",
-    "lastFailureAt": null,
     "createdAt": "2026-05-27T09:30:00Z",
     "updatedAt": "2026-05-27T09:30:00Z"
   }
 ]
 ```
 </ResponseExample>
+
+## Errors
+
+| Status | Code | When |
+| --- | --- | --- |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `webhooks:read`. |
+| `429` | `RATE_LIMITED` | Rate limit hit. Wait for `Retry-After`. |

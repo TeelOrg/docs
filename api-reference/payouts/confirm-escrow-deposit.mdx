@@ -6,7 +6,7 @@ description: Manual fallback when auto-detection misses your on-chain deposit.
 
 Manual deposit-confirmation fallback when on-chain auto-detect misses your transfer. Idempotent on duplicate `(quoteId, txHash)`.
 
-<Info>**Scope** `payouts:write` · rate-limited</Info>
+<Info>**Scope** `payouts:write` · rate limit `payouts_write` (30/min, burst 10) · requires payouts to be enabled for your business</Info>
 
 ## Headers
 
@@ -14,11 +14,13 @@ Manual deposit-confirmation fallback when on-chain auto-detect misses your trans
   API key.
 </ParamField>
 
-<ParamField header="Idempotency-Key" type="string">Optional.</ParamField>
+<ParamField header="Idempotency-Key" type="string">
+  Optional. 8–255 characters from `[A-Za-z0-9_-]`. A retry with the same key and body within 24 hours replays the first response; the same key with a different body returns `409 IDEMPOTENCY_KEY_REUSED`, and a retry while the first is still running returns `409 IDEMPOTENCY_REQUEST_IN_FLIGHT`.
+</ParamField>
 
 ## Request body
 
-<ParamField body="quoteId" type="string" required>UUID of the original quote. Must be in `awaiting_escrow_deposit`.</ParamField>
+<ParamField body="quoteId" type="string" required>UUID of the original quote. Its status must be `awaiting_deposit`.</ParamField>
 <ParamField body="txHash" type="string" required>`0x`-prefixed transaction hash. Teel verifies the on-chain amount, address, and chain match.</ParamField>
 
 ## Response
@@ -42,7 +44,7 @@ Manual deposit-confirmation fallback when on-chain auto-detect misses your trans
 | `409` | `IDEMPOTENCY_KEY_REUSED` / `IDEMPOTENCY_REQUEST_IN_FLIGHT` | Idempotency conflict. |
 | `429` | `RATE_LIMITED` | Per-key rate limit. Wait for `Retry-After`. |
 | `502` | `DOWNSTREAM_UNAVAILABLE` | The payout engine could not be reached. Retry. |
-| `500` | none | Confirmation failed. Returns `{"success": false, "error": "escrow deposit confirmation failed"}`. **Every** persistent failure mode the handler can hit collapses here today — wrong `txHash`, amount mismatch, chain mismatch, quote not in the expected state, on-chain tx not yet confirmed. There is no granular error-shape distinction. **Don't blind-retry a 500 from this endpoint** — verify your tx hash, amount, and chain first. |
+| `500` | none | Confirmation failed. Body: `{"success": false, "error": "escrow deposit confirmation failed"}`. Every cause answers the same way: a wrong `txHash`, an amount or chain mismatch, a quote not in `awaiting_deposit`, or a transaction not yet confirmed. Check the hash, amount and chain before retrying. |
 
 ## When not to call this
 

@@ -6,7 +6,7 @@ description: Update a recipient. Any field you omit stays unchanged.
 
 Omitted fields stay unchanged.
 
-<Info>**Scope** `recipients:write` · rate-limited</Info>
+<Info>**Scope** `recipients:write` · rate limit `default` (60/min, burst 20)</Info>
 
 ## Headers
 
@@ -72,3 +72,19 @@ Same shape as [Get recipient](/api-reference/recipients/get#response).
 }
 ```
 </ResponseExample>
+
+## Errors
+
+| Status | Code | When |
+|---|---|---|
+| `400` | `INVALID_PARAMETER` | `id` is not a UUID. |
+| `400` | `INVALID_REQUEST` | The body is malformed or fails validation, for example an invalid email or country code. |
+| `400` | `MISSING_PARAMETER` | A required field is missing. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `recipients:write`. |
+| `404` | `RECIPIENT_NOT_FOUND` | The recipient does not exist or is not yours. Both answer the same. |
+| `409` | `CONFLICT` | The recipient is your own Teel-held account (`isSelf`), which Teel manages. |
+| `409` | `ALREADY_EXISTS` | The change collides with another record. |
+| `422` | `ADDRESS_SCREENING_BLOCKED` / `ADDRESS_SCREENING_UNDER_REVIEW` | A wallet address in `walletAddresses` failed screening or is still under review. |
+| `429` | `RATE_LIMITED` | Per-key rate limit. Wait for `Retry-After`. |
+| `503` | `ADDRESS_SCREENING_UNAVAILABLE` | A wallet address could not be screened. Retry shortly. |

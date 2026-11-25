@@ -6,7 +6,7 @@ description: Register a recipient.
 
 Body is a common section + a type-specific section keyed on `transferType`. Call [`GET /recipients/requirements`](/api-reference/recipients/requirements) first for the live field list.
 
-<Info>**Scope** `recipients:write` · rate-limited</Info>
+<Info>**Scope** `recipients:write` · rate limit `default` (60/min, burst 20)</Info>
 
 ## Headers
 

@@ -4,9 +4,9 @@ api: DELETE /api/recipients/{id}
 description: Delete a recipient
 ---
 
-Past payouts are unaffected.
+A recipient that any payout references cannot be deleted.
 
-<Info>**Scope** `recipients:write` · rate-limited</Info>
+<Info>**Scope** `recipients:write` · rate limit `default` (60/min, burst 20)</Info>
 
 ## Headers
 
@@ -31,3 +31,15 @@ Past payouts are unaffected.
 { "message": "Recipient deleted successfully" }
 ```
 </ResponseExample>
+
+## Errors
+
+| Status | Code | When |
+|---|---|---|
+| `400` | `INVALID_PARAMETER` | `id` is not a UUID. |
+| `400` | `REFERENCED_BY_OTHERS` | Payouts reference this recipient, so it cannot be deleted. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `recipients:write`. |
+| `404` | `RECIPIENT_NOT_FOUND` | The recipient does not exist or is not yours. Both answer the same. |
+| `409` | `CONFLICT` | The recipient is your own Teel-held account (`isSelf`), which Teel manages. |
+| `429` | `RATE_LIMITED` | Per-key rate limit. Wait for `Retry-After`. |

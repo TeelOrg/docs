@@ -62,7 +62,7 @@ The codes a partner key can receive, with the status each is sent with. New code
 | `400` | `FIELD_NOT_WRITABLE` | The request sets a field, or query parameter, the partner API does not accept. |
 | `400` | `IDEMPOTENCY_KEY_INVALID` | `Idempotency-Key` is not 8–255 characters from `[A-Za-z0-9_-]`. |
 | `400` | `INVALID_PAYOUT_RAIL` | `payoutRail` is not a rail Teel knows. |
-| `400` | `OUTGOING_INVOICE_DOCUMENT_REQUIRED` | A settlement needs `outgoingInvoiceDocumentKey`. |
+| `400` | `OUTGOING_INVOICE_DOCUMENT_REQUIRED` | A settlement needs `outgoingInvoiceDocumentFileId`. |
 | `400` | `AMOUNT_IS_INVALID` | `amountIs` is neither `delivery` nor `spend`. |
 | `400` | `SPEND_MODE_UNSUPPORTED` | `amountIs=spend` on a settlement whose rail cannot debit exactly the spend. |
 | `413` | `REQUEST_BODY_TOO_LARGE` | The body is over the size limit. |
@@ -189,15 +189,14 @@ Collections follow the same rules on `POST /collections/payment-links` and `POST
 
 ## Rate limiting
 
-Per-key default: **60 requests per minute, burst 20**. Specific endpoint families have tighter limits:
-
-Each route is governed by exactly one limit: its family's, or the per-key default when it has none. The `X-RateLimit-*` headers describe that limit.
+Per-key default: **60 requests per minute, burst 20**. A route in one of the families below is limited by its family instead of the default, and the `X-RateLimit-*` headers describe that family's limit. Webhook replay is the one exception: it keeps the default and adds its own per-account limit.
 
 | Endpoint | Limit | Notes |
 | --- | --- | --- |
 | `GET /quotes/*` | 120/min, burst 40 | Quotes are cheap; higher limit reflects their typical poll-during-checkout pattern |
-| `POST /rfq/execute` | 30/min, burst 10 | Creating money movements should be relatively rare |
-| `POST /webhooks/deliveries/:id/replay` | **5/min, burst 5** per account | Stricter — manual ops affordance, not a programmatic endpoint |
+| `POST /rfq/execute`, `POST /rfq/execute-batch`, `POST /rfq/confirm-escrow-deposit`, `POST /payouts/document` (`payouts_write`) | 30/min, burst 10 | Creating money movements should be relatively rare |
+| `POST /webhooks/subscriptions/{id}/rotate-secret` (`rotate_secret`) | **3/min, burst 3** | Manual ops affordance |
+| `POST /webhooks/deliveries/{id}/replay` | **5/min, burst 5** per account, on top of the default | Manual ops affordance, not a programmatic endpoint |
 | `GET /collections/*` (`collections_read`) | 120/min, burst 40 | Reads and settlement previews |
 | `POST`/`PUT`/`DELETE` payment links and buyers (`collections_write`) | 30/min, burst 10 | Creating a link locks a rate; creating a buyer can mint an address |
 | `POST /collections/receiving-accounts/offramp` and `/offramp/document` (`settlements_write`) | 10/min, burst 5 | Settlements move money |

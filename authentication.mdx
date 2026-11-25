@@ -3,7 +3,7 @@ title: Authentication
 description: How to authenticate with the Teel API
 ---
 
-The Teel API uses a **secret API key** sent as a bearer token on every request. Same pattern as Stripe, OpenAI, Anthropic, Resend. Your server holds the key in env vars or a vault and presents it on every call.
+The Teel API uses a **secret API key** sent as a bearer token on every request. Your server holds the key in env vars or a vault and presents it on every call.
 
 ```bash
 curl https://api.teel.finance/recipients \
@@ -28,30 +28,30 @@ sk_<env>_<43 url-safe base64 chars>
 The fixed `sk_` prefix is recognized by GitHub secret scanning, GitGuardian, and TruffleHog — if you accidentally commit a key, you'll get a leak notification. The visible `live` vs `test` distinction prevents the "prod creds in Slack" failure mode.
 
 <Warning>
-  Use each key only against its matching base URL. A key sent to the wrong environment is rejected with `403` and the body `{"error": "environment_scope mismatch"}` — `sk_live_…` belongs on `api.teel.finance`, `sk_test_…` on `api.teel.finance/sandbox`.
+  Use each key only against its matching base URL. A key sent to the wrong environment is rejected with `403 ENV_SCOPE_MISMATCH` — `sk_live_…` belongs on `api.teel.finance`, `sk_test_…` on `api.teel.finance/sandbox`.
 </Warning>
 
 ## Issuing a key
 
-API keys are issued by the Teel onboarding team. Email **support@teel.finance** (or your dedicated onboarding contact) to request:
+Create keys yourself in the Teel dashboard, once your business has completed onboarding:
 
-- A new `sk_test_…` sandbox key
-- A new `sk_live_…` production key (after KYB approval)
-- Additional keys for separate use cases (e.g. one per service)
-- A scope change on an existing key
+1. Pick the environment with the **Sandbox** / **Production** switch in the dashboard header. A key created in Sandbox is an `sk_test_…` key; one created in Production is an `sk_live_…` key.
+2. Open **Settings** → **API Keys** and click **Create API Key**.
+3. Enter a **Label** that identifies where the key will be used, then create it.
+4. Copy the key from the **Your New API Key** dialog and save it to your secret manager.
 
-The plaintext key is delivered through an encrypted channel and shown **exactly once** — Teel stores only an argon2id hash plus the first 12 characters for identification. We cannot retrieve the plaintext later, so save it to your secret manager immediately.
-
-Self-service key creation from the dashboard is on the roadmap.
+The plaintext key is shown **exactly once**. Teel stores only a hash of the key plus its first characters for identification, so it cannot be retrieved later. Create one key per service so you can revoke one without touching the others.
 
 ## Scopes
 
-Each key carries a subset of scopes. Default for a newly-minted key is read-only:
+Each key carries a set of scopes. A key created from **API Keys** holds every scope in the table below.
+
+The sandbox key you claim from the dashboard's one-time **Your sandbox API key** dialog holds `quotes:read`, `recipients:read`, `recipients:write`, `payouts:write`, `collections:read`, `collections:write` and `settlements:write`. It has no `payouts:read`, `webhooks:read` or `webhooks:write`; create a key from **API Keys** when you need those.
 
 | Scope | What it allows |
 | --- | --- |
 | `quotes:read` | Fetch quotes (`/quotes/*`) |
-| `payouts:write` | Execute payouts (`POST /rfq/execute`) |
+| `payouts:write` | Execute payouts (`POST /rfq/execute`, `POST /rfq/execute-batch`, `POST /rfq/confirm-escrow-deposit`) and upload payout documents (`POST /payouts/document`) |
 | `payouts:read` | List / fetch your own payouts |
 | `recipients:write` | Create / update / delete recipients |
 | `recipients:read` | List / fetch recipients |
@@ -61,23 +61,31 @@ Each key carries a subset of scopes. Default for a newly-minted key is read-only
 | `collections:write` | Create / void payment links; create / update / delete buyers |
 | `settlements:write` | Upload a settlement invoice and create settlements (moves money) |
 
-Webhook subscriptions are managed entirely through the API with the `webhooks:read` / `webhooks:write` scopes — see the [Webhooks guide](/guides/webhooks).
+Manage webhook subscriptions through the API with the `webhooks:read` / `webhooks:write` scopes, or on the dashboard's **Settings** → **Webhooks** page. See the [Webhooks guide](/guides/webhooks).
 
 ## Rotation
 
-To roll a key, contact **support@teel.finance**. We issue a new key alongside the existing one and keep the previous key working for **7 days** to give you time to redeploy. After the overlap window, the old key returns `401`.
+To roll a key yourself:
 
-Rotations are logged to the partner-visible audit feed under the same business.
+1. Create a new key from **Settings** → **API Keys**.
+2. Deploy it to your services.
+3. **Revoke** the old key.
+
+The old key stops working as soon as it is revoked, so finish step 2 first.
+
+If you need both keys to work for a while, ask **support@teel.finance** to rotate the key instead. Support issues the new key alongside the existing one and keeps the previous key working for **7 days**. After that window, the old key returns `401`.
 
 ## Revocation
 
-If you suspect compromise, contact **support@teel.finance** to revoke the key immediately. Active in-memory caches drain within 30 seconds; after that, every request with the revoked key returns `401`. Use revocation rather than rotation during incident response — rotation has a 7-day overlap window you don't want when responding to a leak.
+Revoke a key from **Settings** → **API Keys**: click **Revoke** on its row and confirm. You can also ask **support@teel.finance** to revoke it. A revoked key can keep working for up to 60 seconds while Teel's servers refresh; after that, every request with it returns `401`.
+
+During incident response, revoke rather than rotate through support, because a support rotation keeps the old key working for 7 days.
 
 ## What happens if a key is compromised
 
-1. **Blast radius is bounded by the key's scopes** — a key with `quotes:read` only cannot create payouts. Issue narrowly-scoped keys per use case so a leaked CI key can't act as a leaked production key.
+1. **Blast radius is bounded by the key's scopes** — a key with `quotes:read` only cannot create payouts. Keys created from **API Keys** hold every scope, so keep one key per service and never reuse a production key in CI.
 2. **Teel only custodies funds via escrow + smart wallets.** A captured key cannot drain a wallet — it can only place actions the holder of the key could place anyway, all of which are audited and rate-limited.
-3. **Revoke first, investigate second.** Rotation's 7-day overlap is wrong for an active compromise; revoke + mint a new key + redeploy.
+3. **Revoke first, investigate second.** Revoke the key, create a new one, and redeploy.
 
 ## Storage
 
@@ -111,4 +119,4 @@ Specific limits per endpoint family + the per-key default are documented in the 
 
 The Teel dashboard is a separate, browser-only session and is **not** the API authentication path. Partner integrations should always use the `sk_` API key pattern above — dashboard sessions are not accepted on `api.teel.finance` or `api.teel.finance/sandbox`.
 
-If you build an internal tool that needs to act on behalf of multiple Teel accounts, request one `sk_` key per account rather than reusing your own dashboard session.
+If you build an internal tool that needs to act on behalf of multiple Teel accounts, create one `sk_` key in each account rather than reusing your own dashboard session.

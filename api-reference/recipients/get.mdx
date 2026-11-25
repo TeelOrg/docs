@@ -6,7 +6,7 @@ description: Fetch a single recipient by ID
 
 Returns `404` if the ID isn't yours.
 
-<Info>**Scope** `recipients:read`</Info>
+<Info>**Scope** `recipients:read` · rate limit `default` (60/min, burst 20)</Info>
 
 ## Headers
 
@@ -23,14 +23,15 @@ Returns `404` if the ID isn't yours.
 ## Response
 
 <ResponseField name="id" type="string">UUID.</ResponseField>
+<ResponseField name="businessId" type="string">Owning business UUID.</ResponseField>
 <ResponseField name="email" type="string" />
 <ResponseField name="isBusiness" type="boolean" />
 <ResponseField name="businessName" type="string" />
-<ResponseField name="firstName" type="string" />
-<ResponseField name="lastName" type="string" />
+<ResponseField name="firstName" type="string">Omitted when empty.</ResponseField>
+<ResponseField name="lastName" type="string">Omitted when empty.</ResponseField>
 <ResponseField name="country" type="string">ISO 3166-1 alpha-2.</ResponseField>
-<ResponseField name="currency" type="string" />
-<ResponseField name="phone" type="string" />
+<ResponseField name="currency" type="string">Currency of the recipient's bank payment method, or inferred from `country`. Omitted when empty.</ResponseField>
+<ResponseField name="phone" type="string">Omitted when empty.</ResponseField>
 <ResponseField name="address" type="object">
   <Expandable title="address">
     <ResponseField name="streetLine1" type="string" />
@@ -41,10 +42,15 @@ Returns `404` if the ID isn't yours.
     <ResponseField name="country" type="string" />
   </Expandable>
 </ResponseField>
+<ResponseField name="dateOfBirth" type="string">Omitted when empty.</ResponseField>
+<ResponseField name="identificationNumber" type="string">Tax or ID number. Omitted when empty.</ResponseField>
+<ResponseField name="recipientType" type="string">`normal`, `subsidiary`, or `counterparty`. Omitted when empty.</ResponseField>
+<ResponseField name="relationship" type="string">`self` (the recipient is your own business) or `third_party`.</ResponseField>
 <ResponseField name="transferType" type="string">`"fiat"` or `"stablecoin"`.</ResponseField>
-<ResponseField name="walletAddresses" type="object">Chain ID → address, when `transferType` is `"stablecoin"`.</ResponseField>
-<ResponseField name="externalReference" type="object">Map of `string` → `string`.</ResponseField>
+<ResponseField name="walletAddresses" type="object">Chain ID → address, when `transferType` is `"stablecoin"`. Omitted when empty.</ResponseField>
+<ResponseField name="externalReference" type="object">Map of `string` → `string`. Omitted when empty.</ResponseField>
 <ResponseField name="status" type="string">`"pending"`, `"accepted"`, or `"rejected"`.</ResponseField>
+<ResponseField name="isSelf" type="boolean">`true` for the recipient that holds your own Teel-held accounts, which Teel manages.</ResponseField>
 <ResponseField name="createdAt" type="string">ISO 8601.</ResponseField>
 <ResponseField name="updatedAt" type="string">ISO 8601.</ResponseField>
 
@@ -52,6 +58,7 @@ Returns `404` if the ID isn't yours.
 ```json 200
 {
   "id": "8b1a4c1d-7a3c-4a08-94ad-9f1ef1e0c3a2",
+  "businessId": "2d4f6a8c-1e3b-4d5f-9a7c-0b2d4f6a8c1e",
   "email": "payments@acme-ph.com",
   "isBusiness": true,
   "businessName": "Acme Corp Philippines",
@@ -66,10 +73,22 @@ Returns `404` if the ID isn't yours.
     "country": "PH"
   },
   "transferType": "fiat",
+  "relationship": "third_party",
   "externalReference": { "vendor_id": "ACME-001" },
   "status": "accepted",
+  "isSelf": false,
   "createdAt": "2026-06-09T10:00:00Z",
   "updatedAt": "2026-06-09T10:00:00Z"
 }
 ```
 </ResponseExample>
+
+## Errors
+
+| Status | Code | When |
+|---|---|---|
+| `400` | `INVALID_PARAMETER` | `id` is not a UUID. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `recipients:read`. |
+| `404` | `RECIPIENT_NOT_FOUND` | The recipient does not exist or is not yours. Both answer the same. |
+| `429` | `RATE_LIMITED` | Per-key rate limit. Wait for `Retry-After`. |

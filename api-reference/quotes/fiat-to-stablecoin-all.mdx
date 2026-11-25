@@ -1,98 +1,82 @@
 ---
-title: Get All Fiat-to-Stablecoin Quotes
+title: Get all fiat-to-stablecoin quotes
 api: GET /api/quotes/fiat-to-stablecoin/all
-description: Get quotes from all available routes for converting fiat currency to a stablecoin
+description: Every route for delivering stablecoin from fiat.
 ---
 
-Returns an every available quote for converting fiat currency into a stablecoin. Useful for comparing rates and routes.
+import Headers from '/snippets/quotes/headers.mdx';
+import QuoteErrors from '/snippets/quotes/errors.mdx';
+import FiatRouteFields from '/snippets/quotes/fiat-route-fields.mdx';
+
+Returns every route for converting fiat into a stablecoin. Send `amount` to fix the fiat, or `targetAmount` to fix the stablecoin delivered.
+
+<Info>**Scope** `quotes:read` · rate limit `quotes_read` (120/min, burst 40) · each currency must be in your business's payouts scope</Info>
+
+## Headers
+
+<Headers />
 
 ## Query parameters
+
 <ParamField query="sourceCurrency" type="string" required>
-  ISO 4217 currency code for the source fiat currency (e.g. `USD`, `EUR`).
+  ISO 4217 code of the fiat you pay in.
 </ParamField>
-
-<ParamField query="cryptoTicker" type="string" required>
-  The target stablecoin token symbol (e.g. `USDC`, `USDT`).
+<ParamField query="amount" type="number">
+  Fiat amount. Required unless you send `targetAmount`.
 </ParamField>
-
-<ParamField query="amount" type="number" required>
-  The amount in the source fiat currency to convert.
+<ParamField query="targetAmount" type="number">
+  Exact stablecoin amount delivered.
+</ParamField>
+<ParamField query="cryptoTicker" type="string">
+  Stablecoin to deliver, for example `USDCPOLYGON`.
+</ParamField>
+<ParamField query="userPaymentMethodId" type="string">
+  Your funding payment method. Prices the quote from that source, including a held balance's funding fee. Must be yours.
+</ParamField>
+<ParamField query="recipientPaymentMethodId" type="string">
+  Recipient payment method to price delivery to. Must be yours.
+</ParamField>
+<ParamField query="fundingRail" type="string">
+  Held-balance sources only. Only routes funded on this rail. A rail the source cannot fund on is `422 FUNDING_RAIL_UNSUPPORTED`.
 </ParamField>
 
 ## Response
-Returns an array of stablecoin quote objects.
 
-<ResponseField name="quotes" type="array">
-  <Expandable title="StablecoinQuote object">
-    <ResponseField name="protocol" type="string">
-      Opaque route token (`rt_...`) identifying the route. See [Route tokens](/api-reference/quotes/onramp-all#route-tokens).
-    </ResponseField>
-
-    <ResponseField name="fromCcy" type="string">
-      Source fiat currency code.
-    </ResponseField>
-
-    <ResponseField name="toCcy" type="string">
-      Target stablecoin token symbol.
-    </ResponseField>
-
-    <ResponseField name="fromAmount" type="number">
-      Amount in the source fiat currency.
-    </ResponseField>
-
-    <ResponseField name="toAmount" type="number">
-      Amount of stablecoin the user will receive.
-    </ResponseField>
-
-    <ResponseField name="exchangeRate" type="number">
-      The raw exchange rate before fees.
-    </ResponseField>
-
-    <ResponseField name="effRate" type="number">
-      The effective exchange rate after fees are applied.
-    </ResponseField>
-
-    <ResponseField name="fee" type="number">
-      Total fee charged for the conversion.
-    </ResponseField>
-
-    <ResponseField name="isCryptoQuote" type="boolean">
-      Whether this quote involves a crypto leg.
-    </ResponseField>
-
-    <ResponseField name="swapPath" type="string">
-      Description of the swap path used.
-    </ResponseField>
+<ResponseField name="success" type="boolean">`true`.</ResponseField>
+<ResponseField name="data" type="array">
+  One route per entry.
+  <Expandable title="data[]">
+    <FiatRouteFields />
   </Expandable>
 </ResponseField>
 
 <ResponseExample>
 ```json 200
-[
+{
+  "success": true,
+  "data": [
   {
-    "protocol": "rt_5Tn1bQp8w2k",
+    "protocol": "rt_3FpL7dM2w8q",
     "fromCcy": "USD",
-    "toCcy": "USDC",
-    "fromAmount": 1000,
-    "toAmount": 998.50,
-    "exchangeRate": 1.0,
-    "effRate": 0.9985,
-    "fee": 1.50,
+    "toCcy": "USDCPOLYGON",
+    "fromAmount": "1000",
+    "toAmount": "995.00",
+    "exchangeRate": "17.35",
+    "effRate": 17.2505,
+    "rateDecimals": 4,
+    "fee": "5.00",
+    "teelFee": 34.70,
+    "teelFeeBps": 20,
     "isCryptoQuote": true,
-    "swapPath": "USD -> USDC"
-  },
-  {
-    "protocol": "rt_8QmVxT2pA9c",
-    "fromCcy": "USD",
-    "toCcy": "USDC",
-    "fromAmount": 1000,
-    "toAmount": 995.00,
-    "exchangeRate": 1.0,
-    "effRate": 0.995,
-    "fee": 5.00,
-    "isCryptoQuote": true,
-    "swapPath": "USD -> USDC"
+    "swapPath": [],
+    "bridgingAsset": "USDCPOLYGON",
+    "validUntil": "2026-03-01T10:05:00Z"
   }
-]
+  ]
+}
 ```
 </ResponseExample>
+
+## Errors
+
+<QuoteErrors />

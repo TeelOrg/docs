@@ -56,6 +56,8 @@
               "guides/payment-methods",
               "guides/fiat-to-fiat-payout",
               "guides/stablecoin-transfer",
+              "guides/batch-payouts",
+              "guides/supporting-documents",
               "guides/crypto-payout",
               "guides/stablecoin-collections",
               "guides/fiat-collections",
@@ -71,7 +73,9 @@
         "groups": [
           {
             "group": "Configuration",
-            "pages": ["api-reference/config/coverage"]
+            "pages": [
+              "api-reference/config/coverage"
+            ]
           },
           {
             "group": "Recipients",

@@ -1,53 +1,69 @@
 ---
-title: Get Indicative Fiat-to-Fiat Quote
+title: Get indicative fiat-to-fiat quote
 api: GET /api/quotes/fiat-to-fiat/indicative
-description: A fast, indicative cross-border fiat-to-fiat rate (not lockable)
+description: A representative fiat-to-fiat rate for pricing screens.
 ---
 
-Returns a single **indicative** fiat-to-fiat route — a fast estimate suitable for display before a recipient or payment method is selected. Indicative quotes are **not firm**: they are not pinned to a payment-method context and should not be relied on for the exact settled amount. Use [Get Best Fiat-to-Fiat Quote](/api-reference/quotes/fiat-to-fiat-best) for a firm, executable quote.
+import Headers from '/snippets/quotes/headers.mdx';
+import QuoteErrors from '/snippets/quotes/errors.mdx';
+import FiatRouteFields from '/snippets/quotes/fiat-route-fields.mdx';
+
+Returns a representative rate for a corridor. Nothing is reserved or locked; use it for display, then quote again before you execute.
+
+<Info>**Scope** `quotes:read` · rate limit `quotes_read` (120/min, burst 40) · each currency must be in your business's payouts scope</Info>
+
+## Headers
+
+<Headers />
 
 ## Query parameters
+
 <ParamField query="sourceCurrency" type="string" required>
-  ISO 4217 code for the currency you are sending from (e.g. `USD`).
+  ISO 4217 code of the source currency.
 </ParamField>
-
 <ParamField query="targetCurrency" type="string" required>
-  ISO 4217 code for the recipient's currency (e.g. `PHP`).
+  ISO 4217 code of the destination currency.
 </ParamField>
-
 <ParamField query="amount" type="number" required>
-  The amount in the source currency.
+  Source amount. Must be `> 0`.
 </ParamField>
 
 ## Response
-<ResponseField name="success" type="boolean" />
 
+<ResponseField name="success" type="boolean">`true`.</ResponseField>
 <ResponseField name="data" type="object">
-  The indicative route, or `null` when no route is available (a `message` field then explains why). The `protocol` field is an opaque route token (`rt_...`) — see [Route tokens](/api-reference/quotes/onramp-all#route-tokens).
+  The indicative route, or `null` when there is none.
+  <Expandable title="data">
+    <FiatRouteFields />
+  </Expandable>
 </ResponseField>
-
-<ResponseField name="message" type="string">
-  Present only when `data` is `null` (e.g. `"No route available"`).
-</ResponseField>
+<ResponseField name="message" type="string">`No route available` when `data` is `null`.</ResponseField>
 
 <ResponseExample>
 ```json 200
 {
   "success": true,
   "data": {
-    "protocol": "rt_2hVtQ7w",
+    "protocol": "rt_3FpL7dM2w8q",
     "fromCcy": "USD",
-    "toCcy": "PHP",
-    "fromAmount": 1000,
-    "toAmount": 56700.00,
-    "rate": 56.7,
-    "fee": 5.0
+    "toCcy": "MXN",
+    "fromAmount": "1000",
+    "toAmount": "17250.50",
+    "exchangeRate": "17.35",
+    "effRate": 17.2505,
+    "rateDecimals": 4,
+    "fee": "5.00",
+    "teelFee": 34.70,
+    "teelFeeBps": 20,
+    "isCryptoQuote": true,
+    "swapPath": [],
+    "bridgingAsset": "USDCPOLYGON",
+    "validUntil": "2026-03-01T10:05:00Z"
   }
 }
 ```
 </ResponseExample>
 
-<Note>
-  Indicative quotes omit firm-quote resolution (payment-method-specific pricing,
-  fallback routes). The settled amount on a firm quote may differ.
-</Note>
+## Errors
+
+<QuoteErrors />

@@ -147,14 +147,14 @@ A settlement through the API is allowed only when Teel can sign for the wallet t
 - a **custodial** wallet, or
 - for the USDT balance (`riskClass: "high"`) only, a wallet where you have granted Teel a **scoped settle signer**. For the USDC balance (`riskClass: "low"`), a wallet your business controls is refused even with a scoped signer.
 
-If your business controls the wallet itself, a settlement needs your own authorization, which an API key can't give. The API checks this before anything moves and returns `409 SETTLEMENT_REQUIRES_DASHBOARD_AUTHORIZATION`. Settle those balances from the Teel dashboard.
+If your business controls the wallet itself, a settlement needs your own authorization, which an API key can't give. The API checks this before anything moves and returns `409 SETTLEMENT_REQUIRES_DASHBOARD_AUTHORIZATION`. Settle those balances from **Convert** in the Teel dashboard.
 
 ## Holds and refusals
 
 | Situation | Response |
 | --- | --- |
 | Converting to fiat is not enabled for your account yet | `403 MANUAL_CONVERT_DISABLED` for any fiat target. A `USDC` payout still works, and so does preview. |
-| No invoice key, or a key you did not upload | `400 OUTGOING_INVOICE_DOCUMENT_REQUIRED` or `422 OUTGOING_INVOICE_DOCUMENT_INVALID`. |
+| No invoice file id, or a file you did not upload | `400 OUTGOING_INVOICE_DOCUMENT_REQUIRED` or `422 OUTGOING_INVOICE_DOCUMENT_INVALID`. |
 | The amount is more than your uncommitted balance, or another settlement of it is running | `409 insufficient_available_balance`. Send less, or retry shortly. |
 | Teel can't carry out the settlement | `422 SETTLEMENT_REFUSED`, with `details.reason` and, when one was recorded, `details.settlement`. |
 | A downstream service failed | `502` or `503 DOWNSTREAM_UNAVAILABLE`, with the same `details`. |

@@ -4,11 +4,11 @@ api: POST /api/rfq/execute
 description: Lock a quote and start the payout in one call.
 ---
 
-Lock + start a payout in one call. Pick the matching tab — shapes differ by corridor.
+Locks a quote and starts the payout in one call. `flowType` picks the corridor; the tabs below show what each one needs and returns.
 
 Response: `{ "success": true, "data": { … } }`.
 
-<Info>**Scope** `payouts:write` · rate-limited</Info>
+<Info>**Scope** `payouts:write` · rate limit `payouts_write` (30/min, burst 10) · requires payouts to be enabled for your business</Info>
 
 ## Headers
 
@@ -17,60 +17,67 @@ Response: `{ "success": true, "data": { … } }`.
 </ParamField>
 
 <ParamField header="Idempotency-Key" type="string">
-  Optional. 8–255 url-safe characters. 24h replay window; mismatched bodies on the same key return `409 IDEMPOTENCY_KEY_REUSED`.
+  Optional. 8–255 characters from `[A-Za-z0-9_-]`. A retry with the same key and body within 24 hours replays the first response. The same key with a different body returns `409 IDEMPOTENCY_KEY_REUSED`; a retry while the first is still running returns `409 IDEMPOTENCY_REQUEST_IN_FLIGHT`.
 </ParamField>
 
-## Common fields
+## Request body
 
+<ParamField body="flowType" type="string" default="fiat-to-fiat">
+  `fiat-to-fiat`, `stablecoin-to-fiat` or `onramp` (fiat to stablecoin). Absent means `fiat-to-fiat`, so send it on every other corridor. Underscored spellings such as `stablecoin_to_fiat` are also accepted. Any other value is `400`.
+</ParamField>
 <ParamField body="fromCurrency" type="string" required>Source currency. ISO 4217 for fiat, ticker for stablecoin.</ParamField>
 <ParamField body="toCurrency" type="string" required>Destination currency.</ParamField>
 <ParamField body="amount" type="number" required>Source amount. Must be `> 0`.</ParamField>
 <ParamField body="recipientId" type="string" required>UUID from [`POST /recipients`](/api-reference/recipients/create).</ParamField>
-<ParamField body="targetAmount" type="number">Exact-output target. When set, sizes `amount` upstream so the recipient receives exactly this much.</ParamField>
-<ParamField body="recipientPaymentMethodId" type="string">UUID of the recipient PM, when more than one exists.</ParamField>
-<ParamField body="routeProtocol" type="string">Opaque route token (`rt_…`) from a `/quotes/*` call. Pins the route.</ParamField>
-<ParamField body="paymentPurpose" type="string">Partner-side classification (e.g. `salary`).</ParamField>
-<ParamField body="reference" type="string">Free-text reference echoed back on reads.</ParamField>
-<ParamField body="supportingDocumentKey" type="string">S3 key for an attached supporting document. Required by some compliance-bearing onramp flows.</ParamField>
-
-## Request body
-
-Switch tabs for the type-specific fields and response shape.
+<ParamField body="recipientPaymentMethodId" type="string">UUID of the recipient payment method to pay, when the recipient has more than one.</ParamField>
+<ParamField body="targetAmount" type="number">Exact-output target. When set, Teel sizes the source so the recipient receives this amount.</ParamField>
+<ParamField body="amountMode" type="string" default="target">
+  The side you fixed: `target` when you entered `targetAmount`, `source` when you entered `amount` and `targetAmount` is the quoted delivery. Any other value is `400 INVALID_PARAMETER`.
+</ParamField>
+<ParamField body="routeProtocol" type="string">Route token (`rt_…`) from a `/quotes/*` response. Pins that route; without it, Teel picks the best route at lock time.</ParamField>
+<ParamField body="payoutRail" type="string">
+  Destination rail: the chosen quote's `payoutRail`, or a `rail` from its `payoutRailOptions`. A chosen rail is never swapped for another: if no route pays it for this payout, the execute is `422 PAYOUT_RAIL_UNAVAILABLE`. A value that is not a rail of `toCurrency` is `400 INVALID_PAYOUT_RAIL`.
+</ParamField>
+<ParamField body="bridgingAsset" type="string">Fiat-to-fiat only. The `bridgingAsset` of the route you pin, as the quote returned it. An unknown ticker, or one sent on another `flowType`, is `400`.</ParamField>
+<ParamField body="fundingRail" type="string">Held-balance sources only. The `fundingRail` of the chosen quote. A rail the source cannot fund on is `422 FUNDING_RAIL_UNSUPPORTED`.</ParamField>
+<ParamField body="executionKind" type="string">`direct_bank` to pay a bank recipient from a held fiat balance without conversion. Requires `payoutRail`: `ach`, `fedwire`, `fednow`, `sepa`, `fps` or `chaps`.</ParamField>
+<ParamField body="paymentPurpose" type="string">Purpose code from [`GET /payouts/payment-purposes`](/api-reference/payouts/payment-purposes).</ParamField>
+<ParamField body="purposeDescription" type="string">Free-text purpose. Required, 10–255 characters, when `paymentPurpose` is `other`; otherwise `400 INVALID_PARAMETER`.</ParamField>
+<ParamField body="reference" type="string">Your reference, stored on the payout and returned on reads.</ParamField>
+<ParamField body="supportingDocumentFileId" type="string">
+  The `fileId` from [`POST /payouts/document`](/api-reference/payouts/upload-document), for a route that asks for a document. An id that is not a document your account uploaded is `400 INVALID_PARAMETER`. See [Supporting documents](/guides/supporting-documents).
+</ParamField>
 
 <Tabs>
   <Tab title="Fiat-to-fiat">
-    Send fiat from your stored payment method; recipient receives fiat.
+    Send fiat from your stored payment method; the recipient receives fiat.
 
     <ParamField body="userPaymentMethodId" type="string" required>UUID of your funding source.</ParamField>
 
+    The payout is created after this call answers, so `payoutId` is empty and no deposit instructions are returned. Poll [`GET /rfq/status/{quoteId}`](/api-reference/payouts/status) for `transactionId` (the payout id) and `bankingInstructions`. A payout funded from a held balance is the exception: it answers with `payoutId` set.
+
     ### Response
 
-    <ResponseField name="payoutId" type="string">UUID of the new payout. Use with [`GET /payouts/{id}`](/api-reference/payouts/get).</ResponseField>
-    <ResponseField name="quoteId" type="string">UUID of the locked quote. Use with [`GET /rfq/status/{quoteId}`](/api-reference/payouts/status).</ResponseField>
-    <ResponseField name="status" type="string">Hard-coded `accepted` on success.</ResponseField>
-    <ResponseField name="toAmount" type="number">Destination amount the recipient will receive.</ResponseField>
-    <ResponseField name="partnerFxRate" type="number">Quoted FX rate, pre-fees.</ResponseField>
+    <ResponseField name="payoutId" type="string">Empty string. See above.</ResponseField>
+    <ResponseField name="quoteId" type="string">UUID of the locked quote.</ResponseField>
+    <ResponseField name="status" type="string">Always `accepted`.</ResponseField>
+    <ResponseField name="toAmount" type="number">Amount the recipient will receive.</ResponseField>
+    <ResponseField name="partnerFxRate" type="number">Quoted FX rate, before fees.</ResponseField>
     <ResponseField name="effectiveRate" type="number">Effective rate net of fees.</ResponseField>
-    <ResponseField name="fees" type="object">Per-payout fee breakdown — see [Fees](#fees).</ResponseField>
-    <ResponseField name="bankingInstructions" type="object">Map of `string` → `string` describing where to send the source fiat. Keys vary by rail (`accountNumber`, `bankName`, `swiftCode`, etc.).</ResponseField>
+    <ResponseField name="fees" type="object">Fee breakdown. See [Fees](#fees).</ResponseField>
 
     <ResponseExample>
     ```json 200
     {
       "success": true,
       "data": {
-        "payoutId": "8b1a4c1d-7a3c-4a08-94ad-9f1ef1e0c3a2",
+        "payoutId": "",
         "quoteId":  "4c2b7e8f-3a3c-4a08-94ad-1234567890ab",
         "status": "accepted",
         "toAmount": 4425.00,
         "partnerFxRate": 4.4250,
         "effectiveRate": 4.4070,
-        "fees": { "teelFee": 4.05, "teelFeeBps": 40, "partnerFee": 0, "gasFee": 0 },
-        "bankingInstructions": {
-          "accountNumber": "1234567890",
-          "bankName": "Maybank",
-          "swiftCode": "MBBEMYKL"
-        }
+        "fees": { "teelFee": 4.05, "teelFeeBps": 40, "partnerFee": 0, "gasFee": 0 }
       }
     }
     ```
@@ -78,7 +85,7 @@ Switch tabs for the type-specific fields and response shape.
   </Tab>
 
   <Tab title="Stablecoin-to-fiat">
-    Send stablecoin from your wallet; recipient receives fiat. The response carries escrow deposit instructions — your wallet must send the source stablecoin to `escrowAddress`.
+    Send stablecoin; the recipient receives fiat. Set `flowType` to `stablecoin-to-fiat`.
 
     <ParamField body="walletAddress" type="string" required>Source wallet address.</ParamField>
 
@@ -86,15 +93,15 @@ Switch tabs for the type-specific fields and response shape.
 
     <ResponseField name="payoutId" type="string">UUID of the new payout.</ResponseField>
     <ResponseField name="quoteId" type="string">UUID of the locked quote.</ResponseField>
-    <ResponseField name="status" type="string">Always `awaiting_escrow_deposit` until the deposit lands.</ResponseField>
+    <ResponseField name="status" type="string">`awaiting_deposit` until the deposit arrives.</ResponseField>
     <ResponseField name="toAmount" type="number">Destination fiat amount.</ResponseField>
-    <ResponseField name="partnerFxRate" type="number">Quoted FX rate, pre-fees.</ResponseField>
+    <ResponseField name="partnerFxRate" type="number">Quoted FX rate, before fees.</ResponseField>
     <ResponseField name="effectiveRate" type="number">Effective rate net of fees.</ResponseField>
-    <ResponseField name="fees" type="object">Per-payout fee breakdown — see [Fees](#fees).</ResponseField>
-    <ResponseField name="escrowAddress" type="string">On-chain address your wallet must send the source stablecoin to.</ResponseField>
-    <ResponseField name="depositAmountAtomic" type="string">Atomic-units integer string — parse with `BigInt`. JSON numbers lose precision for 18-decimal tokens. Example: `"300000"` = 0.3 USDC at 6 decimals.</ResponseField>
-    <ResponseField name="tokenAddress" type="string">ERC-20 contract address of the source stablecoin.</ResponseField>
-    <ResponseField name="chainId" type="integer">EVM chain id of the deposit address.</ResponseField>
+    <ResponseField name="fees" type="object">Fee breakdown. See [Fees](#fees).</ResponseField>
+    <ResponseField name="escrowAddress" type="string">Your business's payout wallet, which pays the payout. Send the deposit here. The name is historical; no escrow contract is involved.</ResponseField>
+    <ResponseField name="depositAmountAtomic" type="string">Amount to send, as an atomic-units integer string. Parse with `BigInt`; JSON numbers lose precision for 18-decimal tokens. Example: `"300000"` = 0.3 USDC at 6 decimals.</ResponseField>
+    <ResponseField name="tokenAddress" type="string">Contract address of the source stablecoin.</ResponseField>
+    <ResponseField name="chainId" type="integer">Chain id of `escrowAddress`.</ResponseField>
 
     <ResponseExample>
     ```json 200
@@ -103,7 +110,7 @@ Switch tabs for the type-specific fields and response shape.
       "data": {
         "payoutId": "8b1a4c1d-7a3c-4a08-94ad-9f1ef1e0c3a2",
         "quoteId":  "4c2b7e8f-3a3c-4a08-94ad-1234567890ab",
-        "status": "awaiting_escrow_deposit",
+        "status": "awaiting_deposit",
         "toAmount": 4425.00,
         "partnerFxRate": 4.4250,
         "effectiveRate": 4.4070,
@@ -117,11 +124,11 @@ Switch tabs for the type-specific fields and response shape.
     ```
     </ResponseExample>
 
-    After the response: your wallet sends `depositAmountAtomic` of `tokenAddress` to `escrowAddress` on `chainId`. The engine auto-detects the transfer; if it misses, fall back to [`POST /rfq/confirm-escrow-deposit`](/api-reference/payouts/confirm-escrow-deposit) with the tx hash.
+    Send `depositAmountAtomic` of `tokenAddress` to `escrowAddress` on `chainId`. Teel detects the transfer. If it does not, call [`POST /rfq/confirm-escrow-deposit`](/api-reference/payouts/confirm-escrow-deposit) with the transaction hash.
   </Tab>
 
   <Tab title="Onramp (fiat → stablecoin)">
-    Send fiat from your stored PM; recipient receives stablecoin on-chain.
+    Send fiat from your stored payment method; the recipient receives stablecoin. Set `flowType` to `onramp`.
 
     <ParamField body="userPaymentMethodId" type="string" required>UUID of your funding source.</ParamField>
 
@@ -129,13 +136,13 @@ Switch tabs for the type-specific fields and response shape.
 
     <ResponseField name="payoutId" type="string">UUID of the new payout.</ResponseField>
     <ResponseField name="quoteId" type="string">UUID of the locked quote.</ResponseField>
-    <ResponseField name="status" type="string">Passed through from the onramp route.</ResponseField>
+    <ResponseField name="status" type="string">Status of the collection leg, as the route reports it.</ResponseField>
     <ResponseField name="toAmount" type="number">Destination stablecoin amount.</ResponseField>
-    <ResponseField name="partnerFxRate" type="number">Quoted FX rate, pre-fees.</ResponseField>
+    <ResponseField name="partnerFxRate" type="number">Quoted FX rate, before fees.</ResponseField>
     <ResponseField name="effectiveRate" type="number">Effective rate net of fees.</ResponseField>
-    <ResponseField name="fees" type="object">Per-payout fee breakdown — see [Fees](#fees).</ResponseField>
-    <ResponseField name="paymentUrl" type="string">Hosted payment page — redirect the user here to complete the onramp.</ResponseField>
-    <ResponseField name="bankingInstructions" type="object">When the rail settles by bank transfer instead of hosted page. Mutually exclusive with `paymentUrl`.</ResponseField>
+    <ResponseField name="fees" type="object">Fee breakdown. See [Fees](#fees).</ResponseField>
+    <ResponseField name="paymentUrl" type="string">Hosted payment page, on routes that collect through one.</ResponseField>
+    <ResponseField name="bankingInstructions" type="object">Map of `string` to `string` with the bank details to pay, on routes that collect by bank transfer. Keys vary by rail, for example `accountNumber`, `bankName`, `swiftCode`.</ResponseField>
 
     <ResponseExample>
     ```json 200
@@ -149,7 +156,7 @@ Switch tabs for the type-specific fields and response shape.
         "partnerFxRate": 1.0,
         "effectiveRate": 0.9905,
         "fees": { "teelFee": 9.50, "teelFeeBps": 95, "partnerFee": 0, "gasFee": 0 },
-        "paymentUrl": "https://pay.example.com/sess_abc123"
+        "paymentUrl": "https://pay.example.com/session/4f1c9a"
       }
     }
     ```
@@ -159,28 +166,31 @@ Switch tabs for the type-specific fields and response shape.
 
 ## Fees
 
-<ResponseField name="fees.teelFee" type="number">Teel's fee, in `fromCurrency`.</ResponseField>
+<ResponseField name="fees.teelFee" type="number">Teel's fee on this payout.</ResponseField>
 <ResponseField name="fees.teelFeeBps" type="integer">Teel's fee in basis points (1 bp = 0.01%).</ResponseField>
 <ResponseField name="fees.partnerFee" type="number">Your markup. `0` unless configured.</ResponseField>
-<ResponseField name="fees.gasFee" type="number">On-chain gas (S2F / stablecoin flows).</ResponseField>
+<ResponseField name="fees.gasFee" type="number">On-chain gas passed through, on stablecoin flows.</ResponseField>
 
 ## Errors
 
 | Status | Code | When |
 |---|---|---|
-| `400` | `INVALID_JSON` / `INVALID_PARAMETER` | Body malformed, required field missing, or a UUID is malformed. |
+| `200` | `error.code`, with `success: false` | The quote could not be locked, for example `corridor_unsupported`, `amount_out_of_range` or `rate_unavailable`. Nothing was created. `error.retryable` says whether the same request can succeed later. Always check `success`. |
+| `400` | `INVALID_JSON` / `INVALID_PARAMETER` | Body malformed, a required field missing, a UUID malformed, `amountMode` or `purposeDescription` invalid, or `supportingDocumentKey` sent (no longer accepted). |
+| `400` | `INVALID_PAYOUT_RAIL` | `payoutRail` is not a rail of `toCurrency`. |
 | `401` | `UNAUTHORIZED` | Missing or invalid key. |
 | `403` | `INSUFFICIENT_SCOPE` | Key lacks `payouts:write`. |
 | `403` | `PAYOUTS_NOT_ENABLED` | Payouts are not enabled for your business. |
 | `403` | `APPROVAL_REQUIRED` | Your business approves payouts before they execute, so this route cannot commit one in a single call. |
 | `403` | `FORBIDDEN` | A currency is outside your business's payouts scope. |
 | `404` | `RECIPIENT_NOT_FOUND` / `PAYMENT_METHOD_NOT_FOUND` | A recipient or payment method does not exist or is not yours. |
-| `409` | `IDEMPOTENCY_KEY_REUSED` / `IDEMPOTENCY_REQUEST_IN_FLIGHT` | Idempotency conflict — back off per `Retry-After` for in-flight. |
+| `409` | `IDEMPOTENCY_KEY_REUSED` / `IDEMPOTENCY_REQUEST_IN_FLIGHT` | Idempotency conflict. For in-flight, wait for `Retry-After`. |
 | `409` | `rate_moved` / `route_infeasible`, nested in `error` | The price moved past your tolerance, or the pinned route can no longer carry the payout. Nothing was locked; get a new quote. See [Errors](/errors#conflicts). |
-| `422` | See [Business rules](/errors#business-rules) | The payout breaks a business rule, for example `HELD_BALANCE_INSUFFICIENT` or `SUPPORTING_DOCUMENT_REQUIRED`. |
-| `429` | `RATE_LIMITED` | Per-key rate limit. |
+| `422` | `PAYOUT_RAIL_UNAVAILABLE` | No route pays the `payoutRail` you chose for this payout. |
+| `422` | See [Business rules](/errors#business-rules) | The payout breaks a business rule, for example `HELD_BALANCE_INSUFFICIENT`, `SUPPORTING_DOCUMENT_REQUIRED`, `FUNDING_RAIL_UNSUPPORTED` or `RECIPIENT_VERIFICATION_PENDING`. |
+| `429` | `RATE_LIMITED` | `payouts_write` budget exhausted. Wait for `Retry-After`. |
 | `502` / `503` | `DOWNSTREAM_UNAVAILABLE` | The payout engine could not be reached. Retry with the same `Idempotency-Key`. |
 
 ## Next steps
 
-Poll [`GET /rfq/status/{quoteId}`](/api-reference/payouts/status) or — preferred — subscribe to `payout.status.updated` and `payout.delivered` via [Webhooks](/guides/webhooks).
+Subscribe to `payout.status.updated` through [Webhooks](/guides/webhooks), or poll [`GET /rfq/status/{quoteId}`](/api-reference/payouts/status).

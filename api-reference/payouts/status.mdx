@@ -1,12 +1,12 @@
 ---
-title: Get payout status
+title: Get quote status
 api: GET /api/rfq/status/{quoteId}
-description: Current status of a payout, by quote ID.
+description: Where a locked quote, and the payout it started, stands.
 ---
 
-Lookup by `quoteId` from [`POST /rfq/execute`](/api-reference/payouts/execute). Prefer [Webhooks](/guides/webhooks) over polling.
+Look up the quote from [`POST /rfq/execute`](/api-reference/payouts/execute) by its `quoteId`. This is where a fiat-to-fiat payout's id (`transactionId`) and deposit instructions appear. For the payout itself, read [`GET /payouts/{id}`](/api-reference/payouts/get) or subscribe to [Webhooks](/guides/webhooks).
 
-<Info>**Scope** `payouts:read`</Info>
+<Info>**Scope** `payouts:read` · rate limit `default` (60/min, burst 20)</Info>
 
 ## Headers
 
@@ -20,69 +20,92 @@ Lookup by `quoteId` from [`POST /rfq/execute`](/api-reference/payouts/execute). 
 
 ## Response
 
-Fields are populated progressively. Pre-settle reads show core + escrow detail; post-settle reads add the actual amounts and `transactionId`.
+Fields fill in as the payout progresses.
 
-<Tabs>
-  <Tab title="Common">
-    <ResponseField name="quoteId" type="string">Echoed back.</ResponseField>
-    <ResponseField name="status" type="string">Coarse-grained status. See [Core Concepts](/concepts#transaction-status).</ResponseField>
-    <ResponseField name="transactionId" type="string">UUID of the underlying payout — use with [`GET /payouts/{id}`](/api-reference/payouts/get). Populated once written.</ResponseField>
-    <ResponseField name="quotedToAmount" type="number">Destination amount as quoted at lock time.</ResponseField>
-    <ResponseField name="actualToAmount" type="number">Destination amount that actually settled. Post-delivery.</ResponseField>
-    <ResponseField name="deltaAmount" type="number">Signed `actualToAmount − quotedToAmount`. Surfaces FX slippage.</ResponseField>
-    <ResponseField name="settleTxHash" type="string">On-chain settlement tx hash (S2F / fiat-to-stablecoin).</ResponseField>
-    <ResponseField name="onrampProvider" type="string">Opaque routing identifier of the onramp leg.</ResponseField>
-    <ResponseField name="offrampProvider" type="string">Opaque routing identifier of the offramp leg.</ResponseField>
-    <ResponseField name="paymentUrl" type="string">Hosted payment page (onramp flows).</ResponseField>
-    <ResponseField name="bankingInstructions" type="object">Map of `string` → `string` for bank-transfer settlement.</ResponseField>
-    <ResponseField name="errorMessage" type="string">Set when `status` is `failed`.</ResponseField>
-  </Tab>
+<ResponseField name="quoteId" type="string">Echoed back.</ResponseField>
+<ResponseField name="status" type="string">
+  The quote lock's status, not the payout's:
 
-  <Tab title="Stablecoin-to-fiat">
-    Same `Common` fields plus the escrow detail below.
+  | Status | Meaning |
+  |---|---|
+  | `pending` | Created, not yet accepted. |
+  | `accepted` | Locked; the payout is starting. |
+  | `awaiting_deposit` | Stablecoin-to-fiat: waiting for your deposit to `escrowAddress`. |
+  | `deposit_confirming` | Deposit seen, waiting for confirmations. |
+  | `webhook_processing` | The collected stablecoin has arrived and settlement is starting. |
+  | `processing` | Settlement is under way. |
+  | `completed` | Settled for the quoted amount. |
+  | `completed_with_topup` | Settled; the delivery fell short and was topped up. |
+  | `completed_with_surplus` | Settled; the delivery came in above the quote. |
+  | `cancelled` | Cancelled before settlement. |
+  | `onramp_abandoned` | The collection never arrived and the payout was abandoned. |
+  | `expired` | The lock lapsed before it was used. |
+  | `failed` | The payout failed; see `errorMessage`. |
 
-    <ResponseField name="escrowAddress" type="string">On-chain address your wallet sent (or must send) the stablecoin to.</ResponseField>
-    <ResponseField name="depositAmountAtomic" type="string">Atomic-units integer string. Parse with `BigInt`.</ResponseField>
-    <ResponseField name="tokenAddress" type="string">ERC-20 contract of the source stablecoin.</ResponseField>
-    <ResponseField name="chainId" type="integer">Chain id of the source token.</ResponseField>
-    <ResponseField name="escrowChainId" type="integer">Chain on which the escrow slot lives.</ResponseField>
-    <ResponseField name="escrowState" type="string">One of `none` (no escrow yet), `active` (deposit pending or in flight), `settled` (post-settle), `cancelled` (explicitly cancelled). Don't branch on other values — none are emitted.</ResponseField>
-    <ResponseField name="actualUsdcReceived" type="string">Atomic-units integer string of USDC the escrow received (e.g. `"227250000"` for 227.25 USDC at 6 decimals). Parse with `BigInt`. `"0"` until deposit confirmation.</ResponseField>
-  </Tab>
-</Tabs>
+  Treat any other value as in progress.
+</ResponseField>
+<ResponseField name="transactionId" type="string">UUID of the payout. Use it with [`GET /payouts/{id}`](/api-reference/payouts/get). Set once the payout exists.</ResponseField>
+<ResponseField name="quotedToAmount" type="number">Destination amount quoted at lock time.</ResponseField>
+<ResponseField name="actualToAmount" type="number">Destination amount actually delivered. Set after delivery; absent when none was reported.</ResponseField>
+<ResponseField name="deltaAmount" type="number">Signed `actualToAmount − quotedToAmount`.</ResponseField>
+<ResponseField name="settleTxHash" type="string">On-chain settlement transaction hash.</ResponseField>
+<ResponseField name="onrampProvider" type="string">Route token (`rt_…`) of the collection leg.</ResponseField>
+<ResponseField name="offrampProvider" type="string">Route token (`rt_…`) of the delivery leg.</ResponseField>
+<ResponseField name="paymentUrl" type="string">Hosted payment page, on routes that collect through one.</ResponseField>
+<ResponseField name="bankingInstructions" type="object">Map of `string` to `string` with the bank details to pay, on routes that collect by bank transfer.</ResponseField>
+<ResponseField name="escrowAddress" type="string">Stablecoin-to-fiat: the wallet to send the deposit to. Set while `status` is `awaiting_deposit`.</ResponseField>
+<ResponseField name="depositAmountAtomic" type="string">Stablecoin-to-fiat: amount to send, as an atomic-units integer string. Parse with `BigInt`.</ResponseField>
+<ResponseField name="tokenAddress" type="string">Stablecoin-to-fiat: contract address of the source stablecoin.</ResponseField>
+<ResponseField name="chainId" type="integer">Stablecoin-to-fiat: chain id of `escrowAddress`.</ResponseField>
+<ResponseField name="settlementChainId" type="integer">Chain the payout's stablecoin settles on. `0` when not set.</ResponseField>
+<ResponseField name="actualUsdcReceived" type="string">USDC received for this quote, as an atomic-units integer string. Parse with `BigInt`. `"0"` until measured, and on a payout inside a batch.</ResponseField>
+<ResponseField name="batchActualUsdcReceived" type="string">Batch payouts only: USDC received for the whole batch's collection, atomic-units integer string.</ResponseField>
+<ResponseField name="errorMessage" type="string">Set when `status` is `failed`.</ResponseField>
 
 <ResponseExample>
-```json 200 — Pre-settle (S2F)
+```json 200 — Awaiting deposit
 {
   "success": true,
   "data": {
     "quoteId": "4c2b7e8f-3a3c-4a08-94ad-1234567890ab",
-    "status": "awaiting_escrow_deposit",
+    "status": "awaiting_deposit",
+    "transactionId": "8b1a4c1d-7a3c-4a08-94ad-9f1ef1e0c3a2",
     "quotedToAmount": 4425.00,
     "escrowAddress": "0xAbcDef0123456789AbcDef0123456789AbcDef01",
     "depositAmountAtomic": "227250000",
     "tokenAddress": "0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174",
     "chainId": 137,
-    "escrowState": "active"
+    "settlementChainId": 137,
+    "actualUsdcReceived": "0"
   }
 }
 ```
-```json 200 — Post-settle
+```json 200 — Completed
 {
   "success": true,
   "data": {
     "quoteId": "4c2b7e8f-3a3c-4a08-94ad-1234567890ab",
-    "status": "delivered",
+    "status": "completed",
     "transactionId": "8b1a4c1d-7a3c-4a08-94ad-9f1ef1e0c3a2",
     "quotedToAmount": 4425.00,
     "actualToAmount": 4423.50,
     "deltaAmount": -1.50,
     "settleTxHash": "0x1234abcd…",
-    "onrampProvider": "provider_a",
-    "offrampProvider": "provider_a",
-    "escrowState": "settled",
+    "onrampProvider": "rt_8QmVxT2pA9c",
+    "offrampProvider": "rt_9XbN2kQ7r3d",
+    "settlementChainId": 137,
     "actualUsdcReceived": "227250000"
   }
 }
 ```
 </ResponseExample>
+
+## Errors
+
+| Status | Code | When |
+|---|---|---|
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `payouts:read`. |
+| `404` | none | The quote does not exist or is not yours. Body: `{"success": false, "error": "…"}`. |
+| `429` | `RATE_LIMITED` | Per-key rate limit. Wait for `Retry-After`. |
+| `502` | `DOWNSTREAM_UNAVAILABLE` | The payout engine could not be reached. Retry. |

@@ -8,12 +8,16 @@ Register a delivery URL.
 
 <Warning>The response includes `secret` (a `whsec_…` signing secret) **once**. Store it on receipt — only the `secretPrefix` is retrievable later.</Warning>
 
-<Info>**Scope** `webhooks:write` · rate-limited</Info>
+<Info>**Scope** `webhooks:write` · rate limit `default` (60/min, burst 20)</Info>
 
 ## Headers
 
 <ParamField header="Authorization" type="string" required>
   API key.
+</ParamField>
+
+<ParamField header="Idempotency-Key" type="string">
+  Optional. 8–255 characters of `[A-Za-z0-9_-]`. The same key and body within 24 hours replays the original response with `Idempotency-Replayed: true`. The same key with a different body returns `409 IDEMPOTENCY_KEY_REUSED`. A retry while the first request is still running returns `409 IDEMPOTENCY_REQUEST_IN_FLIGHT` with `Retry-After`.
 </ParamField>
 
 ## Request body
@@ -48,20 +52,19 @@ Register a delivery URL.
   Always `active` on a new subscription.
 </ResponseField>
 
-The other fields (`url`, `events`, `label`, `lastSuccessAt`, `lastFailureAt`, `createdAt`, `updatedAt`) match the shape on [List subscriptions](/api-reference/webhooks/subscriptions/list).
+The other fields (`userId`, `url`, `events`, `label`, `lastSuccessAt`, `lastFailureAt`, `createdAt`, `updatedAt`) match the shape on [List subscriptions](/api-reference/webhooks/subscriptions/list).
 
 <ResponseExample>
 ```json 201
 {
   "id": "1c84203c-b4e3-40de-83a9-51bc0d9c991f",
+  "userId": "6b1e4f2a-9c3d-4e8b-a7f5-2d0c1b3a4e5f",
   "url": "https://hooks.example.com/teel",
   "events": ["payout.created", "payout.status.updated"],
   "status": "active",
   "secretPrefix": "whsec_Pdt_BP",
   "secret": "whsec_Pdt_BP3ft-nIDl86430kZrGEy8qd7zB4pCUmeU1GVB0",
   "label": "Production receiver",
-  "lastSuccessAt": null,
-  "lastFailureAt": null,
   "createdAt": "2026-05-27T09:30:00Z",
   "updatedAt": "2026-05-27T09:30:00Z"
 }
@@ -70,8 +73,14 @@ The other fields (`url`, `events`, `label`, `lastSuccessAt`, `lastFailureAt`, `c
 
 ## Errors
 
-| Status | Meaning |
-| --- | --- |
-| `400` | Invalid URL (not https, missing host, private IP, metadata host) or unknown event type. |
-| `403` | `INSUFFICIENT_SCOPE`: a `collections.*` event was requested by a key without `collections:read`. `details.requiredScopes` maps each such event to the scope it needs. |
-| `409` | You've reached the per-account limit (25). Delete or pause an existing one first. |
+| Status | Code | When |
+| --- | --- | --- |
+| `400` | `INVALID_JSON` | The body is not valid JSON, `url` or `events` is missing, or `url` is not a URL. |
+| `400` | `INVALID_REQUEST` | `url` is not `https://`, has no host, or points at a private, loopback or metadata address, or `events` names an unknown event type. |
+| `400` | `IDEMPOTENCY_KEY_INVALID` | `Idempotency-Key` is malformed. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `webhooks:write`, or a `collections.*` event was requested by a key without `collections:read`. In the second case `details.requiredScopes` maps each such event to the scope it needs. |
+| `409` | `MAX_ACTIVE_SUBSCRIPTIONS_EXCEEDED` | You have reached the limit of 25 subscriptions. Delete one first. |
+| `409` | `IDEMPOTENCY_KEY_REUSED` | The `Idempotency-Key` was used with a different body. |
+| `409` | `IDEMPOTENCY_REQUEST_IN_FLIGHT` | The first request with this key is still running. |
+| `429` | `RATE_LIMITED` | Rate limit hit. Wait for `Retry-After`. |

@@ -41,6 +41,10 @@ flowchart LR
 ```mermaid
 stateDiagram-v2
     [*] --> pending
+    [*] --> pending_collection
+    pending_collection --> pending
+    pending_collection --> processing
+    pending_collection --> failed
     pending --> processing
     processing --> completed
     processing --> failed
@@ -51,9 +55,10 @@ stateDiagram-v2
 | Status | Meaning |
 |---|---|
 | `pending` | Created, awaiting provider hand-off. No funds in motion yet. |
+| `pending_collection` | A payout in a batch, waiting for the batch's shared collection. Moves on once the collection completes. |
 | `processing` | Submitted to the winning provider. A Payout may involve both a collection and a disbursement leg. |
 | `completed` | Recipient received the funds. Terminal. |
-| `failed` | Compliance, balance, or provider error. Inspect `error` on the payout. Terminal. |
+| `failed` | Compliance, balance, or provider error. Inspect `failureCode` on the payout. Terminal. |
 | `cancelled` | Quote expired or cancelled before execution. Terminal. |
 
 ## How payouts settle
@@ -75,10 +80,7 @@ A **Payout** is settled as a collection leg (fiat in) plus a disbursement leg (f
 
 ## Real-time updates
 
-Two channels, same events — pick one and you don't need to poll.
-
-- **WebSocket** — push updates as a payout moves through its lifecycle. Authenticate in-band with your API key on the first frame.
-- **HTTP webhooks** — POST callbacks to a URL you register. HMAC-signed; verify the signature before processing. See the [Webhooks guide](/guides/webhooks).
+Register an HTTP webhook to be told when a payout moves, instead of polling. Callbacks are HMAC-signed; verify the signature before processing. See the [Webhooks guide](/guides/webhooks). To check one payout on demand, read [`GET /payouts/{id}`](/api-reference/payouts/get).
 
 ## Collections
 
@@ -88,7 +90,7 @@ Collections is the receiving side: your payers pay you, and you settle what you 
 - **Receiving accounts** are fiat bank accounts for your business. Money paid into them arrives as **deposits**. See [Fiat collections](/guides/fiat-collections).
 - **Settlements** convert what you hold and pay it out to a recipient, in fiat or USDC. See [Settlements](/guides/settlements).
 
-All three report status changes through [webhooks](/guides/webhooks#collections-events). Collections events are delivered over HTTP webhooks only, not the WebSocket.
+All three report status changes through [webhooks](/guides/webhooks#collections-events).
 
 ## Payment link status
 

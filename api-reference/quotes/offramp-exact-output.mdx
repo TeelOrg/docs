@@ -1,25 +1,52 @@
 ---
-title: Get Exact-Output Offramp Quote
+title: Get exact-output offramp quote
 api: GET /api/quotes/offramp/exact-output
-description: Quote the crypto input needed to deliver an exact fiat payout
+description: The stablecoin needed to deliver an exact fiat amount.
 ---
 
-Returns the single best offramp quote that delivers an **exact** fiat amount to the recipient. Teel solves for the required crypto input, adding the Teel fee on top of the input (fee-on-input) so the recipient receives exactly `targetAmount`.
+import Headers from '/snippets/quotes/headers.mdx';
+import QuoteErrors from '/snippets/quotes/errors.mdx';
+import OfframpQuoteFields from '/snippets/quotes/offramp-quote-fields.mdx';
+import RouteExtras from '/snippets/quotes/route-extras.mdx';
+
+Returns the best route that delivers exactly `targetAmount` to the recipient. Teel solves for the stablecoin input, with its fee added to the input.
+
+<Info>**Scope** `quotes:read` · rate limit `quotes_read` (120/min, burst 40) · each currency must be in your business's payouts scope</Info>
+
+## Headers
+
+<Headers />
 
 ## Query parameters
-<ParamField query="payoutCurrency" type="string" required>
-  ISO 4217 currency code for the fiat payout currency (e.g. `USD`, `PHP`).
-</ParamField>
 
+<ParamField query="payoutCurrency" type="string" required>
+  ISO 4217 code of the payout currency.
+</ParamField>
 <ParamField query="targetAmount" type="number" required>
-  The exact fiat amount the recipient must receive.
+  Exact amount the recipient receives. Must be `> 0`.
+</ParamField>
+<ParamField query="userPaymentMethodId" type="string">
+  Your funding payment method. Prices the quote from that source, including a held balance's funding fee. Must be yours.
+</ParamField>
+<ParamField query="recipientId" type="string">
+  Recipient to price delivery to, using their payment methods. Ignored when `recipientPaymentMethodId` is set. Must be yours.
+</ParamField>
+<ParamField query="recipientPaymentMethodId" type="string">
+  Recipient payment method to price delivery to. Must be yours.
+</ParamField>
+<ParamField query="payoutRail" type="string">
+  Only routes that pay this rail of the payout currency, for example `instapay` or `ach`. A value that is not a rail of the currency is `400 INVALID_PAYOUT_RAIL`.
 </ParamField>
 
 ## Response
-<ResponseField name="success" type="boolean" />
 
+<ResponseField name="success" type="boolean">`true`.</ResponseField>
 <ResponseField name="data" type="object">
-  A single offramp quote. `toAmount` equals the requested `targetAmount`; `fromAmount` is the crypto input required (including the Teel fee). The `protocol` field is an opaque route token (`rt_...`) — see [Route tokens](/api-reference/quotes/onramp-all#route-tokens).
+  The quote. `toAmount` is `targetAmount`; `fromAmount` is the stablecoin needed, including Teel's fee.
+  <Expandable title="data">
+    <OfframpQuoteFields />
+    <RouteExtras />
+  </Expandable>
 </ResponseField>
 
 <ResponseExample>
@@ -27,14 +54,23 @@ Returns the single best offramp quote that delivers an **exact** fiat amount to 
 {
   "success": true,
   "data": {
-    "protocol": "rt_9XbN2kQ",
+    "protocol": "rt_9XbN2kQ7r3d",
     "fromToken": "USDC",
     "toCcy": "PHP",
-    "fromAmount": 176.43,
-    "toAmount": 10000.00,
+    "fromAmount": "177.12",
+    "toAmount": "10000.00",
     "rate": 56.8,
-    "fee": 0.35
+    "providerFee": 2.5,
+    "teelFee": 2.0,
+    "teelFeeBps": 20,
+    "payoutRail": "instapay",
+    "payoutRailLabel": "InstaPay",
+    "validUntil": "2026-03-01T10:05:00Z"
   }
 }
 ```
 </ResponseExample>
+
+## Errors
+
+<QuoteErrors />

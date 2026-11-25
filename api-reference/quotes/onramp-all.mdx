@@ -1,39 +1,43 @@
 ---
-title: Get All Onramp Quotes
+title: Get all onramp quotes
 api: GET /api/quotes/onramp/all
-description: Get every available onramp quote for fiat to crypto
+description: Every route for buying stablecoin with fiat.
 ---
 
-Returns **all** available onramp quotes for converting fiat into crypto, one per route. Use this when you want to present the full set of options; use [Get Best Onramp Quote](/api-reference/quotes/onramp-best) for the single best route.
+import Headers from '/snippets/quotes/headers.mdx';
+import QuoteErrors from '/snippets/quotes/errors.mdx';
+import OnrampQuoteFields from '/snippets/quotes/onramp-quote-fields.mdx';
+
+Returns every available route for converting fiat into stablecoin, one quote per route.
+
+<Info>**Scope** `quotes:read` · rate limit `quotes_read` (120/min, burst 40) · each currency must be in your business's payouts scope</Info>
+
+## Headers
+
+<Headers />
 
 ## Query parameters
+
 <ParamField query="sourceCurrency" type="string" required>
-  ISO 4217 currency code for the source fiat currency (e.g. `USD`, `EUR`).
+  ISO 4217 code of the fiat you pay in.
 </ParamField>
-
 <ParamField query="amount" type="number" required>
-  The amount in the source fiat currency to onramp.
+  Fiat amount. Must be `> 0`.
 </ParamField>
-
-<ParamField query="payoutCurrency" type="string">
-  Optional. The desired payout token (e.g. `USDC`). If omitted, the default is used.
+<ParamField query="userPaymentMethodId" type="string">
+  Your funding payment method. Prices the quote from that source, including a held balance's funding fee. Must be yours.
+</ParamField>
+<ParamField query="recipientPaymentMethodId" type="string">
+  Recipient payment method to price delivery to. Must be yours.
 </ParamField>
 
 ## Response
-<ResponseField name="success" type="boolean" />
 
+<ResponseField name="success" type="boolean">`true`.</ResponseField>
 <ResponseField name="data" type="array">
-  Array of onramp quote objects, each with the same shape as [Get Best Onramp Quote](/api-reference/quotes/onramp-best).
-  <Expandable title="Quote object">
-    <ResponseField name="protocol" type="string">
-      Opaque route token (`rt_...`) identifying the route. See [Route tokens](#route-tokens).
-    </ResponseField>
-    <ResponseField name="fromCcy" type="string">Source fiat currency code.</ResponseField>
-    <ResponseField name="toToken" type="string">Crypto token purchased.</ResponseField>
-    <ResponseField name="fromAmount" type="number">Amount in source fiat.</ResponseField>
-    <ResponseField name="toAmount" type="number">Amount of crypto received.</ResponseField>
-    <ResponseField name="rate" type="number">Conversion rate applied.</ResponseField>
-    <ResponseField name="fee" type="number">Total fee charged.</ResponseField>
+  One quote per route.
+  <Expandable title="data[]">
+    <OnrampQuoteFields />
   </Expandable>
 </ResponseField>
 
@@ -42,13 +46,20 @@ Returns **all** available onramp quotes for converting fiat into crypto, one per
 {
   "success": true,
   "data": [
-    { "protocol": "rt_8QmVxT2pA9c", "fromCcy": "USD", "toToken": "USDC", "fromAmount": 500, "toAmount": 493.75, "rate": 1.0, "fee": 6.25 },
-    { "protocol": "rt_K1d9LpZr4Hn", "fromCcy": "USD", "toToken": "USDC", "fromAmount": 500, "toAmount": 492.10, "rate": 1.0, "fee": 7.90 }
+  {
+    "protocol": "rt_8QmVxT2pA9c",
+    "fromCcy": "USD",
+    "toToken": "USDC",
+    "fromAmount": "500",
+    "toAmount": "493.75",
+    "rate": 1.0,
+    "fee": 6.25
+  }
   ]
 }
 ```
 </ResponseExample>
 
-## Route tokens
+## Errors
 
-The `protocol` value is an **opaque route token** (`rt_...`) — execution-side routing is opaque. Pass it back verbatim as `routeProtocol` on [`POST /rfq/execute`](/api-reference/payouts/execute); Teel resolves it server-side. Treat it as an opaque string; do not parse or construct it.
+<QuoteErrors />

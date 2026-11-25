@@ -24,7 +24,7 @@ sequenceDiagram
 
 ## Prerequisites
 
-- An API key with `collections:read` and `collections:write`, plus `webhooks:write` to subscribe. The sandbox key minted when you sign up includes the collections scopes but not `webhooks:write`. Create the subscription from the dashboard's **Webhooks** page instead, or ask support for the scope.
+- An API key with `collections:read` and `collections:write`, plus `webhooks:write` to subscribe. A key created from **Settings** → **API Keys** in the dashboard holds all of them. The sandbox key you claim at sign-up has the collections scopes but not `webhooks:write`, so create a key from **API Keys** to subscribe.
 - Stablecoin collections enabled on your business. Without it, link calls return `403 COLLECTIONS_NOT_ENABLED`.
 - An HTTPS endpoint that [verifies webhook signatures](/guides/webhooks#verifying-signatures).
 

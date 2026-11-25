@@ -1,0 +1,15 @@
+Quote errors come in three shapes. Always check `success`.
+
+| Status | Code | When |
+|---|---|---|
+| `200` | `error.code`, with `success: false` | No quote could be produced. Body: `{"success": false, "error": {"code": "…", "retryable": true}}`. Codes: `corridor_unsupported`, `provider_corridor_not_enabled` (contact support to enable the corridor), `amount_out_of_range`, `provider_kyc_required`, `rate_unavailable`, `provider_down`, `settlement_unavailable`, `unknown`. Retry only when `retryable` is `true`. Treat an unknown code as a generic failure. |
+| `400` | none | A required parameter is missing or not positive. Body: `{"success": false, "error": "…"}`. |
+| `400` | `INVALID_PARAMETER` | `userPaymentMethodId`, `recipientPaymentMethodId` or `recipientId` is not a UUID. |
+| `400` | `INVALID_PAYOUT_RAIL` | `payoutRail` is not a rail of the payout currency. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `quotes:read`. |
+| `403` | `FORBIDDEN` | A currency is outside your business's payouts scope. |
+| `404` | `RECIPIENT_NOT_FOUND` / `PAYMENT_METHOD_NOT_FOUND` | A recipient or payment method you named does not exist or is not yours. |
+| `422` | `FUNDING_RAIL_UNSUPPORTED` / `PAYOUT_RAIL_UNAVAILABLE` / `COLLECTIONS_WALLET_SOURCE_NOT_SUPPORTED` | Body: `{"success": false, "code": "…", "error": "…"}`. The source cannot fund on the rail you asked for, no route pays the `payoutRail` you chose, or the source is a collections wallet that cannot fund payouts. |
+| `429` | `RATE_LIMITED` | `quotes_read` budget exhausted. Wait for `Retry-After`. |
+| `502` | `DOWNSTREAM_UNAVAILABLE` | The quote engine could not be reached. Retry. |

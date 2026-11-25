@@ -1,18 +1,11 @@
 ---
 title: "Webhooks & real-time updates"
-description: "Receive real-time notifications for payout and collections status changes — over WebSocket or HTTP"
+description: "Receive real-time notifications for payout and collections status changes"
 ---
 
 ## Overview
 
-Teel sends real-time updates whenever a payout is created or changes status. Two delivery modes:
-
-| Mode | When to use |
-| --- | --- |
-| **WebSocket** | Your backend can hold a long-lived connection (Node.js server, Go service, Python worker). Lowest latency, no public URL needed. |
-| **HTTP webhooks** | Your backend is serverless or runs behind a CDN (Lambda, Cloudflare Workers, Vercel Edge, Next.js API routes). Each event is delivered as a POST to a URL you control. |
-
-You can use either, or both — they carry the same payout events. [Collections events](#collections-events) are delivered over HTTP webhooks only.
+Teel sends real-time updates whenever a payout is created or changes status, and when collections activity happens. Each event is delivered as a signed HTTP POST to a URL you control. If you can't expose a public URL, poll the resource instead, for example [`GET /payouts/{id}`](/api-reference/payouts/get).
 
 ---
 
@@ -22,7 +15,7 @@ You register one or more URLs, Teel POSTs signed events to them whenever activit
 
 ### Register an endpoint
 
-Create a subscription with `POST /webhooks/subscriptions` (scope `webhooks:write`), or from the **Webhooks** page in the dashboard. You provide:
+Create a subscription with `POST /webhooks/subscriptions` (scope `webhooks:write`), or in the dashboard under **Settings** → **Webhooks** → **Add Subscription**. You provide:
 
 - **url** — must be `https://`. Loopback, RFC1918 / private IPv4 and IPv6 ranges, link-local addresses, and known cloud metadata hosts are rejected at create time and at delivery time (DNS is re-resolved before each POST).
 - **events** — pick from the allow list: `payout.created`, `payout.status.updated`, `collections.payment_link.paid`, `collections.deposit.received`, `collections.offramp.status.updated`. The three `collections.*` events also need the `collections:read` scope on the key that subscribes; without it you get `403 INSUFFICIENT_SCOPE`.
@@ -40,6 +33,8 @@ curl -X POST https://api.teel.finance/webhooks/subscriptions \
 ```
 
 The response includes a `whsec_…` signing secret **exactly once**. Copy it into your verifier's secret store immediately — there is no way to retrieve it again. Use **rotate secret** (`POST /webhooks/subscriptions/{id}/rotate-secret` or the dashboard) if it's ever lost or you suspect it's been exposed; the rotation invalidates the old secret immediately (no overlap window).
+
+To stop deliveries for a while without deleting the subscription, **Pause** it on the dashboard's **Webhooks** page (or `PATCH` it with `status: "paused"`), then **Resume** it later.
 
 ### Account limits
 
@@ -65,9 +60,9 @@ Teel-Event-Type: payout.status.updated
 
 | Header | Meaning |
 | --- | --- |
-| `Teel-Signature` | HMAC-SHA256 over `t.body` with your signing secret. `t=` is the Unix timestamp (seconds), `v1=` is the hex digest. See [verifying](#verifying-signatures). |
+| `Teel-Signature` | HMAC-SHA256 over `<unix>.<raw body>` with your signing secret. `t=` is the Unix timestamp (seconds), `v1=` is the hex digest. See [verifying](#verifying-signatures). |
 | `Teel-Delivery-Id` | Unique ID for **this delivery attempt's row** in Teel's queue. Use it to dedupe — retries re-send with the same `Teel-Delivery-Id`, replays use a fresh one. |
-| `Teel-Event-Type` | The event type, mirrors `data.type` in the body. |
+| `Teel-Event-Type` | The event type, mirrors the top-level `type` in the body. |
 
 ### Successful response
 
@@ -94,7 +89,7 @@ After 5 attempts the delivery is marked `permanently_failed`. It stays visible i
 
 ### Verifying signatures
 
-Every delivery is HMAC-SHA256-signed over `t=<unix>.<raw body>` using your subscription's `whsec_…` secret. Recompute the digest on your side and constant-time-compare. Reject anything older than 5 minutes — that's the replay-protection window.
+Every delivery is HMAC-SHA256-signed over `<unix>.<raw body>` using your subscription's `whsec_…` secret. Recompute the digest on your side and constant-time-compare. Reject anything older than 5 minutes — that's the replay-protection window.
 
 <CodeGroup>
 
@@ -216,7 +211,7 @@ Fires once when a payout is first created (any flow — a Payout, a Stablecoin p
   "createdAt": "2026-05-27T09:30:46Z",
   "data": {
     "payoutId": "3d1f7c20-9b8a-4e6d-bf12-7a4c9e2d1f0b",
-    "transactionType": "fiat_to_fiat",
+    "transactionType": "payout",
     "payoutAmount": 10000.0,
     "payoutCurrency": "EUR",
     "sourceCurrency": "USD",
@@ -229,7 +224,7 @@ Fires once when a payout is first created (any flow — a Payout, a Stablecoin p
 
 #### `payout.status.updated`
 
-Fires every time a payout's status or step changes. Multiple events are emitted per payout as it progresses (`pending` → `processing` → `completed` is at least three updates, plus per-step transitions like `compliance_cleared`, `instructions_sent`, `collected`, `converting`, `settling`, `delivered`).
+Fires every time a payout's status or step changes. Multiple events are emitted per payout as it progresses (`pending` → `processing` → `completed` is at least three updates, plus per-step transitions like `compliance_cleared`, `instructions_sent`, `collected`, `converting`, `transfer_sent`, `settling`, `delivered`).
 
 ```json
 {
@@ -250,7 +245,6 @@ Fires every time a payout's status or step changes. Multiple events are emitted 
 
 Three events cover [collections](/concepts#collections). Each `data` is exactly what the matching `GET` returns, so one parser serves both.
 
-- They are delivered over **HTTP webhooks only**, not the WebSocket.
 - Subscribing needs the **`collections:read`** scope on the key that calls `POST /webhooks/subscriptions` (or `PATCH` to add them). Without it, you get `403 INSUFFICIENT_SCOPE` with `details.requiredScopes` naming the missing scope per event.
 - They are business-wide. Every member of your business with an active subscription to the event receives it, including for payment links, deposits and settlements made in the dashboard.
 
@@ -338,31 +332,6 @@ A settlement created as `pending` sends nothing until its status first changes. 
 
 ---
 
-## WebSocket connection
-
-If you can hold an open connection, the WebSocket delivers the same events with sub-100ms latency. Authenticate in-band with your API key as the first message:
-
-```javascript
-const ws = new WebSocket("wss://api.teel.finance/ws");
-
-ws.onopen = () => {
-  // Send auth as the first message — we close the socket if we don't see it
-  // within 10 seconds.
-  ws.send(JSON.stringify({ type: "auth", apiKey: "sk_live_..." }));
-};
-
-ws.onmessage = (event) => {
-  const data = JSON.parse(event.data);
-  if (data.type === "payout.status.updated") {
-    // ...same shape as the HTTP webhook payload's `data` field
-  }
-};
-```
-
-The WebSocket scopes events to your account — you only see events for payouts your business owns.
-
----
-
 ## Status transitions
 
 All payouts follow the same status state machine regardless of the underlying provider:
@@ -370,10 +339,15 @@ All payouts follow the same status state machine regardless of the underlying pr
 ```mermaid
 stateDiagram-v2
     [*] --> pending
+    [*] --> pending_collection
+    pending_collection --> pending
+    pending_collection --> processing
+    pending_collection --> failed
     pending --> processing
     processing --> completed
     processing --> failed
     pending --> cancelled
+    processing --> cancelled
     completed --> [*]
     failed --> [*]
     cancelled --> [*]
@@ -382,16 +356,21 @@ stateDiagram-v2
 | Status | Description |
 | --- | --- |
 | `pending` | Payout created but not yet submitted to the provider |
+| `pending_collection` | A batch payout waiting for its batch's collection to complete |
 | `processing` | Provider has accepted the payout and is executing it |
 | `completed` | Funds have been delivered to the recipient |
 | `failed` | The payout failed during processing |
-| `cancelled` | The payout was cancelled before processing began |
+| `cancelled` | The payout was cancelled |
 
 ### Step transitions
 
-Within `processing`, the payout progresses through a fixed sequence of steps. The `step` field on `payout.status.updated` reflects the current position:
+Within `processing`, the payout progresses through a fixed sequence of steps. The `step` field on `payout.status.updated` reflects the current position. The sequence depends on the payout type:
 
-`initiated` → `compliance_cleared` → `instructions_sent` → `collected` → `converting` → `settling` → `delivered`
+| Payout | Steps |
+| --- | --- |
+| Fiat to fiat | `initiated` → `compliance_cleared` → `instructions_sent` → `collected` → `converting` → `settling` → `delivered` |
+| Fiat to stablecoin | `initiated` → `compliance_cleared` → `instructions_sent` → `collected` → `delivered` |
+| Stablecoin to fiat | `initiated` → `compliance_cleared` → `transfer_sent` → `settling` → `delivered` |
 
 Steps are monotonic — they only ever move forward.
 
@@ -402,7 +381,7 @@ Steps are monotonic — they only ever move forward.
 A Payout generates roughly this sequence of events (some steps fire multiple times depending on the providers involved):
 
 ```
-payout.created           { status: pending,    step: initiated }
+payout.created           { status: pending }
 payout.status.updated    { status: processing, step: compliance_cleared }
 payout.status.updated    { status: processing, step: instructions_sent }
 payout.status.updated    { status: processing, step: collected }

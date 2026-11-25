@@ -49,3 +49,11 @@ Send one `value` as `paymentPurpose` when you execute a payout. An unrecognised 
 }
 ```
 </ResponseExample>
+
+## Errors
+
+| Status | Code | When |
+|---|---|---|
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `payouts:read`. |
+| `429` | `RATE_LIMITED` | Per-key rate limit. Wait for `Retry-After`. |

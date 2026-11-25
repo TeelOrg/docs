@@ -1,29 +1,61 @@
 ---
-title: Get All Offramp Quotes
+title: Get all offramp quotes
 api: GET /api/quotes/offramp/all
-description: Get every available offramp quote for crypto to fiat
+description: Every route for paying out fiat from stablecoin.
 ---
 
-Returns **all** available offramp quotes for converting crypto into fiat, one per route. Supports both forward mode (you specify the crypto input) and exact-output mode (you specify the fiat the recipient must receive).
+import Headers from '/snippets/quotes/headers.mdx';
+import QuoteErrors from '/snippets/quotes/errors.mdx';
+import OfframpQuoteFields from '/snippets/quotes/offramp-quote-fields.mdx';
+import RouteExtras from '/snippets/quotes/route-extras.mdx';
+
+Returns every available route for converting stablecoin into a fiat payout. Send `usdcAmount` to fix what you sell, or `targetAmount` to fix what the recipient receives (exact output, one quote per route and rail, cheapest first).
+
+<Info>**Scope** `quotes:read` · rate limit `quotes_read` (120/min, burst 40) · each currency must be in your business's payouts scope</Info>
+
+## Headers
+
+<Headers />
 
 ## Query parameters
+
 <ParamField query="payoutCurrency" type="string" required>
-  ISO 4217 currency code for the desired fiat payout currency (e.g. `USD`, `PHP`).
+  ISO 4217 code of the payout currency.
 </ParamField>
-
 <ParamField query="usdcAmount" type="number">
-  Forward mode: the amount of crypto (USDC) to offramp. Provide either this or `targetAmount`.
+  Stablecoin amount to sell. Send this or `targetAmount`.
 </ParamField>
-
 <ParamField query="targetAmount" type="number">
-  Exact-output mode: the exact fiat amount the recipient must receive. Teel computes the crypto input (fee-on-input). Provide either this or `usdcAmount`.
+  Exact amount the recipient receives. Send this or `usdcAmount`.
+</ParamField>
+<ParamField query="cryptoTicker" type="string">
+  With `targetAmount`: the stablecoin to price on, for a source that is not a wallet. An unknown ticker is `400`.
+</ParamField>
+<ParamField query="userPaymentMethodId" type="string">
+  Your funding payment method. Prices the quote from that source, including a held balance's funding fee. Must be yours.
+</ParamField>
+<ParamField query="recipientId" type="string">
+  Recipient to price delivery to, using their payment methods. Ignored when `recipientPaymentMethodId` is set. Must be yours.
+</ParamField>
+<ParamField query="recipientPaymentMethodId" type="string">
+  Recipient payment method to price delivery to. Must be yours.
+</ParamField>
+<ParamField query="payoutRail" type="string">
+  Only routes that pay this rail of the payout currency, for example `instapay` or `ach`. A value that is not a rail of the currency is `400 INVALID_PAYOUT_RAIL`.
 </ParamField>
 
 ## Response
-<ResponseField name="success" type="boolean" />
 
+<ResponseField name="success" type="boolean">`true`.</ResponseField>
 <ResponseField name="data" type="array">
-  Array of offramp quote objects, each with the same shape as [Get Best Offramp Quote](/api-reference/quotes/offramp-best). The `protocol` field is an opaque route token (`rt_...`) — see [Route tokens](/api-reference/quotes/onramp-all#route-tokens).
+  One quote per route.
+  <Expandable title="data[]">
+    <OfframpQuoteFields />
+    <RouteExtras />
+  </Expandable>
+</ResponseField>
+<ResponseField name="payoutRailOptions" type="array">
+  One entry per rail the routes in `data` pay, when the rail has a standard arrival. Each carries the best route on that rail: `rail`, `label`, `protocol`, `bridgingAsset`, `fundingRail`, `fromAmount`, `toAmount`, `exchangeRate`, `flatFees`, `expectedArrivalAt`, and the flags `fastest` (earliest arrival) and `bestRate` (the first option). To lock one, send its `protocol` as `routeProtocol`, `rail` as `payoutRail` and, when not empty, `bridgingAsset` and `fundingRail` on execute.
 </ResponseField>
 
 <ResponseExample>
@@ -31,9 +63,25 @@ Returns **all** available offramp quotes for converting crypto into fiat, one pe
 {
   "success": true,
   "data": [
-    { "protocol": "rt_9XbN2kQ", "fromToken": "USDC", "toCcy": "PHP", "fromAmount": 1000, "toAmount": 56800.00, "rate": 56.8, "fee": 2.5 },
-    { "protocol": "rt_3FpL7dM", "fromToken": "USDC", "toCcy": "PHP", "fromAmount": 1000, "toAmount": 56750.00, "rate": 56.75, "fee": 3.0 }
+  {
+    "protocol": "rt_9XbN2kQ7r3d",
+    "fromToken": "USDC",
+    "toCcy": "PHP",
+    "fromAmount": "1000",
+    "toAmount": "56800.00",
+    "rate": 56.8,
+    "providerFee": 2.5,
+    "teelFee": 2.0,
+    "teelFeeBps": 20,
+    "payoutRail": "instapay",
+    "payoutRailLabel": "InstaPay",
+    "validUntil": "2026-03-01T10:05:00Z"
+  }
   ]
 }
 ```
 </ResponseExample>
+
+## Errors
+
+<QuoteErrors />

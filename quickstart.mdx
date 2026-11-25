@@ -7,9 +7,9 @@ This guide walks you through making your first payout against the Teel **sandbox
 
 <Steps>
   <Step title="Set your API key">
-    Teel uses long-lived secret API keys (`sk_live_…` for production, `sk_test_…` for sandbox) presented as a bearer token. Same pattern as Stripe, OpenAI, Resend.
+    Teel uses long-lived secret API keys (`sk_live_…` for production, `sk_test_…` for sandbox) presented as a bearer token.
 
-    Sandbox API keys are issued by the Teel onboarding team. Email **support@teel.finance** (or reach out to your dedicated onboarding contact) and we'll send your `sk_test_…` key through an encrypted channel. The plaintext is shown **exactly once** at creation; afterwards only the first 12 characters are retrievable for identification.
+    Switch the dashboard header to **Sandbox**, then open **Settings** → **API Keys** and click **Create API Key**. Copy the `sk_test_…` key from the **Your New API Key** dialog: the plaintext is shown **exactly once**.
 
     ```bash
     export TEEL_API_KEY="sk_test_<43 url-safe base64 chars>"
@@ -128,16 +128,9 @@ This guide walks you through making your first payout against the Teel **sandbox
       }'
     ```
 
-    Today the subscribable events are `payout.created` and `payout.status.updated` — delivery and failure arrive as the `status` field inside `payout.status.updated` (terminal values `delivered` / `failed`), not as separate event types.
+    Delivery and failure arrive as the `status` field inside `payout.status.updated` (terminal values `completed` / `failed`), not as separate event types. Collections have their own events; see the [Webhooks guide](/guides/webhooks#event-types).
 
     The response includes the signing `secret` returned **exactly once**. Store it server-side. See the [Webhooks guide](/guides/webhooks) for signature verification + retry semantics.
-
-    For real-time updates without a public URL, a WebSocket endpoint is also available. Auth is in-band — connect, then send `{"type":"auth","apiKey":"sk_test_..."}` as the first frame:
-
-    ```bash
-    wscat -c "wss://api.teel.finance/sandbox/ws"
-    > {"type":"auth","apiKey":"sk_test_..."}
-    ```
   </Step>
 </Steps>
 
@@ -145,7 +138,7 @@ This guide walks you through making your first payout against the Teel **sandbox
 
 <CardGroup cols={2}>
   <Card title="Authentication" href="/authentication">
-    Key format, scopes, rotation (7-day overlap), revocation, error responses.
+    Key format, scopes, rotation, revocation, error responses.
   </Card>
   <Card title="Core concepts" href="/concepts">
     Multi-provider architecture, quote engine, transaction lifecycle.

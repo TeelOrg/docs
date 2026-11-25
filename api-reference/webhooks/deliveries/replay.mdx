@@ -11,7 +11,7 @@ Use this for:
 - Debugging your verifier — drop a row, fix the bug, replay, watch it land.
 - Recovering from a long outage on your side — walk the `permanently_failed` deliveries and replay them once your endpoint is healthy.
 
-<Info>**Scope** `webhooks:write` · rate-limited</Info>
+<Info>**Scope** `webhooks:write` · rate limit `default` (60/min, burst 20), plus 5 replays per minute per account (burst 5)</Info>
 
 ## Headers
 
@@ -35,8 +35,16 @@ Use this for:
   Inherited from the source delivery.
 </ResponseField>
 
+<ResponseField name="userId" type="string">
+  UUID of the user that owns the subscription.
+</ResponseField>
+
 <ResponseField name="eventType" type="string">
   Inherited from the source delivery.
+</ResponseField>
+
+<ResponseField name="payload" type="object">
+  Inherited from the source delivery: the JSON envelope that will be POSTed.
 </ResponseField>
 
 <ResponseField name="status" type="string">
@@ -55,12 +63,25 @@ Use this for:
   ISO 8601 timestamp.
 </ResponseField>
 
+The remaining fields of a delivery (`lastResponseCode`, `lastResponseBody`, `lastError`, `deliveredAt`) are omitted until the first attempt; see [List deliveries](/api-reference/webhooks/deliveries/list).
+
 <ResponseExample>
-```json 200
+```json 202
 {
   "id": "deabb47c-b3c4-4777-867c-cc32c434957c",
   "subscriptionId": "1c84203c-b4e3-40de-83a9-51bc0d9c991f",
+  "userId": "6b1e4f2a-9c3d-4e8b-a7f5-2d0c1b3a4e5f",
   "eventType": "payout.status.updated",
+  "payload": {
+    "type": "payout.status.updated",
+    "createdAt": "2026-05-27T09:30:46Z",
+    "data": {
+      "payoutId": "3d1f7c20-9b8a-4e6d-bf12-7a4c9e2d1f0b",
+      "status": "processing",
+      "step": "settling",
+      "stepChangedAt": "2026-05-27T09:30:46Z"
+    }
+  },
   "status": "pending",
   "attemptCount": 0,
   "nextAttemptAt": "2026-05-27T09:34:50Z",
@@ -69,6 +90,13 @@ Use this for:
 ```
 </ResponseExample>
 
-## Rate limit
+## Errors
 
-To prevent self-inflicted DoS, replays are capped per account: **5 per minute, burst 5**. Over the limit returns `429 Too Many Requests` with a `Retry-After` header (seconds).
+| Status | Code | When |
+| --- | --- | --- |
+| `400` | `INVALID_PARAMETER` | `id` is not a UUID. |
+| `401` | `UNAUTHORIZED` | Missing or invalid key. |
+| `403` | `INSUFFICIENT_SCOPE` | Key lacks `webhooks:write`. |
+| `404` | `WEBHOOK_DELIVERY_NOT_FOUND` | The delivery does not exist or is not yours. |
+| `429` | `RATE_LIMITED` | Rate limit hit. Wait for `Retry-After`. |
+| `429` | — | The per-account replay limit (5 per minute) was hit. The body is `{"success": false, "error": "rate limit exceeded"}` with no `code`; wait for `Retry-After`. |

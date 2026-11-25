@@ -1,0 +1,47 @@
+---
+title: "Supporting documents"
+description: "Attach an invoice or other document to a payout"
+---
+
+Some routes need a supporting document, such as an invoice, before they pay out. You upload the file first, then name it on the payout.
+
+## Step 1: Check whether the route needs one
+
+A quote tells you. On fiat-to-fiat and offramp quotes, a route that needs a document carries `offrampRequirements` (and `needsSupportingDocument` or `requiresDocument`). If the route you pick has none, skip this guide.
+
+## Step 2: Upload the file
+
+Send the file as multipart form data to [`POST /payouts/document`](/api-reference/payouts/upload-document). PDF, JPG, PNG and WEBP are accepted, up to 5 MB.
+
+```bash
+curl -X POST https://api.teel.finance/api/payouts/document \
+  -H "Authorization: Bearer $TEEL_API_KEY" \
+  -F "document=@invoice.pdf"
+```
+
+```json
+{ "fileId": "7d9e2b14-6a3c-4f1e-9b0d-2c5a8e7f1d36" }
+```
+
+The upload is not idempotent: a retry creates a new file, and the unused one is never attached to anything.
+
+## Step 3: Name it on the payout
+
+Send the `fileId` as `supportingDocumentFileId` on [`POST /rfq/execute`](/api-reference/payouts/execute), or on each item of [`POST /rfq/execute-batch`](/api-reference/payouts/execute-batch):
+
+```json
+{
+  "fromCurrency": "USD",
+  "toCurrency": "PHP",
+  "amount": 1000,
+  "recipientId": "8f3c2a91-4e5b-4d8c-9a1f-3e2b1c4d5e6f",
+  "userPaymentMethodId": "e5f6a7b8-c9d0-4e1f-8a2b-3c4d5e6f7a8b",
+  "supportingDocumentFileId": "7d9e2b14-6a3c-4f1e-9b0d-2c5a8e7f1d36"
+}
+```
+
+Only a file your account uploaded is accepted; any other id is `400 INVALID_PARAMETER`. A route that needs a document and gets none refuses the payout with `422 SUPPORTING_DOCUMENT_REQUIRED`.
+
+## Step 4: Retrieve it later
+
+The payout shows `providerMetadata.offramp.hasSupportingDocument: true`. Get a download link from [`GET /payouts/{id}/document/url`](/api-reference/payouts/document-url). The link expires after 15 minutes, so fetch a new one each time.

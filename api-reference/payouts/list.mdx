@@ -1,10 +1,12 @@
 ---
-title: List Payouts
+title: List payouts
 api: GET /api/payouts
-description: List all payouts with pagination
+description: List your business's payouts, newest first.
 ---
 
-<Info>**Scope** `payouts:read`</Info>
+import PayoutFields from '/snippets/payouts/payout-fields.mdx';
+
+<Info>**Scope** `payouts:read` · rate limit `default` (60/min, burst 20)</Info>
 
 ## Headers
 
@@ -14,12 +16,12 @@ description: List all payouts with pagination
 
 ## Query parameters
 
-<ParamField query="limit" type="integer">
-  Maximum number of results (default: 10)
+<ParamField query="limit" type="integer" default="10">
+  Maximum number of results. A value below 1 or not a number falls back to 10.
 </ParamField>
 
-<ParamField query="offset" type="integer">
-  Number of results to skip (default: 0)
+<ParamField query="offset" type="integer" default="0">
+  Number of results to skip.
 </ParamField>
 
 <ParamField query="recipient_id" type="string">
@@ -31,28 +33,35 @@ description: List all payouts with pagination
 </ParamField>
 
 <ParamField query="status" type="string">
-  Only payouts in this status.
+  Only payouts in this status: `pending`, `pending_collection`, `processing`, `completed`, `failed` or `cancelled`.
 </ParamField>
 
 <ParamField query="transaction_type" type="string">
-  Only payouts of this type.
+  Only payouts of this type: `payout` or `swap`.
 </ParamField>
 
 ## Response
 
+An array of payout objects. Each has the fields below, except `estimatedArrivalAt`, `settlementSla` and `feeVsMidMarket`, which only [`GET /payouts/{id}`](/api-reference/payouts/get) serves.
+
+<PayoutFields />
+
 <ResponseExample>
-```json
+```json 200
 [
   {
-    "id": "pay_abc123",
+    "id": "3f2a9c1e-5b7d-4e2a-8c1f-0a9b8c7d6e5f",
     "transactionType": "payout",
-    "payoutAmount": 4425.00,
-    "sourceCurrency": "USD",
-    "payoutCurrency": "MYR",
     "status": "completed",
-    "recipientId": "rec_xyz",
+    "step": "delivered",
+    "sourceAmount": 1000.00,
+    "sourceCurrency": "USD",
+    "payoutAmount": 4425.00,
+    "payoutCurrency": "MYR",
+    "recipientId": "9b7c2e41-0d3a-4c5f-8e6b-1a2b3c4d5e6f",
     "paymentMethod": "fiat_bank_transfer",
     "createdAt": "2026-03-01T10:00:00Z",
+    "updatedAt": "2026-03-01T10:05:00Z",
     "completedAt": "2026-03-01T10:05:00Z"
   }
 ]

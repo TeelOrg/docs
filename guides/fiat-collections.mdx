@@ -27,7 +27,7 @@ sequenceDiagram
 
 ## Before you start
 
-Receiving accounts are opened from the Teel dashboard after KYB, not through the API. The API reads them.
+Your business needs fiat collections enabled and at least one receiving account. Teel opens receiving accounts for the currencies your business selected during onboarding, and you can ask for another with **Request account** on the dashboard's Home page. Requests are normally approved automatically. The API reads receiving accounts; it can't open them.
 
 **Who can pay in.** Payers can pay from any US state. There is no restriction on where the payer is.
 
@@ -37,7 +37,7 @@ Receiving accounts are opened from the Teel dashboard after KYB, not through the
 - US businesses based in **Texas** can open USD accounts on some rails only. On the other rails, the bank accepts only transfers from the business's own accounts, so those accounts aren't offered for collecting from customers.
 - A US business must have its **state on file** in its business address. Without it, Teel can't check eligibility and won't open a USD account. Complete the address in the dashboard.
 
-You also need an API key with `collections:read`, and `webhooks:write` to subscribe.
+You also need an API key with `collections:read`, and `webhooks:write` to subscribe. A key created from **Settings** → **API Keys** holds both.
 
 ## Step 1: Get payment details
 

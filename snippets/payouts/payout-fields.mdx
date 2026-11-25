@@ -1,0 +1,128 @@
+<ResponseField name="id" type="string">Payout UUID.</ResponseField>
+<ResponseField name="transactionType" type="string">`payout` or `swap`.</ResponseField>
+<ResponseField name="status" type="string">
+  `pending`, `pending_collection`, `processing`, `completed`, `failed` or `cancelled`. A delivered payout is `completed` with `step` `delivered`. See [Core Concepts](/concepts#transaction-status).
+</ResponseField>
+<ResponseField name="step" type="string">
+  Progress within `status`: `initiated`, `compliance_cleared`, `instructions_sent`, `collected`, `converting`, `settling`, `transfer_sent` or `delivered`. Steps only move forward.
+</ResponseField>
+<ResponseField name="stepChangedAt" type="string">ISO 8601. When `step` last changed.</ResponseField>
+<ResponseField name="failureCode" type="string">
+  Why the payout failed, for example `OFFRAMP_FAILED` or `PAYOUT_EXPIRED`. Present only on failed payouts. New codes may be added; treat an unknown one as a generic failure.
+</ResponseField>
+<ResponseField name="sourceAmount" type="number">Amount debited, in `sourceCurrency`. Absent until the quote settles.</ResponseField>
+<ResponseField name="sourceCurrency" type="string">Source currency or stablecoin ticker.</ResponseField>
+<ResponseField name="payoutAmount" type="number">Amount the recipient receives, in `payoutCurrency`. Full precision.</ResponseField>
+<ResponseField name="payoutCurrency" type="string">Destination currency or stablecoin ticker.</ResponseField>
+<ResponseField name="effectiveRate" type="number">Source-to-destination rate locked at quote time.</ResponseField>
+<ResponseField name="recipientId" type="string">Recipient UUID.</ResponseField>
+<ResponseField name="recipientName" type="string">Recipient display name.</ResponseField>
+<ResponseField name="recipientPaymentMethodId" type="string">The recipient payment method paid.</ResponseField>
+<ResponseField name="userPaymentMethodId" type="string">Your funding payment method, when one was used.</ResponseField>
+<ResponseField name="paymentMethod" type="string">How the payout is funded and delivered, for example `fiat_bank_transfer`.</ResponseField>
+<ResponseField name="paymentPurpose" type="string">Payment purpose, as resolved from the value you sent.</ResponseField>
+<ResponseField name="purposeDescription" type="string">Free-text purpose you sent. Present only when you sent one.</ResponseField>
+<ResponseField name="reference" type="string">Your reference.</ResponseField>
+<ResponseField name="idempotencyKey" type="string">The `Idempotency-Key` the payout was created with.</ResponseField>
+<ResponseField name="batchId" type="string">Set when the payout belongs to a batch from [`POST /rfq/execute-batch`](/api-reference/payouts/execute-batch).</ResponseField>
+<ResponseField name="executionKind" type="string">`direct_bank` for a direct delivery from a held fiat balance without conversion. Absent otherwise.</ResponseField>
+<ResponseField name="payoutRail" type="string">The delivery rail selected for the payout.</ResponseField>
+<ResponseField name="payoutRailLabel" type="string">Display name of the rail, for example `InstaPay` or `ACH`. Absent on a direct bank payout and for a rail without a standard arrival.</ResponseField>
+<ResponseField name="expectedArrivalAt" type="string">ISO 8601. When the funds should reach the recipient's bank, fixed once Teel has the money. Absent until then.</ResponseField>
+<ResponseField name="estimatedArrivalAt" type="string">ISO 8601. Until `expectedArrivalAt` is fixed, the arrival if Teel had the money now; it moves. Single-payout read only.</ResponseField>
+<ResponseField name="settlementSla" type="object">
+  Settlement estimate for the payout's delivery rail: `speed`, `processingDays`, `estimateMinBusinessDays`, `estimateMaxBusinessDays`, and, when known, `cutoff`, `cutoffTimezone`, `estimatedArrivalStart` and `estimatedArrivalEnd`. Single-payout read only; absent when no estimate is available.
+</ResponseField>
+<ResponseField name="feeVsMidMarket" type="object">
+  All-in cost against the mid-market rate at quote time: `amount`, `bps` and `currency`, plus `flatFees`, `rail`, `rate` and `rateBps` when the payout carries flat fees. Single-payout read only; absent when no mid-market rate is available.
+</ResponseField>
+<ResponseField name="bankPayout" type="object">
+  Direct bank delivery only.
+  <Expandable title="bankPayout">
+    <ResponseField name="rail" type="string">Delivery rail.</ResponseField>
+    <ResponseField name="fee" type="string">Rail fee, decimal string: the charged fee once reported, otherwise the quoted one.</ResponseField>
+    <ResponseField name="currency" type="string">Currency of `fee`.</ResponseField>
+    <ResponseField name="estimatedSettlementSeconds" type="integer">Estimated processing time, including review. Not an arrival guarantee.</ResponseField>
+  </Expandable>
+</ResponseField>
+<ResponseField name="fundedFrom" type="string">`collections_wallet` or `holding_account` when the payout was not funded by your own deposit. Absent otherwise.</ResponseField>
+<ResponseField name="funding" type="object">
+  Present only when `fundedFrom` is `holding_account`.
+  <Expandable title="funding">
+    <ResponseField name="status" type="string">`reserved`, `pushed`, `settled`, `failed` or `released`.</ResponseField>
+    <ResponseField name="amount" type="string">Decimal amount sent from the holding account, excluding the funding fee.</ResponseField>
+    <ResponseField name="currency" type="string">The holding account's currency.</ResponseField>
+    <ResponseField name="pushedAt" type="string">ISO 8601. Absent while `reserved`.</ResponseField>
+  </Expandable>
+</ResponseField>
+<ResponseField name="walletSend" type="object">
+  A payout sent straight from your wallet to the recipient's wallet.
+  <Expandable title="walletSend">
+    <ResponseField name="fromAddress" type="string">Sending address.</ResponseField>
+    <ResponseField name="toAddress" type="string">Recipient address.</ResponseField>
+    <ResponseField name="network" type="string">Network name.</ResponseField>
+    <ResponseField name="chainId" type="integer">Chain id.</ResponseField>
+    <ResponseField name="token" type="string">Token symbol.</ResponseField>
+    <ResponseField name="amountAtomic" type="string">Atomic-units integer string. Parse with `BigInt`.</ResponseField>
+    <ResponseField name="decimals" type="integer">Token decimals.</ResponseField>
+    <ResponseField name="txHash" type="string">Set once the transfer is final.</ResponseField>
+    <ResponseField name="txUrl" type="string">Explorer link for `txHash`.</ResponseField>
+  </Expandable>
+</ResponseField>
+<ResponseField name="walletSwapOrderId" type="string">UUID of the stablecoin swap order behind the payout, when there is one.</ResponseField>
+<ResponseField name="invoices" type="object">Invoice data attached to the payout, as stored.</ResponseField>
+<ResponseField name="refundStatus" type="string">`pending`, `processing` or `completed` once a refund starts. Absent otherwise.</ResponseField>
+<ResponseField name="refundInitiatedAt" type="string">ISO 8601.</ResponseField>
+<ResponseField name="refundCompletedAt" type="string">ISO 8601.</ResponseField>
+<ResponseField name="receiptEmailedAt" type="string">ISO 8601. When the receipt was last emailed.</ResponseField>
+<ResponseField name="providerMetadata" type="object">
+  Per-leg detail. Each leg is present only when the payout has it.
+  <Expandable title="providerMetadata">
+    <ResponseField name="version" type="integer">Schema version.</ResponseField>
+    <ResponseField name="onramp" type="object">
+      Fiat collection leg: where and how much to pay.
+      <Expandable title="onramp">
+        <ResponseField name="payerAmount" type="string">What the payer is billed.</ResponseField>
+        <ResponseField name="depositAmount" type="string">What arrives after any cash-in fee. Never use it as the amount owed.</ResponseField>
+        <ResponseField name="amount" type="string">Deprecated. Read `payerAmount`.</ResponseField>
+        <ResponseField name="currency" type="string">Currency of the amounts.</ResponseField>
+        <ResponseField name="expiresAt" type="string">When the deposit instructions expire.</ResponseField>
+        <ResponseField name="paymentUrl" type="string">Hosted payment page, on routes that use one.</ResponseField>
+        <ResponseField name="bankName" type="string">Deposit bank details: `bankName`, `accountNumber`, `routingNumber`, `iban`, `accountName`, `swiftCode`, `pixKey`, `ispb`, `beneficiaryName`, `beneficiaryAddress`, `bankAddress`, `depositMessage`. Only the ones the rail uses are set.</ResponseField>
+        <ResponseField name="onrampInstructions" type="array">Per-rail deposit instructions, each naming its `rail` and `railLabel`.</ResponseField>
+        <ResponseField name="paymentsData" type="object">Alternative payment details (for example a QR code or virtual account) with `type`, `qrCode`, `vaCode`, `form` and `accountDetails`.</ResponseField>
+        <ResponseField name="requiresManualContinuation" type="boolean">`true` when the payer must complete a step on the payment page.</ResponseField>
+        <ResponseField name="deliveryAddress" type="string">Wallet the stablecoin is delivered to.</ResponseField>
+        <ResponseField name="deliveryAmountAtomic" type="string">Delivered amount, atomic-units integer string.</ResponseField>
+        <ResponseField name="cryptoTicker" type="string">Stablecoin delivered.</ResponseField>
+        <ResponseField name="status" type="string">Leg status, for example `awaiting_payment` or `completed`.</ResponseField>
+        <ResponseField name="settledAt" type="string">ISO 8601. When the collection settled.</ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="offramp" type="object">
+      Fiat delivery leg.
+      <Expandable title="offramp">
+        <ResponseField name="amount" type="number">Amount delivered.</ResponseField>
+        <ResponseField name="currency" type="string">Delivery currency.</ResponseField>
+        <ResponseField name="expiresAt" type="string">When the deposit window expires, on stablecoin-to-fiat payouts.</ResponseField>
+        <ResponseField name="depositAddress" type="string">Stablecoin-to-fiat: address to send the source stablecoin to.</ResponseField>
+        <ResponseField name="depositAmount" type="number">Stablecoin-to-fiat: amount to send.</ResponseField>
+        <ResponseField name="depositAmountAtomic" type="string">`depositAmount` as an atomic-units integer string.</ResponseField>
+        <ResponseField name="chainId" type="integer">Chain id of `depositAddress`.</ResponseField>
+        <ResponseField name="quoteId" type="string">The locked quote.</ResponseField>
+        <ResponseField name="status" type="string">Leg status, for example `awaiting_transfer` or `completed`.</ResponseField>
+        <ResponseField name="completedAt" type="string">ISO 8601.</ResponseField>
+        <ResponseField name="hasSupportingDocument" type="boolean">Whether a supporting document is attached. Download it with [`GET /payouts/{id}/document/url`](/api-reference/payouts/document-url).</ResponseField>
+        <ResponseField name="supportingDocumentName" type="string">File name of the attached document.</ResponseField>
+        <ResponseField name="supportingDocumentSize" type="integer">Size in bytes, when recorded.</ResponseField>
+        <ResponseField name="bankTransit" type="object">Set when the payout was sent on a bank rail that clears later: `rail`, `railLabel`, `reference`, `referenceLabel`, `sentAt`, `expectedBy` and `arrived`.</ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="bridge" type="object">Cross-chain leg: chains, amounts, transaction hashes and `status`.</ResponseField>
+    <ResponseField name="cryptoPayout" type="object">Stablecoin payout leg: swap and transfer hashes, `overallStatus`, and `errorStep` / `errorMessage` on failure.</ResponseField>
+    <ResponseField name="heldConversion" type="object">Set when the delivery was refused after conversion: where the converted funds rest (`walletAddress`, `cryptoTicker`, `amountAtomic`, `decimals`).</ResponseField>
+  </Expandable>
+</ResponseField>
+<ResponseField name="createdAt" type="string">ISO 8601.</ResponseField>
+<ResponseField name="updatedAt" type="string">ISO 8601.</ResponseField>
+<ResponseField name="completedAt" type="string">ISO 8601. Present once `status` is `completed`.</ResponseField>

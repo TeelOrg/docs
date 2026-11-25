@@ -1,0 +1,20 @@
+<ResponseField name="payoutRail" type="string">The destination rail this route pays. Send it as `payoutRail` on [`POST /rfq/execute`](/api-reference/payouts/execute) to pin it. Absent when no rail is named or resolved.</ResponseField>
+<ResponseField name="payoutRailLabel" type="string">Display name of `payoutRail`, for example `InstaPay` or `ACH`. Absent for a rail without a standard arrival.</ResponseField>
+<ResponseField name="expectedArrivalAt" type="string">ISO 8601. When the funds should reach the recipient's bank if the payout started now. Absent when no arrival resolves.</ResponseField>
+<ResponseField name="settlementSla" type="object">
+  Settlement estimate for the route's delivery rail. Absent when none is available.
+  <Expandable title="settlementSla">
+    <ResponseField name="speed" type="string">`standard` or `realtime`.</ResponseField>
+    <ResponseField name="processingDays" type="string">`weekdays` or `everyday`.</ResponseField>
+    <ResponseField name="estimateMinBusinessDays" type="integer">Lower bound in business days. `0` is same day.</ResponseField>
+    <ResponseField name="estimateMaxBusinessDays" type="integer">Upper bound in business days.</ResponseField>
+    <ResponseField name="cutoff" type="string">Daily cutoff, `HH:MM`. Absent when there is none.</ResponseField>
+    <ResponseField name="cutoffTimezone" type="string">IANA timezone of `cutoff`.</ResponseField>
+    <ResponseField name="beforeCutoff" type="string">`same_day` or `next_day`: arrival for a payout sent before the cutoff.</ResponseField>
+    <ResponseField name="atOrAfterCutoff" type="string">`same_day` or `next_day`: arrival for a payout sent at or after the cutoff.</ResponseField>
+    <ResponseField name="estimatedArrivalStart" type="string">`YYYY-MM-DD`. Start of the estimated arrival window, if sent now.</ResponseField>
+    <ResponseField name="estimatedArrivalEnd" type="string">`YYYY-MM-DD`. End of that window. An estimate, not a guarantee.</ResponseField>
+    <ResponseField name="expectedArrival" type="string">`YYYY-MM-DD`. Firm arrival date, on routes with a committed cutoff.</ResponseField>
+  </Expandable>
+</ResponseField>
+<ResponseField name="offrampRequirements" type="object">Present when the route asks for a supporting document. `document` describes it. Upload it with [`POST /payouts/document`](/api-reference/payouts/upload-document).</ResponseField>

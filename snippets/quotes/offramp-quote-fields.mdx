@@ -1,0 +1,25 @@
+<ResponseField name="protocol" type="string">Route token (`rt_…`). Send it as `routeProtocol` on [`POST /rfq/execute`](/api-reference/payouts/execute) to pin the route. Treat it as opaque.</ResponseField>
+<ResponseField name="fromToken" type="string">Stablecoin sold.</ResponseField>
+<ResponseField name="toCcy" type="string">Payout currency.</ResponseField>
+<ResponseField name="fromAmount" type="string">Stablecoin amount sold, decimal string.</ResponseField>
+<ResponseField name="toAmount" type="string">Fiat amount the recipient receives, decimal string.</ResponseField>
+<ResponseField name="rate" type="number">Rate the recipient gets, after Teel's fee.</ResponseField>
+<ResponseField name="exchangeRate" type="string">Route's exchange rate, when it reports one.</ResponseField>
+<ResponseField name="fee" type="number">Legacy total fee in the source token. Read `providerFee` and `teelFee`.</ResponseField>
+<ResponseField name="providerFee" type="number">Route's own fee, in the source token.</ResponseField>
+<ResponseField name="deductedFromTransfer" type="number">Part of `providerFee` taken out of the transfer. Absent means all of it.</ResponseField>
+<ResponseField name="teelFee" type="number">Teel's fee, in the source token.</ResponseField>
+<ResponseField name="teelFeeExact" type="string">`teelFee` as an exact decimal. Only on quotes funded from your collections wallet.</ResponseField>
+<ResponseField name="teelFeeBps" type="integer">Teel's fee in basis points.</ResponseField>
+<ResponseField name="flatFees" type="array">Each flat fee charged apart from the rate, one line each: `kind` (`provider`, `rail` or `network`), `amount` and `currency`. Absent when there are none.</ResponseField>
+<ResponseField name="networkFeeWaived" type="boolean">`true` when the network fee of sending from your wallet is waived.</ResponseField>
+<ResponseField name="payoutRailOptions" type="array">Rails this route can pay, each with `rail` (`ach`, `wire` or `fednow`) and `fee` in the source token. Send one as `payoutRail` to price that rail.</ResponseField>
+<ResponseField name="requiresDocument" type="boolean">`true` when the route needs a supporting document.</ResponseField>
+<ResponseField name="validUntil" type="string">ISO 8601. Teel honours this quote until then.</ResponseField>
+<ResponseField name="midMarketRate" type="number">Mid-market rate used for the all-in cost.</ResponseField>
+<ResponseField name="allInCostBps" type="number">All-in cost against mid-market, in basis points. Negative means better than mid-market.</ResponseField>
+<ResponseField name="allInCostAmount" type="number">All-in cost in the source token.</ResponseField>
+<ResponseField name="allInCostAmountExact" type="string">`allInCostAmount` as an exact decimal. Only on quotes funded from your collections wallet.</ResponseField>
+<ResponseField name="providerToAmount" type="string">Route's delivery before Teel's fee.</ResponseField>
+<ResponseField name="providerRate" type="number">Route's rate before Teel's fee.</ResponseField>
+<ResponseField name="metadata" type="object">Route-specific detail. Don't depend on its keys.</ResponseField>
