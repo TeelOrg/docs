@@ -3295,19 +3295,10 @@
                       "raw": "{\n  \"url\": \"<uri>\",\n  \"events\": [\n    \"<string>\",\n    \"<string>\"\n  ],\n  \"status\": \"<enum>\",\n  \"label\": \"<string>\"\n}"
                     },
                     "description": {
-                      "content": "Scope `webhooks:write`. Idempotent via `Idempotency-Key`.\nSetting `events` to include a `collections.*` event needs\n`collections:read` on the key, as on create (`403 INSUFFICIENT_SCOPE`).\n",
+                      "content": "Scope `webhooks:write`. Does not honour `Idempotency-Key`.\nSetting `events` to include a `collections.*` event needs\n`collections:read` on the key, as on create (`403 INSUFFICIENT_SCOPE`).\n",
                       "type": "text/plain"
                     },
                     "header": [
-                      {
-                        "description": {
-                          "content": "Optional. Stripe-style idempotency: same key + same body \u2192 cached\nresponse replayed within 24h with `Idempotency-Replayed: true`.\nSame key + different body \u2192 409 IDEMPOTENCY_KEY_REUSED. Concurrent\nin-flight \u2192 409 IDEMPOTENCY_REQUEST_IN_FLIGHT + Retry-After.\n",
-                          "type": "text/plain"
-                        },
-                        "disabled": false,
-                        "key": "Idempotency-Key",
-                        "value": "{{idempotencyKey}}"
-                      },
                       {
                         "key": "Content-Type",
                         "value": "{{contentType}}"
@@ -4686,6 +4677,96 @@
         }
       ],
       "name": "collections"
+    },
+    {
+      "description": "",
+      "item": [
+        {
+          "event": [],
+          "name": "List funding sources",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "auth": null,
+            "body": {},
+            "description": {
+              "content": "Scope `payment_methods:read`. The business's receiving accounts and\ncollections wallets that a payout can be paid from. Pass a row's `id`\nas `userPaymentMethodId` on `POST /rfq/execute` or\n`POST /rfq/execute-batch`. Bank accounts and wallets added in the\ndashboard are not listed.\n",
+              "type": "text/plain"
+            },
+            "header": [
+              {
+                "key": "Accept",
+                "value": "{{accept}}"
+              }
+            ],
+            "method": "GET",
+            "name": "List funding sources",
+            "url": {
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payment-methods"
+              ],
+              "query": [],
+              "variable": []
+            }
+          }
+        },
+        {
+          "description": "",
+          "item": [
+            {
+              "event": [],
+              "name": "Get a funding source",
+              "protocolProfileBehavior": {
+                "disableBodyPruning": true
+              },
+              "request": {
+                "auth": null,
+                "body": {},
+                "description": {
+                  "content": "Scope `payment_methods:read`. One row of `GET /payment-methods`, with\nthe same fields. `404 PAYMENT_METHOD_NOT_FOUND` for any id that list\ndoes not return.\n",
+                  "type": "text/plain"
+                },
+                "header": [
+                  {
+                    "key": "Accept",
+                    "value": "{{accept}}"
+                  }
+                ],
+                "method": "GET",
+                "name": "Get a funding source",
+                "url": {
+                  "host": [
+                    "{{baseUrl}}"
+                  ],
+                  "path": [
+                    "payment-methods",
+                    ":id"
+                  ],
+                  "query": [],
+                  "variable": [
+                    {
+                      "description": {
+                        "content": "(Required) ",
+                        "type": "text/plain"
+                      },
+                      "disabled": false,
+                      "key": "id",
+                      "type": "any",
+                      "value": "<uuid>"
+                    }
+                  ]
+                }
+              }
+            }
+          ],
+          "name": "{id}"
+        }
+      ],
+      "name": "payment-methods"
     }
   ],
   "variable": [
